@@ -563,7 +563,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Superscript" => "Superíndice",
         "Locked" => "Bloqueada",
         "Hidden" => "Oculta",
-        "Locking cells or hiding formulas has no effect until you protect the worksheet (Review › Protect Sheet)." => "Bloquear celdas u ocultar fórmulas no tiene efecto hasta que protejas la hoja (Revisar › Proteger hoja).",
+        "Locking cells or hiding formulas has no effect until you protect the worksheet (Review › Protect Sheet)." => {
+            "Bloquear celdas u ocultar fórmulas no tiene efecto hasta que protejas la hoja (Revisar › Proteger hoja)."
+        }
         "Auto Fill Options" => "Opciones de autorrelleno",
         "Convert to Number" => "Convertir en número",
         "Number Stored as Text" => "Número almacenado como texto",
