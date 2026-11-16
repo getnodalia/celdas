@@ -5,6 +5,7 @@
 /// Returns the Spanish translation for `text`, or `None` so callers fall back to English.
 pub(super) fn translate(text: &str) -> Option<&'static str> {
     Some(match text {
+        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => "Este libro contiene VBA. Guárdalo como .xlsm o .xltm para conservarlo.",
         "Diagram" => "Diagrama",
         "Main menu" => "Menú principal",
         "Preferences" => "Preferencias",
