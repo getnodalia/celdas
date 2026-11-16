@@ -153,10 +153,7 @@ fn check_vba_save(wb: &celdas_model::Workbook, path: &str, kind: Option<crate::i
         && !celdas_xlsx::XlsxKind::from_path(path).is_macro_enabled()
         && !discard
     {
-        return Err(bad(
-            "file.save",
-            "This workbook contains VBA. Save as .xlsm or .xltm to keep it.",
-        ));
+        return Err(bad("file.save", "This workbook contains VBA. Save as .xlsm or .xltm to keep it."));
     }
     Ok(())
 }
