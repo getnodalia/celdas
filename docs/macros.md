@@ -370,4 +370,7 @@ neither read nor change their storage; a recording keeps the steps a script run 
 recorded. A workbook can hold a script and a macro with the same name.
 
 A VBA project in an `.xlsm` or `.xltm` file is preserved on save and never run. Celdas macros
-are stored apart from it.
+are stored apart from it. Saving an open workbook with VBA as `.xlsx` or `.xltx` is refused:
+choose `.xlsm` or `.xltm` to keep the project. Programmatic `file.save`, `file.saveAs` and
+`file.saveBytes` callers can explicitly pass `discardVba: true` to produce a macro-free Excel
+file. Other export formats remain separate exports and do not preserve VBA.

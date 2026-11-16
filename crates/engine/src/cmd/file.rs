@@ -9,9 +9,9 @@ pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(noundo "file.new", "New Workbook", ["File"], Some("Cmd+N"), "{sample?: \"budget\"|\"sales\"|\"grades\"}", always, new_workbook),
         cmd!(noundo "file.open", "Open…", ["File"], Some("Cmd+O"), "{path} | {name, base64}, plus {password} for a password-protected workbook and {csvAsText?: bool} to keep every csv/tsv/txt field as text, with no number or date conversion (xlsx, xlsm, xls import, xlsb and ods data import, csv, tsv, txt, json)", always, open),
-        cmd!(noundo "file.save", "Save", ["File"], Some("Cmd+S"), "{path?} (xlsx by default; .csv/.tsv/.json/.html/.pdf by extension)", has_doc, save),
-        cmd!(noundo "file.saveAs", "Save As…", ["File"], Some("Cmd+Shift+S"), "{path} (.xlsx, .csv, .tsv, .json, .html, or .pdf: a PDF of the active sheet)", has_doc, save_as),
-        cmd!(query "file.saveBytes", "Encode Workbook", [], None, "{format?: xlsx|csv|tsv|json|html} → {base64}", has_doc, save_bytes),
+        cmd!(noundo "file.save", "Save", ["File"], Some("Cmd+S"), "{path?, discardVba?: bool} (xlsx by default; .csv/.tsv/.json/.html/.pdf by extension; discardVba explicitly permits removing a VBA project when saving .xlsx/.xltx)", has_doc, save),
+        cmd!(noundo "file.saveAs", "Save As…", ["File"], Some("Cmd+Shift+S"), "{path, discardVba?: bool} (.xlsx, .xlsm, .xltx, .xltm, .csv, .tsv, .json, .html, or .pdf; discardVba explicitly permits removing VBA when saving .xlsx/.xltx)", has_doc, save_as),
+        cmd!(query "file.saveBytes", "Encode Workbook", [], None, "{format?: xlsx|xlsm|xltx|xltm|csv|tsv|json|html, discardVba?: bool} → {base64}", has_doc, save_bytes),
         cmd!(noundo "file.close", "Close", ["File"], Some("Cmd+W"), "{force?: bool, document?: bool} (closes the active window, or with `document` the workbook and all its windows; the workbook closes with its last window)", has_doc, close),
         cmd!(noundo "file.exportCsv", "Export as CSV", ["File", "Export"], None, "{path, sheet?, values?: bool} → {path, bytes}: writes the cells as displayed, like Excel's Save As CSV; `values: true` writes raw values instead (full-precision numbers, ISO 8601 dates and times, TRUE/FALSE)", has_doc, |s, p| export(s, p, "csv")),
         cmd!(noundo "file.exportHtml", "Save as Web Page", ["File", "Export"], None, "{path}", has_doc, |s, p| export(s, p, "html")),
@@ -123,6 +123,7 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
     // The document's own file keeps the format its content had when opened; any other path
     // goes by its extension. Relative paths to linked workbooks are rewritten for the new folder.
     let kind = crate::io::FileKind::from_path(&path).or(d.content_kind.filter(|_| d.path.as_deref() == Some(path.as_str())));
+    check_vba_save(&d.wb, &path, kind, bool_param(p, "discardVba").unwrap_or(false))?;
     let rebased = crate::io::source_dir(&path).and_then(|f| celdas_xlsx::rebase_links(&d.wb, &f));
     let wb = rebased.as_ref().unwrap_or(&d.wb);
     let bytes = match kind {
@@ -145,6 +146,21 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
     Ok(json!({"path": path, "bytes": bytes.len()}))
 }
 
+/// Do not silently strip VBA when changing to a macro-free Excel workbook or template.
+fn check_vba_save(wb: &celdas_model::Workbook, path: &str, kind: Option<crate::io::FileKind>, discard: bool) -> Result<()> {
+    if wb.vba_project.is_some()
+        && matches!(kind, Some(crate::io::FileKind::Xlsx))
+        && !celdas_xlsx::XlsxKind::from_path(path).is_macro_enabled()
+        && !discard
+    {
+        return Err(bad(
+            "file.save",
+            "This workbook contains VBA. Save as .xlsm or .xltm to keep it.",
+        ));
+    }
+    Ok(())
+}
+
 fn save_as(s: &mut Session, p: &Json) -> Result<Json> {
     if str_param(p, "path").is_none() {
         s.ui_requests.push(crate::UiRequest::Dialog("saveAs".into(), json!({})));
@@ -157,6 +173,7 @@ fn save_bytes(s: &mut Session, p: &Json) -> Result<Json> {
     let fmt = str_param(p, "format").unwrap_or("xlsx");
     let d = s.doc()?;
     let name = format!("{}.{fmt}", std::path::Path::new(&d.display_title()).file_stem().and_then(|x| x.to_str()).unwrap_or("Book"));
+    check_vba_save(&d.wb, &name, crate::io::FileKind::from_path(&name), bool_param(p, "discardVba").unwrap_or(false))?;
     // The file name goes into a PivotChart's link to its PivotTable.
     let bytes = crate::io::save_bytes(&d.wb, &name)?;
     Ok(json!({"name": name, "base64": crate::io::base64_encode(&bytes), "bytes": bytes.len()}))
@@ -268,3 +285,6 @@ fn close_window(s: &mut Session, p: &Json) -> Result<Json> {
     s.close_window(id);
     Ok(json!({"closed": true, "document": true}))
 }
+
+#[cfg(test)]
+mod tests;

@@ -175,8 +175,8 @@ No alpha blockers: every core workflow passes the [alpha gate](roadmap.md#alpha-
   [hardware-parity.md](hardware-parity.md)
 
 ### 21. Automation and add-ins (F)
-- VBA out of scope (dropped on open, #6); no Office Scripts compatibility; no plugin or custom
-  function API. **Estimate:** 25–40 h plus an owner decision.
+- VBA projects are preserved in `.xlsm`/`.xltm` but cannot be executed or edited; no Office
+  Scripts compatibility; no plugin or custom function API. **Estimate:** 25–40 h plus an owner decision.
 
 ### 22. AI features (F)
 - No in-app assistant, natural-language formulas or Analyze Data; agent control via MCP is
