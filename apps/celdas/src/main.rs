@@ -259,6 +259,12 @@ fn icon() -> Option<egui::IconData> {
 }
 
 fn main() -> eframe::Result<()> {
+    // A confined launcher run (`celdas_sandbox::launch_command`) comes before everything else:
+    // it opens no window, writes no log, and becomes the program it confines.
+    let raw: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
+    if let Some(code) = celdas_sandbox::handle_args(&raw) {
+        std::process::exit(code);
+    }
     // First, so the panic hook and every start-up warning are recorded (`logging`).
     let logger = logging::install();
     // Commands catch their panics (`Session::execute`), but the default hook only prints to
@@ -354,7 +360,8 @@ fn main() -> eframe::Result<()> {
         .with_inner_size([1440.0, 900.0])
         .with_min_inner_size([640.0, 420.0])
         .with_app_id("dev.danielmiguelt.Celdas")
-        .with_drag_and_drop(true);
+        .with_drag_and_drop(true)
+        .with_decorations(!app.window_controls);
     if cfg!(target_os = "macos") {
         viewport = viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false);
     }
