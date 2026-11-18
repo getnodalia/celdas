@@ -38,6 +38,7 @@ pub(crate) use names::insert_name;
 use names::pasteable_names;
 pub(crate) use ref_edit::SHEET_DELETED;
 pub(crate) use show::build_params;
+pub(crate) use show::dialog_header;
 pub use show::show;
 pub(crate) use sort_dialog::{grid_sense, refuse_sheet_change};
 use zoom::zoom_preset;

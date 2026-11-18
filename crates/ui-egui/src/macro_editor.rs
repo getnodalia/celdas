@@ -919,17 +919,20 @@ pub fn window(app: &mut SheetApp, ctx: &egui::Context, d: &mut Dialog, open: &mu
     let fit = (screen.size() - vec2(16.0, 16.0)).max(vec2(240.0, 200.0));
     let mut win_open = true;
     ed.refs.drawn = false;
-    egui::Window::new(format!("Macro: {}{dirty_mark}", ed.draft.name))
+    let title = format!("Macro: {}{dirty_mark}", ed.draft.name);
+    egui::Window::new(&title)
         .id(Id::unique("celdas.macro_editor"))
         .collapsible(false)
         .resizable(true)
+        // Nodalia's dialog header (the title and the round close button) replaces egui's title bar.
+        .title_bar(false)
         // Never larger than the app's window, so a narrow one keeps every control on screen.
         .default_size(vec2(840.0, 560.0).min(fit))
         .min_size(vec2(660.0, 380.0).min(fit))
         // To the right, so the data the overlays mark (usually top left) stays in view.
         .default_pos(pos2((screen.right() - 860.0).max(screen.left() + 20.0), screen.top() + 190.0))
-        .open(&mut win_open)
         .show(ctx, |ui| {
+            crate::dialogs::dialog_header(ui, &title, app.ui.language.tr("Close"), &mut win_open);
             if !home {
                 let t = Tokens::get(ui.ctx());
                 ui.label(
