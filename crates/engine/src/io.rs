@@ -124,6 +124,14 @@ fn fit_imported_rows(wb: &mut Workbook) {
     }
 }
 
+/// The shared format crate names the app it came from; a person opening a file sees Celdas.
+fn json_read_error(e: craft_gridcraft_format::Error) -> EngineError {
+    match e {
+        craft_gridcraft_format::Error::Read(e) => EngineError::Other(format!("not a Celdas JSON workbook: {e}")),
+        other => EngineError::Other(other.to_string()),
+    }
+}
+
 /// What to tell the user when an encrypted workbook can't be decrypted. Never quotes the password.
 fn decrypt_message(name: &str, e: celdas_xlsx::DecryptError) -> String {
     match e {
@@ -314,7 +322,7 @@ fn read_plain(name: &str, bytes: &[u8], csv_as_text: bool) -> Result<(Workbook, 
     }
     match kind {
         Some(FileKind::Json) => {
-            let mut wb: Workbook = craft_gridcraft_format::read(bytes).map_err(|e| EngineError::Other(e.to_string()))?;
+            let mut wb: Workbook = craft_gridcraft_format::read(bytes).map_err(json_read_error)?;
             wb.styles.rebuild_index();
             if wb.sheets.is_empty() {
                 // The file's macros are read after this (`macros::load`), so they come along.
