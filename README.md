@@ -38,12 +38,12 @@ dark.
 > **Celdas is at an early stage.** Expect rough edges, and keep a copy of workbooks that matter.
 
 <p align="center">
-  <img src="docs/images/celdas-sales.png" alt="Celdas showing a quarterly sales dashboard: a styled table with data bars and sparklines next to a column chart and a pie chart, under the Home tab of the ribbon" width="100%">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/celdas/celdas-dashboard-light.jpg" alt="Celdas showing a quarterly sales dashboard in the light theme: a styled table with data bars and sparklines next to a column chart and a pie chart" width="100%">
 </p>
 
 <table>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/celdas-dark.png" alt="The sales dashboard in dark mode with the Insert tab open" width="100%"><p align="center"><sub><b>Dark mode</b> and the Insert tab: tables, charts, sparklines, pictures, shapes, links and comments.</sub></p></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/celdas/celdas-dashboard-dark.jpg" alt="The sales dashboard in the dark theme" width="100%"><p align="center"><sub><b>Dark mode</b>, with tables, charts, sparklines, pictures, shapes, links and comments one tab away.</sub></p></td>
 <td width="50%" valign="top"><img src="docs/images/celdas-formulas.png" alt="A gradebook table with averages and letter grades, with the Formulas tab open" width="100%"><p align="center"><sub><b>Formulas.</b> Hundreds of functions, dynamic arrays, LET and LAMBDA, structured table references.</sub></p></td>
 </tr>
 <tr>
