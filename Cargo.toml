@@ -14,6 +14,7 @@ repository = "https://github.com/getnodalia/celdas"
 # internal
 celdas-core = { path = "crates/core" }
 celdas-numfmt = { path = "crates/numfmt" }
+celdas-sandbox = { path = "crates/sandbox" }
 celdas-formula = { path = "crates/formula" }
 celdas-functions = { path = "crates/functions" }
 celdas-model = { path = "crates/model" }
@@ -25,13 +26,31 @@ celdas-ui-egui = { path = "crates/ui-egui" }
 celdas-mcp = { path = "crates/mcp" }
 celdas-pdf = { path = "crates/pdf" }
 celdas-math = { path = "crates/math" }
-# Every craft-libs crate (craft-window here, craft-ui in ui-egui, craft-print in the app) comes
-# from one craft-libs revision.
-
+# Every craft-libs crate (craft-window and the file-format crates here, craft-ui in
+# ui-egui, craft-print in the app, craft-web-api and craft-web-host in the web app) comes from one
+# craft-libs revision.
 # In-app updates from this app's GitHub releases, with the update windows for egui.
 nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "114848a2ff1a7c29c9a5432fb12e955fbe0aeef2", features = ["egui"] }
 # Nodalia Design for egui: the palette, Celdas's accent, the icon set and the window controls.
 nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "3c6bbd28c68496b3084fdae29005f4ac48720fe5", features = ["egui"] }
+# PDF RunLength encoding; this revision also fixes the vendored JBIG2 dependency for Git consumers.
+craft-pdf = { git = "https://github.com/getnodalia/foundation", rev = "ff142b3ad58aa7306676749428f4f2f9b277b5dd", version = "0.1.0", default-features = false }
+craft-stream-codecs = { git = "https://github.com/getnodalia/foundation", rev = "f7e0d7fd5577e102b4634bcbe062e649eb68165f", version = "0.1.0" }
+# Compound files ([MS-CFB]) and password-encrypted OOXML packages ([MS-OFFCRYPTO]).
+craft-cfb = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+craft-offcrypto = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+# OPC zip packages (parts, relationships, the zip writer) under `crates/xlsx/src/package.rs`.
+craft-opc = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+# Delimited text (CSV, TSV) and SYLK; `crates/xlsx/src/csv.rs` and `crates/engine/src/io/sylk.rs`
+# turn them into workbooks.
+craft-csv = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+# The native JSON workbook (`.json`, `.scjson`): read, written, and kept newer macros written back.
+craft-gridcraft-format = { git = "https://github.com/getnodalia/foundation", rev = "9a6d894200221fcfedc274870c30394d404f859d", version = "0.1.0" }
+# Excel 97-2003 (.xls, BIFF8) workbooks; `crates/xlsx/src/xls.rs` maps them onto the model.
+# SpreadsheetML string encoding/decoding; workbook model mapping stays in celdas-xlsx.
+craft-xlsx = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+craft-xml = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
+craft-xls = { git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", version = "0.1.0" }
 
 # foundation
 thiserror = "2"
@@ -46,9 +65,6 @@ regex = { version = "1", default-features = false, features = ["std", "unicode",
 quick-xml = "0.41"
 zip = { version = "3", default-features = false, features = ["deflate"] }
 sha2 = { version = "0.11", default-features = false }
-# Decrypting password-protected workbooks ([MS-OFFCRYPTO]): AES and SHA-1, pure Rust (wasm-safe).
-aes = { version = "0.9", default-features = false }
-sha1 = { version = "0.11", default-features = false }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 # equations: RaTeX (MIT) lays LaTeX out as positioned glyphs, rules and paths. Exact pins: it is
@@ -74,7 +90,7 @@ skrifa = { version = "0.44", default-features = false, features = ["std"] }
 epaint_default_fonts = "0.37"
 # One native window per workbook: the window list, Window menu titles and the immediate-viewport
 # driver. Same craft-libs revision as the other craft-libs crates.
-craft-window = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "1b34eba41e62138fc2438d2734523b302840b45d", default-features = false, features = ["egui"] }
+craft-window = { version = "0.1.0", git = "https://github.com/getnodalia/foundation", rev = "bb57d422d0bc842cbde430955825553ab7b976f4", default-features = false, features = ["egui"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -118,7 +134,8 @@ egui_demo_lib = { git = "https://github.com/getnodalia/foundation", rev = "6d518
 egui_inspection = { git = "https://github.com/getnodalia/foundation", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 winit = { git = "https://github.com/getnodalia/foundation", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
 
-# A vendored library still names this by its old home; the same commits are kept in foundation.
+# craft-print at the pinned revisions names winprint.rs by its old home; resolve it from foundation,
+# where the same commits are kept (vendor/winprint.rs/main).
 [patch."https://github.com/storytold/winprint.rs"]
 craft-winprint-gdi = { git = "https://github.com/getnodalia/foundation", rev = "64e7afd4d1483512385012c340ecaaaf0f3beb7f" }
-winprint = { git = "https://github.com/getnodalia/foundation", rev = "51934db382f225454cf152a8657eb03789be63c4" }
+winprint = { git = "https://github.com/getnodalia/foundation", rev = "bc06a7c48b768eb27a828c7986f6d2868b245ee0" }

@@ -21,10 +21,13 @@ web-time = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 celdas-xlsx = { workspace = true }
+craft-csv = { workspace = true }
+craft-gridcraft-format = { workspace = true }
 celdas-chart = { workspace = true }
 celdas-pdf = { workspace = true }
 celdas-math = { workspace = true }
 image = { workspace = true }
+unicode-segmentation = "=1.13.3"
 
 [dev-dependencies]
 celdas-xlsx = { workspace = true, features = ["test-support"] }
