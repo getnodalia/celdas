@@ -672,6 +672,7 @@ dependencies = [
  "arboard",
  "celdas-engine",
  "celdas-mcp",
+ "celdas-sandbox",
  "celdas-ui-egui",
  "chrono",
  "craft-print",
@@ -722,10 +723,11 @@ version = "0.1.5"
 dependencies = [
  "celdas-engine",
  "celdas-mcp",
+ "celdas-sandbox",
  "log",
  "quick-xml",
  "serde_json",
- "zip",
+ "zip 3.0.0",
 ]
 
 [[package]]
@@ -753,13 +755,16 @@ dependencies = [
  "celdas-numfmt",
  "celdas-pdf",
  "celdas-xlsx",
+ "craft-csv",
+ "craft-gridcraft-format",
  "image",
  "log",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
+ "unicode-segmentation",
  "web-time",
- "zip",
+ "zip 3.0.0",
 ]
 
 [[package]]
@@ -821,6 +826,25 @@ dependencies = [
 [[package]]
 name = "celdas-pdf"
 version = "0.1.5"
+dependencies = [
+ "craft-pdf",
+ "craft-stream-codecs",
+ "harfrust",
+ "sha2 0.11.1",
+ "skrifa",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "celdas-sandbox"
+version = "0.1.5"
+dependencies = [
+ "landlock",
+ "libc",
+ "nix 0.31.3",
+ "seccompiler",
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "celdas-ui-egui"
@@ -873,17 +897,22 @@ dependencies = [
 name = "celdas-xlsx"
 version = "0.1.5"
 dependencies = [
- "aes",
  "celdas-core",
  "celdas-formula",
  "celdas-functions",
  "celdas-math",
  "celdas-model",
+ "craft-cfb",
+ "craft-csv",
+ "craft-offcrypto",
+ "craft-opc",
+ "craft-xls",
+ "craft-xlsx",
+ "craft-xml",
  "quick-xml",
- "sha1 0.11.0",
  "sha2 0.11.1",
  "thiserror 2.0.21",
- "zip",
+ "zip 3.0.0",
 ]
 
 [[package]]
@@ -961,6 +990,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmov"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
+
+[[package]]
 name = "cmpv2"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -978,7 +1013,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b77c319abfd5219629c45c34c89ba945ed3c5e49fcde9d16b6c3885f118a730"
 dependencies = [
- "const-oid",
+ "const-oid 0.9.6",
  "der",
  "spki",
  "x509-cert",
@@ -1047,6 +1082,21 @@ name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
+
+[[package]]
+name = "const-oid"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be95d4a884358a21a199689323c29e9256b4a1b315e22f183d155422041d3a9a"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9eb6feb175df65d0a3ccd3e73484e940d0ac664e8034f0519fd49a93db3071d9"
+dependencies = [
+ "rustversion",
+]
 
 [[package]]
 name = "core-foundation"
@@ -1129,14 +1179,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "craft-cfb"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+
+[[package]]
+name = "craft-csv"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "craft-drawingml"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "craft-xml",
+ "kurbo",
+ "log",
+ "serde",
+]
+
+[[package]]
 name = "craft-fonts-build"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=1b34eba41e62138fc2438d2734523b302840b45d#1b34eba41e62138fc2438d2734523b302840b45d"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
+
+[[package]]
+name = "craft-gridcraft-format"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=9a6d894200221fcfedc274870c30394d404f859d#9a6d894200221fcfedc274870c30394d404f859d"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "craft-i18n"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=1b34eba41e62138fc2438d2734523b302840b45d#1b34eba41e62138fc2438d2734523b302840b45d"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
 dependencies = [
  "fixed_decimal",
  "icu_decimal",
@@ -1157,9 +1241,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "craft-offcrypto"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "aes",
+ "base64 0.23.1",
+ "craft-cfb",
+ "craft-xml",
+ "getrandom 0.3.4",
+ "hmac",
+ "sha1 0.11.0",
+ "sha2 0.11.1",
+ "thiserror 2.0.21",
+ "zeroize",
+]
+
+[[package]]
+name = "craft-opc"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "craft-xml",
+ "craft-zip",
+ "log",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "craft-pdf"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=ff142b3ad58aa7306676749428f4f2f9b277b5dd#ff142b3ad58aa7306676749428f4f2f9b277b5dd"
+
+[[package]]
 name = "craft-print"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=1b34eba41e62138fc2438d2734523b302840b45d#1b34eba41e62138fc2438d2734523b302840b45d"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
 dependencies = [
  "craft-winprint-gdi",
  "log",
@@ -1171,9 +1288,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "craft-sheet"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+
+[[package]]
+name = "craft-stream-codecs"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=f7e0d7fd5577e102b4634bcbe062e649eb68165f#f7e0d7fd5577e102b4634bcbe062e649eb68165f"
+dependencies = [
+ "fax",
+ "hayro-ccitt",
+ "hayro-jbig2",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "craft-ui"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=1b34eba41e62138fc2438d2734523b302840b45d#1b34eba41e62138fc2438d2734523b302840b45d"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
 dependencies = [
  "craft-fonts-build",
  "craft-i18n",
@@ -1193,7 +1326,7 @@ dependencies = [
 [[package]]
 name = "craft-web-api"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=fd5e2feff6ea25bed371a99cc732b3968d621505#fd5e2feff6ea25bed371a99cc732b3968d621505"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
 dependencies = [
  "js-sys",
  "serde_json",
@@ -1204,7 +1337,7 @@ dependencies = [
 [[package]]
 name = "craft-web-host"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=fd5e2feff6ea25bed371a99cc732b3968d621505#fd5e2feff6ea25bed371a99cc732b3968d621505"
+source = "git+https://github.com/getnodalia/foundation?rev=aa84415bae3b765fef6b7ef42404f66ad1cff9d9#aa84415bae3b765fef6b7ef42404f66ad1cff9d9"
 dependencies = [
  "wasm-bindgen",
  "web-sys",
@@ -1213,7 +1346,7 @@ dependencies = [
 [[package]]
 name = "craft-window"
 version = "0.1.0"
-source = "git+https://github.com/getnodalia/foundation?rev=1b34eba41e62138fc2438d2734523b302840b45d#1b34eba41e62138fc2438d2734523b302840b45d"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
 dependencies = [
  "egui",
  "objc2 0.6.5",
@@ -1227,6 +1360,50 @@ version = "0.1.0"
 source = "git+https://github.com/getnodalia/foundation?rev=64e7afd4d1483512385012c340ecaaaf0f3beb7f#64e7afd4d1483512385012c340ecaaaf0f3beb7f"
 dependencies = [
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "craft-xls"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "craft-cfb",
+ "craft-sheet",
+ "md-5",
+ "miniz_oxide 0.9.1",
+ "sha1 0.10.7",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "craft-xlsx"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "craft-drawingml",
+ "craft-opc",
+ "craft-sheet",
+ "craft-xml",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "craft-xml"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "quick-xml",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "craft-zip"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=bb57d422d0bc842cbde430955825553ab7b976f4#bb57d422d0bc842cbde430955825553ab7b976f4"
+dependencies = [
+ "flate2",
+ "thiserror 2.0.21",
+ "zip 9.7.0",
 ]
 
 [[package]]
@@ -1310,6 +1487,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctutils"
+version = "0.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "261af4dc7a06ea8a527a8717d8cbba3417530d6ea14e1edb3de6b67806be474f"
+dependencies = [
+ "cmov",
+]
+
+[[package]]
 name = "cursor-icon"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1321,7 +1507,7 @@ version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7c1832837b905bbfb5101e07cc24c8deddf52f93225eee6ead5f4d63d53ddcb"
 dependencies = [
- "const-oid",
+ "const-oid 0.9.6",
  "der_derive",
  "flagset",
  "pem-rfc7468",
@@ -1380,7 +1566,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
 dependencies = [
  "block-buffer 0.12.1",
+ "const-oid 0.10.3",
  "crypto-common 0.2.2",
+ "ctutils",
 ]
 
 [[package]]
@@ -2071,9 +2259,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 5.3.0",
  "wasip2",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2291,6 +2481,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "hayro-ccitt"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f4d0e94ddd48749f06bbe4e5389fb9799a0c45bcaf00495042076ef05e3241a"
+
+[[package]]
+name = "hayro-jbig2"
+version = "0.3.0"
+source = "git+https://github.com/getnodalia/foundation?rev=f7e0d7fd5577e102b4634bcbe062e649eb68165f#f7e0d7fd5577e102b4634bcbe062e649eb68165f"
+dependencies = [
+ "hayro-ccitt",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2307,6 +2511,15 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hmac"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6303bc9732ae41b04cb554b844a762b4115a61bfaa81e3e83050991eeb56863f"
+dependencies = [
+ "digest 0.11.3",
+]
 
 [[package]]
 name = "http"
@@ -2844,6 +3057,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "landlock"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cca98e95f35b29d469dade6724c6f96cec9236640f745a0e99b0334ec320ab1"
+dependencies = [
+ "enumflags2",
+ "libc",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2936,6 +3160,16 @@ name = "lru-slab"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
+
+[[package]]
+name = "md-5"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
+dependencies = [
+ "cfg-if",
+ "digest 0.10.7",
+]
 
 [[package]]
 name = "memchr"
@@ -3098,6 +3332,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys 0.3.1",
+]
+
+[[package]]
+name = "nix"
+version = "0.31.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
+name = "nix"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77730ed34f01f4990cb2ea67fec715ecebc6fab9a6396cf83c5529b13f581bdc"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -4488,6 +4746,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "seccompiler"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4ae55de56877481d112a559bbc12667635fdaf5e005712fd4e2b2fa50ffc884"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "security-framework"
 version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4709,7 +4976,7 @@ checksum = "da90c3d9af638898a5fdc347479b18f950bb0dde11ecf2244f94cd28135da53b"
 dependencies = [
  "aws-lc-rs",
  "base64 0.22.1",
- "const-oid",
+ "const-oid 0.9.6",
  "der",
  "digest 0.10.7",
  "pem",
@@ -4783,7 +5050,7 @@ dependencies = [
  "chrono",
  "cmpv2",
  "cms",
- "const-oid",
+ "const-oid 0.9.6",
  "der",
  "hex",
  "rand 0.10.3",
@@ -4822,7 +5089,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "cms",
- "const-oid",
+ "const-oid 0.9.6",
  "hex",
  "pem",
  "rustls-pki-types",
@@ -5474,6 +5741,12 @@ checksum = "cb30dbbd9036155e74adad6812e9898d03ec374946234fbcebd5dfc7b9187b90"
 dependencies = [
  "rustc-hash 2.1.3",
 ]
+
+[[package]]
+name = "typed-path"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce898823d8cd0f028662d2f349694b1af0a5cc9be83f1d213a00d3147445e1e"
 
 [[package]]
 name = "typenum"
@@ -6389,7 +6662,7 @@ dependencies = [
 [[package]]
 name = "winprint"
 version = "0.2.1"
-source = "git+https://github.com/getnodalia/foundation?rev=51934db382f225454cf152a8657eb03789be63c4#51934db382f225454cf152a8657eb03789be63c4"
+source = "git+https://github.com/getnodalia/foundation?rev=bc06a7c48b768eb27a828c7986f6d2868b245ee0#bc06a7c48b768eb27a828c7986f6d2868b245ee0"
 dependencies = [
  "flate2",
  "fmt-derive",
@@ -6404,6 +6677,7 @@ dependencies = [
  "windows",
  "windows-core",
  "windows-implement",
+ "windows-numerics",
  "xml",
 ]
 
@@ -6500,7 +6774,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1301e935010a701ae5f8655edc0ad17c44bad3ac5ce8c39185f75453b720ae94"
 dependencies = [
- "const-oid",
+ "const-oid 0.9.6",
  "der",
  "sha1 0.10.7",
  "signature",
@@ -6813,6 +7087,25 @@ dependencies = [
  "indexmap",
  "memchr",
  "zopfli",
+]
+
+[[package]]
+name = "zip"
+version = "9.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08687262e7c0f1284b259686f322805a8adaa8ef4d7210e76448950b3f083bf7"
+dependencies = [
+ "constant_time_eq",
+ "crc32fast",
+ "flate2",
+ "getrandom 0.4.3",
+ "indexmap",
+ "libc",
+ "memchr",
+ "nix 0.32.0",
+ "typed-path",
+ "windows-sys 0.61.2",
+ "zeroize",
 ]
 
 [[package]]

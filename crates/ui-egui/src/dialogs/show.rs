@@ -176,6 +176,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
         "advancedFilter" => window.default_height(0.0),
         _ => window,
     };
+    let window = super::sort_dialog::window(window, &d.name, ctx, app.ui.language);
     let (window, collapsed) = place_window(app, ctx, &mut d, window, window_id);
     let shown = window.show(ctx, |ui| {
             dialog_header(ui, app.ui.language.tr(&d.title), app.ui.language.tr("Close"), &mut win_open);
