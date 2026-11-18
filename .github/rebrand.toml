@@ -8,6 +8,8 @@
 
 # Left as they are wherever they appear (in file contents and in paths).
 keep = [
+    # The shared native-format crate in getnodalia/foundation keeps its published name.
+    "craft[-_]gridcraft[-_]format",
     # Links to upstream's issues, pull requests and commits, and to other people's repositories:
     # history, not branding. Links to upstream's tree and repository page are renamed below.
     "(https?://)?github\\.com/storytold/[\\w.-]+/(issues|pull|commit|discussions)/[^\\s)\\]\"'<>`]*",

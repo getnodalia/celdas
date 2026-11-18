@@ -18,8 +18,8 @@ celdas-engine = { workspace = true }
 celdas-ui-egui = { workspace = true }
 # The host messages (getnodalia/foundation (vendor/craft-libs)): one contract and one bridge for the web builds.
 # The page command API (storytold/craft-libs#413): window.celdas over the control channel.
-craft-web-api = { git = "https://github.com/getnodalia/foundation", rev = "fd5e2feff6ea25bed371a99cc732b3968d621505", version = "0.1.0" }
-craft-web-host = { git = "https://github.com/getnodalia/foundation", rev = "fd5e2feff6ea25bed371a99cc732b3968d621505", version = "0.1.0" }
+craft-web-api = { git = "https://github.com/getnodalia/foundation", rev = "aa84415bae3b765fef6b7ef42404f66ad1cff9d9", version = "0.1.0" }
+craft-web-host = { git = "https://github.com/getnodalia/foundation", rev = "aa84415bae3b765fef6b7ef42404f66ad1cff9d9", version = "0.1.0" }
 egui = { workspace = true }
 log = { workspace = true }
 serde_json = { workspace = true }
