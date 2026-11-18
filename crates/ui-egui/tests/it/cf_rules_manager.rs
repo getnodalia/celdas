@@ -43,8 +43,9 @@ fn harness_with_ranges(ranges: &[String]) -> Harness {
     h
 }
 
+/// The dialog's window (its title bar label carries the same name).
 fn dialog(h: &Harness) -> Rect {
-    h.get_by_label("Conditional Formatting Rules Manager").rect()
+    h.get_by_role_and_label(egui::accesskit::Role::Window, "Conditional Formatting Rules Manager").rect()
 }
 
 /// The rows of the list shown inside the dialog: (rule number, row rectangle).
@@ -114,7 +115,7 @@ fn many_rules_scroll_inside_a_dialog_that_fits_the_window() {
     let lowest = deletes.iter().map(|d| d.rect().bottom()).fold(0.0, f32::max);
     assert!(lowest <= SCREEN_H, "the list stays inside the window, lowest button at {lowest}");
     drop(deletes);
-    let window = h.get_by_label("Conditional Formatting Rules Manager").rect();
+    let window = dialog(&h);
     assert!(window.bottom() <= SCREEN_H, "the dialog fits the window, bottom at {}", window.bottom());
     // Deleting through the dialog removes the first rule and the dialog stays usable.
     // (The ribbon has a Delete button of its own, outside the dialog's window.)
