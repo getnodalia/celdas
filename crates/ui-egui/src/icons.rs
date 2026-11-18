@@ -104,6 +104,7 @@ pub enum Icon {
     Comment,
     Note,
     TextBox,
+    WordArt,
     Symbol,
     /// An equation: a radical sign over an italic x.
     Equation,
@@ -640,6 +641,10 @@ fn paint_drawn(p: &Painter, r: Rect, side: f32, icon: Icon, c: Color32, pal: &Pa
             g.rect(2.0, 3.0, 12.0, 10.0, None, Some(c));
             g.text(8.0, 8.0, "A", 8.0, c, (false, false));
         }
+        Icon::WordArt => {
+            g.text(9.0, 9.0, "A", 13.0, Color32::from_rgb(0x8E, 0x4F, 0xB5), (true, false));
+            g.text(8.0, 8.0, "A", 13.0, c, (true, false));
+        }
         Icon::Symbol => g.text(8.0, 8.0, "Ω", 12.0, c, (false, false)),
         Icon::Equation => {
             g.line(&[(1.5, 9.0), (3.5, 8.0), (5.5, 13.5), (8.5, 2.5), (14.5, 2.5)], c, 1.2);
@@ -1033,6 +1038,7 @@ pub fn ndl_name(icon: Icon) -> &'static str {
         Icon::Comment => "comment",
         Icon::Note => "note",
         Icon::TextBox => "text-box",
+        Icon::WordArt => "text-effects",
         Icon::Symbol => "symbol",
         Icon::Equation => "equation",
         Icon::Sparkline => "sparkline",
