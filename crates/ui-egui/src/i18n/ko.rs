@@ -793,7 +793,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "드롭다운 표시",
         "Include forecast statistics" => "예측 통계 포함",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "ArtCraft 팀과 기타 오픈 소스 작성자의 작업을 포함합니다(NOTICE 참조)."
+            "ArtCraft Team과 기타 오픈 소스 작성자의 작업을 포함합니다(NOTICE 참조)."
         }
         "Indent" => "들여쓰기",
         "Information" => "정보",

@@ -789,7 +789,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Padajuća lista u ćeliji",
         "Include forecast statistics" => "Uključi statistiku prognoze",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Sadrži rad tima ArtCraft i drugih autora otvorenog koda (vidi NOTICE)."
+            "Sadrži rad ArtCraft Team i drugih autora otvorenog koda (vidi NOTICE)."
         }
         "Indent" => "Uvlačenje",
         "Information" => "Informacija",

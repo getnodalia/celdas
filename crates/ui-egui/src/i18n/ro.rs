@@ -1153,7 +1153,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Highlight Cells Rules" => "Reguli de evidențiere celule",
         "Highlight the active cell's row" => "Evidențiere rând celulă activă",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Include munca echipei ArtCraft și a altor autori open-source (consultați NOTICE)."
+            "Include munca ArtCraft Team și a altor autori open-source (consultați NOTICE)."
         }
         "Input" => "Intrare",
         "Insert Function…" => "Inserare funcție…",

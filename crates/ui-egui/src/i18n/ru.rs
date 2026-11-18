@@ -799,7 +799,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Список допустимых значений",
         "Include forecast statistics" => "Включить статистику прогноза",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Содержит работу команды ArtCraft и других авторов открытого кода (см. NOTICE)."
+            "Содержит работу ArtCraft Team и других авторов открытого кода (см. NOTICE)."
         }
         "Indent" => "Отступ",
         "Information" => "Сведения",

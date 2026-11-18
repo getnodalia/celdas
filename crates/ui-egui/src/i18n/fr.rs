@@ -794,7 +794,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Liste déroulante dans la cellule",
         "Include forecast statistics" => "Inclure les statistiques de prévision",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Comprend le travail de l'équipe ArtCraft et d'autres auteurs open source (voir NOTICE)."
+            "Comprend le travail de l'ArtCraft Team et d'autres auteurs open source (voir NOTICE)."
         }
         "Indent" => "Retrait",
         "Information" => "Informations",

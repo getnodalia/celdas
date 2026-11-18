@@ -765,7 +765,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Danh sách thả xuống trong ô",
         "Include forecast statistics" => "Bao gồm thống kê dự báo",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Bao gồm công sức của nhóm ArtCraft và các tác giả mã nguồn mở khác (xem NOTICE)."
+            "Bao gồm công sức của ArtCraft Team và các tác giả mã nguồn mở khác (xem NOTICE)."
         }
         "Indent" => "Thụt lề",
         "Information" => "Thông tin",

@@ -784,7 +784,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In the last 7 days" => "最近 7 天",
         "In-cell dropdown" => "提供下拉箭头",
         "Include forecast statistics" => "包含预测统计信息",
-        "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => "包含 ArtCraft 团队及其他开源作者的成果(参见 NOTICE)。",
+        "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => "包含 ArtCraft Team 及其他开源作者的成果(参见 NOTICE)。",
         "Indent" => "缩进",
         "Information" => "信息",
         "Input" => "输入",

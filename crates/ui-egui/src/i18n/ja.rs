@@ -1314,7 +1314,7 @@ pub(super) const EXTRA: &[(&str, &str)] = &[
     ("Highlight the active cell's row", "アクティブ セルの行を強調表示"),
     (
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE).",
-        "ArtCraft チームおよびその他のオープンソース作者の成果を含みます (NOTICE を参照)。",
+        "ArtCraft Team およびその他のオープンソース作者の成果を含みます (NOTICE を参照)。",
     ),
     ("Insert Function…", "関数の挿入…"),
     ("Keyboard Shortcuts", "キーボード ショートカット"),

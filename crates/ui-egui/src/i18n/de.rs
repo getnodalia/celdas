@@ -816,7 +816,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Zellendropdown",
         "Include forecast statistics" => "Prognosestatistik einschließen",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Enthält Arbeiten des ArtCraft-Teams und weiterer Open-Source-Autoren (siehe NOTICE)."
+            "Enthält Arbeiten des ArtCraft Team und weiterer Open-Source-Autoren (siehe NOTICE)."
         }
         "Indent" => "Einzug",
         "Information" => "Information",

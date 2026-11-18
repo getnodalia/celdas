@@ -864,7 +864,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Rozevírací seznam v buňce",
         "Include forecast statistics" => "Zahrnout statistiku prognózy",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Obsahuje práci týmu ArtCraft a dalších autorů open source (viz NOTICE)."
+            "Obsahuje práci ArtCraft Team a dalších autorů open source (viz NOTICE)."
         }
         "Indent" => "Odsazení",
         "Information" => "Informace",

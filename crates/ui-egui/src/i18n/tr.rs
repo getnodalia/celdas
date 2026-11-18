@@ -769,7 +769,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "In-cell dropdown" => "Hücre içi açılır liste",
         "Include forecast statistics" => "Tahmin istatistiklerini dahil et",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "ArtCraft Ekibi ve diğer açık kaynak yazarlarının çalışmalarını içerir (bkz. NOTICE)."
+            "ArtCraft Team ve diğer açık kaynak yazarlarının çalışmalarını içerir (bkz. NOTICE)."
         }
         "Indent" => "Girinti",
         "Information" => "Bilgi",

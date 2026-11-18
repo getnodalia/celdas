@@ -1109,7 +1109,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Highlight Cells Rules" => "Reguły wyróżniania komórek",
         "Highlight the active cell's row" => "Wyróżnij wiersz aktywnej komórki",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Zawiera pracę zespołu ArtCraft i innych autorów oprogramowania open source (zobacz NOTICE)."
+            "Zawiera pracę ArtCraft Team i innych autorów oprogramowania open source (zobacz NOTICE)."
         }
         "Input" => "Dane wejściowe",
         "Insert Function…" => "Wstaw funkcję…",

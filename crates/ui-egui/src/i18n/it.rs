@@ -1260,7 +1260,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
             "Proteggi la cartella di lavoro per: struttura (non si possono aggiungere, spostare, rinominare, nascondere o eliminare fogli)."
         }
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Include lavori del team ArtCraft e di altri autori open source (vedi NOTICE)."
+            "Include lavori dell'ArtCraft Team e di altri autori open source (vedi NOTICE)."
         }
         "Forecast start (a date or number in the history; blank: after the last point):" => {
             "Inizio della previsione (una data o un numero nella cronologia; vuoto: dopo l'ultimo punto):"

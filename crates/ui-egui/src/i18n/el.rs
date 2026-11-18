@@ -1117,7 +1117,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Highlight Cells Rules" => "Κανόνες επισήμανσης κελιών",
         "Highlight the active cell's row" => "Επισήμανση της γραμμής του ενεργού κελιού",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Περιλαμβάνει εργασία της ομάδας ArtCraft και άλλων δημιουργών ανοιχτού κώδικα (βλ. NOTICE)."
+            "Περιλαμβάνει εργασία του ArtCraft Team και άλλων δημιουργών ανοιχτού κώδικα (βλ. NOTICE)."
         }
         "Input" => "Είσοδος",
         "Insert Function…" => "Εισαγωγή συνάρτησης…",

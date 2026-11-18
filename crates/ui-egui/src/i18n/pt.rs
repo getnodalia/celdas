@@ -1123,7 +1123,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Hex" => "Hexadecimal",
         "Highlight Cells Rules" => "Realçar regras das células",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Inclui trabalho da equipe ArtCraft e de outros autores de código aberto (veja NOTICE)."
+            "Inclui trabalho do ArtCraft Team e de outros autores de código aberto (veja NOTICE)."
         }
         "Input" => "Entrada",
         "Insert Function…" => "Inserir função…",

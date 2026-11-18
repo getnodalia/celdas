@@ -1113,7 +1113,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Highlight Cells Rules" => "Правила виділення клітинок",
         "Highlight the active cell's row" => "Виділяти рядок активної клітинки",
         "Includes work by the ArtCraft Team and other open-source authors (see NOTICE)." => {
-            "Містить роботу команди ArtCraft та інших авторів відкритого коду (див. NOTICE)."
+            "Містить роботу ArtCraft Team та інших авторів відкритого коду (див. NOTICE)."
         }
         "Input" => "Вхідні дані",
         "Insert Function…" => "Вставити функцію…",
