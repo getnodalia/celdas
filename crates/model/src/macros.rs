@@ -1,5 +1,5 @@
 //! Celdas macros: typed, declarative command lists that run as one undo step. They are not VBA:
-//! a VBA project in a file is carried through unchanged (`Workbook::vba_project`) and never run.
+//! a VBA project in a file is carried through unchanged (`Workbook::vba_project`); the engine's `vba.*` commands run it.
 
 use serde::{Deserialize, Serialize};
 

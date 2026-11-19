@@ -40,10 +40,11 @@ pub(super) fn all_scripts(s: &mut Session, _: &Json) -> Result<Json> {
         .as_object()
         .map(|o| o.iter().map(|(k, v)| json!({"name": k, "steps": v.as_array().map_or(0, Vec::len), "trusted": trusted})).collect())
         .unwrap_or_default();
-    // A preserved VBA project is reported alongside Celdas's own scripts; it is carried on
-    // save but never executed here, so it has no step count.
+    // A VBA project is reported alongside Celdas's own scripts, with the procedures `vba.run` can
+    // start (a project has no step count).
     if let Some(bytes) = &wb.vba_project {
-        list.push(json!({"name": "(VBA)", "steps": 0, "kind": "vba", "size": bytes.len(), "executed": false}));
+        list.push(json!({"name": "(VBA)", "steps": 0, "kind": "vba", "size": bytes.len(), "executed": true}));
+        list.extend(crate::vba::runnable_rows(wb));
     }
     Ok(Json::Array(list))
 }

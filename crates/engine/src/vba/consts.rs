@@ -1,0 +1,141 @@
+//! Excel's named constants (`xlCenter`, `xlUp`…), by lower-case name. The VBA constants (`vbCr`,
+//! `vbYes`…) are the interpreter's own.
+
+/// The value of the Excel constant `name` (lower case), if it is one.
+pub fn excel_constant(name: &str) -> Option<i32> {
+    Some(match name {
+        // Alignment.
+        "xlcenter" => -4108,
+        "xlleft" => -4131,
+        "xlright" => -4152,
+        "xltop" => -4160,
+        "xlbottom" => -4107,
+        "xlgeneral" => 1,
+        "xljustify" => -4130,
+        "xldistributed" => -4117,
+        "xlfill" => 5,
+        "xlcenteracrossselection" => 7,
+        // Lines.
+        "xlcontinuous" => 1,
+        "xlnone" => -4142,
+        "xldash" => -4115,
+        "xldot" => -4118,
+        "xldouble" => -4119,
+        "xldashdot" => 4,
+        "xldashdotdot" => 5,
+        "xlslantdashdot" => 13,
+        "xlhairline" => 1,
+        "xlthin" => 2,
+        "xlmedium" => -4138,
+        "xlthick" => 4,
+        "xlautomatic" => -4105,
+        "xlmanual" => -4135,
+        // Border indexes.
+        "xldiagonaldown" => 5,
+        "xldiagonalup" => 6,
+        "xledgeleft" => 7,
+        "xledgetop" => 8,
+        "xledgebottom" => 9,
+        "xledgeright" => 10,
+        "xlinsidevertical" => 11,
+        "xlinsidehorizontal" => 12,
+        // Directions.
+        "xlup" => -4162,
+        "xldown" => -4121,
+        "xltoleft" => -4159,
+        "xltoright" => -4161,
+        // Workbooks and files.
+        "xlwbatworksheet" => -4167,
+        "xlwbatchart" => -4109,
+        "xlworkbooknormal" => -4143,
+        "xlopenxmlworkbook" => 51,
+        "xlopenxmlworkbookmacroenabled" => 52,
+        "xlopenxmltemplate" => 54,
+        "xlcsv" => 6,
+        "xlcsvutf8" => 62,
+        "xltextwindows" => 20,
+        "xlunicodetext" => 42,
+        // Charts.
+        "xlxyscatter" => -4169,
+        "xlxyscattersmooth" => 72,
+        "xlxyscattersmoothnomarkers" => 73,
+        "xlxyscatterlines" => 74,
+        "xlxyscatterlinesnomarkers" => 75,
+        "xlline" => 4,
+        "xllinemarkers" => 65,
+        "xlcolumnclustered" => 51,
+        "xlcolumnstacked" => 52,
+        "xlcolumnstacked100" => 53,
+        "xlbarclustered" => 57,
+        "xlbarstacked" => 58,
+        "xlbarstacked100" => 59,
+        "xlpie" => 5,
+        "xldoughnut" => -4120,
+        "xlarea" => 1,
+        "xlareastacked" => 76,
+        "xlradar" => -4151,
+        "xlbubble" => 15,
+        "xllegendpositionbottom" => -4107,
+        "xllegendpositiontop" => -4160,
+        "xllegendpositionleft" => -4131,
+        "xllegendpositionright" => -4152,
+        // Cells.
+        "xlcelltypeblanks" => 4,
+        "xlcelltypeconstants" => 2,
+        "xlcelltypeformulas" => -4123,
+        "xlcelltypelastcell" => 11,
+        "xlcelltypevisible" => 12,
+        "xlvalues" => -4163,
+        "xlformulas" => -4123,
+        "xlcomments" => -4144,
+        "xlwhole" => 1,
+        "xlpart" => 2,
+        "xlbyrows" => 1,
+        "xlbycolumns" => 2,
+        "xlascending" => 1,
+        "xldescending" => 2,
+        "xlyes" => 1,
+        "xlno" => 2,
+        "xlguess" => 0,
+        "xlnormal" => -4143,
+        "xlmaximized" => -4137,
+        "xlminimized" => -4140,
+        "xlsheetvisible" => -1,
+        "xlsheethidden" => 0,
+        "xlsheetveryhidden" => 2,
+        "xlshiftdown" => -4121,
+        "xlshiftup" => -4162,
+        "xlshifttoleft" => -4159,
+        "xlshifttoright" => -4161,
+        "xlcalculationautomatic" => -4105,
+        "xlcalculationmanual" => -4135,
+        "xlcalculationsemiautomatic" => 2,
+        // Office.
+        "msotrue" => -1,
+        "msofalse" => 0,
+        "msotextorientationhorizontal" => 1,
+        "msoshaperectangle" => 1,
+        "msoshapeoval" => 9,
+        "msoshaperoundedrectangle" => 5,
+        "msoautoshape" => 1,
+        "msochart" => 3,
+        "msotextbox" => 17,
+        "msopicture" => 13,
+        "msoformcontrol" => 8,
+        _ => return None,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::excel_constant;
+
+    #[test]
+    fn the_constants_the_macros_use() {
+        assert_eq!(excel_constant("xlcenter"), Some(-4108));
+        assert_eq!(excel_constant("xlup"), Some(-4162));
+        assert_eq!(excel_constant("xlxyscattersmoothnomarkers"), Some(73));
+        assert_eq!(excel_constant("xlopenxmlworkbook"), Some(51));
+        assert_eq!(excel_constant("hello"), None);
+    }
+}

@@ -185,6 +185,7 @@ pub fn read_drawing(cx: &mut Ctx<'_>, part: &str, sheet: &mut Sheet) -> Result<(
                                 Some(mut ch) => {
                                     ch.id = cx.next_object_id();
                                     ch.anchor = anchor;
+                                    ch.name = obj.path(&["nvGraphicFramePr", "cNvPr"]).and_then(|c| c.attr("name")).unwrap_or("").to_string();
                                     sheet.charts.push(ch);
                                 }
                                 None => cx.warn(format!("chart {target} has no supported plot and was skipped")),
@@ -210,6 +211,14 @@ pub fn read_drawing(cx: &mut Ctx<'_>, part: &str, sheet: &mut Sheet) -> Result<(
         }
     }
     Ok(())
+}
+
+/// The procedure a shape's `macro` attribute names: Excel writes `[0]!Proc`, `'Book.xlsm'!Proc`
+/// or `Module.Proc`, and an empty string for a shape that runs nothing.
+fn macro_target(attr: &str) -> String {
+    let t = attr.trim();
+    let t = t.rsplit_once('!').map_or(t, |(_, name)| name);
+    t.trim_matches('\'').to_string()
 }
 
 fn read_shape(obj: &El, anchor: Anchor) -> Option<Shape> {
@@ -267,6 +276,8 @@ fn read_shape(obj: &El, anchor: Anchor) -> Option<Shape> {
             text,
             format: Default::default(),
             math: Default::default(),
+            name: String::new(),
+            macro_name: String::new(),
         });
     }
     let fill = sp.child("solidFill").and_then(dml_color).unwrap_or_default();
@@ -274,7 +285,9 @@ fn read_shape(obj: &El, anchor: Anchor) -> Option<Shape> {
     let text = obj.child("txBody").map(body_text).unwrap_or_default();
     let mut format = read_text_format(obj.child("txBody"));
     format.no_line = ln.is_some_and(|l| l.child("noFill").is_some());
-    Some(Shape { id: 0, kind, anchor, fill, line, text, format, math: Default::default() })
+    let name = obj.path(&["nvSpPr", "cNvPr"]).and_then(|c| c.attr("name")).unwrap_or("").to_string();
+    let macro_name = macro_target(obj.attr("macro").unwrap_or(""));
+    Some(Shape { id: 0, kind, anchor, fill, line, text, format, math: Default::default(), name, macro_name })
 }
 
 /// A shape's text formatting: vertical anchor (`a:bodyPr anchor`), the first paragraph's
@@ -510,7 +523,7 @@ pub fn write_drawing(sheet: &Sheet, theme: &Theme, objs: &[Obj<'_>]) -> String {
                 let _ = write!(
                     s,
                     "<xdr:graphicFrame macro=\"\"><xdr:nvGraphicFramePr><xdr:cNvPr id=\"{id}\" name=\"Chart {}\"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>{}<a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/chart\"><c:chart r:id=\"{rid}\"/></a:graphicData></a:graphic></xdr:graphicFrame>",
-                    id - 1,
+                    if ch.name.is_empty() { format!("Chart {}", id - 1) } else { esc_attr(&ch.name).to_string() },
                     xfrm(&ch.anchor, "xdr:xfrm")
                 );
             }
@@ -542,8 +555,9 @@ pub fn write_drawing(sheet: &Sheet, theme: &Theme, objs: &[Obj<'_>]) -> String {
                 };
                 let _ = write!(
                     s,
-                    "<xdr:sp macro=\"\" textlink=\"\"><xdr:nvSpPr><xdr:cNvPr id=\"{id}\" name=\"Shape {}\"/><xdr:cNvSpPr{}/></xdr:nvSpPr><xdr:spPr>{}<a:prstGeom prst=\"{prst}\"><a:avLst/></a:prstGeom>",
-                    id - 1,
+                    "<xdr:sp macro=\"{}\" textlink=\"\"><xdr:nvSpPr><xdr:cNvPr id=\"{id}\" name=\"{}\"/><xdr:cNvSpPr{}/></xdr:nvSpPr><xdr:spPr>{}<a:prstGeom prst=\"{prst}\"><a:avLst/></a:prstGeom>",
+                    if sh.macro_name.is_empty() { String::new() } else { format!("[0]!{}", esc_attr(&sh.macro_name)) },
+                    if sh.name.is_empty() { format!("Shape {}", id - 1) } else { esc_attr(&sh.name) },
                     if tx { " txBox=\"1\"" } else { "" },
                     xfrm(&sh.anchor, "a:xfrm")
                 );

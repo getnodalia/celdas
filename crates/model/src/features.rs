@@ -618,6 +618,9 @@ pub struct Chart {
     /// whenever the PivotTable is refreshed or its layout changes.
     #[serde(default)]
     pub pivot: Option<String>,
+    /// The chart's name as VBA's `Shapes("…")` knows it. Empty for a chart nobody named.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
 }
 
 impl Chart {
@@ -693,6 +696,14 @@ pub struct Shape {
     /// An equation's layout, rebuilt from `text` and never saved.
     #[serde(skip)]
     pub math: EquationCache,
+    /// The shape's name (`Shape 3`, `Rectangle: Rounded Corners 6`), as VBA's `Shapes("…")` and
+    /// `Application.Caller` know it. Empty for a shape nobody named.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    /// The VBA procedure a click on the shape runs (`Ir_A_Hoja`), without the workbook prefix the
+    /// file writes (`[0]!`). Empty when the shape runs nothing.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub macro_name: String,
 }
 
 /// The laid-out form of an equation's LaTeX source. It is derived data: rebuilt by
@@ -1157,6 +1168,7 @@ mod tests {
             source: None,
             by_rows: false,
             pivot: None,
+            name: String::new(),
         };
         let mut json = serde_json::to_value(&chart).expect("serialize chart");
         json.as_object_mut().expect("chart object").remove("hole_size");

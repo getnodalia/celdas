@@ -188,6 +188,8 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
         text,
         format: Default::default(),
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
     })
 }
 

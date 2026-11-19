@@ -81,6 +81,8 @@ fn stroke(s: &mut Session, p: &Json) -> Result<Json> {
     let id = d.wb.next_object_id();
     let shape = Shape {
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
         id,
         kind: ShapeKind::Ink,
         anchor: Anchor {

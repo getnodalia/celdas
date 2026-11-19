@@ -220,7 +220,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "parking_lot",
  "percent-encoding",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
  "wl-clipboard-rs",
  "x11rb",
 ]
@@ -667,7 +667,7 @@ dependencies = [
 
 [[package]]
 name = "celdas"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "celdas-engine",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-calc"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
  "celdas-formula",
@@ -708,7 +708,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-chart"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-calc",
  "celdas-core",
@@ -719,7 +719,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-cli"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-engine",
  "celdas-mcp",
@@ -732,7 +732,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-core"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "js-sys",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-engine"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-calc",
  "celdas-chart",
@@ -754,6 +754,7 @@ dependencies = [
  "celdas-model",
  "celdas-numfmt",
  "celdas-pdf",
+ "celdas-vba",
  "celdas-xlsx",
  "image",
  "log",
@@ -769,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-formula"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
  "serde",
@@ -778,7 +779,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-functions"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
  "regex",
@@ -786,7 +787,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-math"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "ratex-font",
  "ratex-layout",
@@ -796,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-mcp"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-engine",
  "log",
@@ -805,7 +806,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-model"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
  "celdas-formula",
@@ -818,14 +819,14 @@ dependencies = [
 
 [[package]]
 name = "celdas-numfmt"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
 ]
 
 [[package]]
 name = "celdas-pdf"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "harfrust",
  "nodalia-pdf",
@@ -837,21 +838,22 @@ dependencies = [
 
 [[package]]
 name = "celdas-sandbox"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "landlock",
  "libc",
- "nix 0.31.3",
+ "nix",
  "seccompiler",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "celdas-ui-egui"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-chart",
  "celdas-engine",
+ "celdas-vba",
  "celdas-xlsx",
  "egui",
  "egui_extras",
@@ -875,8 +877,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "celdas-vba"
+version = "0.2.0"
+dependencies = [
+ "celdas-core",
+ "celdas-numfmt",
+ "nodalia-cfb",
+ "nodalia-codepage",
+]
+
+[[package]]
 name = "celdas-web"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-engine",
  "celdas-ui-egui",
@@ -895,7 +907,7 @@ dependencies = [
 
 [[package]]
 name = "celdas-xlsx"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-core",
  "celdas-formula",
@@ -1680,7 +1692,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3119,18 +3131,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nix"
-version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77730ed34f01f4990cb2ea67fec715ecebc6fab9a6396cf83c5529b13f581bdc"
-dependencies = [
- "bitflags 2.13.2",
- "cfg-if",
- "cfg_aliases",
- "libc",
-]
-
-[[package]]
 name = "nodalia-celdas-format"
 version = "0.1.0"
 source = "git+https://github.com/getnodalia/foundation?rev=d68f03caf6b9fa5db01ab7d62fc5720d17ebf37f#d68f03caf6b9fa5db01ab7d62fc5720d17ebf37f"
@@ -3142,6 +3142,11 @@ dependencies = [
 
 [[package]]
 name = "nodalia-cfb"
+version = "0.1.0"
+source = "git+https://github.com/getnodalia/foundation?rev=57933793e2a2ef8904338640547fdfd673cbc0f9#57933793e2a2ef8904338640547fdfd673cbc0f9"
+
+[[package]]
+name = "nodalia-codepage"
 version = "0.1.0"
 source = "git+https://github.com/getnodalia/foundation?rev=57933793e2a2ef8904338640547fdfd673cbc0f9#57933793e2a2ef8904338640547fdfd673cbc0f9"
 
@@ -3793,7 +3798,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4221,7 +4226,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4606,7 +4611,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4665,7 +4670,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5421,7 +5426,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.5",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6384,7 +6389,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6842,7 +6847,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "celdas-engine",
  "serde_json",
@@ -7102,7 +7107,7 @@ dependencies = [
  "indexmap",
  "libc",
  "memchr",
- "nix 0.32.0",
+ "nix",
  "typed-path",
  "windows-sys 0.61.2",
  "zeroize",

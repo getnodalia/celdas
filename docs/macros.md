@@ -369,8 +369,52 @@ Automate scripts (`automate.recordActions`, `newScript`, `allScripts`, `runScrip
 neither read nor change their storage; a recording keeps the steps a script run ran while it
 recorded. A workbook can hold a script and a macro with the same name.
 
-A VBA project in an `.xlsm` or `.xltm` file is preserved on save and never run. Celdas macros
-are stored apart from it. Saving an open workbook with VBA as `.xlsx` or `.xltx` is refused:
+A VBA project in an `.xlsm` or `.xltm` file is preserved on save and run through the `vba.*`
+commands ([VBA macros](#vba-macros)). Celdas macros are stored apart from it. Saving an open workbook with VBA as `.xlsx` or `.xltx` is refused:
 choose `.xlsm` or `.xltm` to keep the project. Programmatic `file.save`, `file.saveAs` and
 `file.saveBytes` callers can explicitly pass `discardVba: true` to produce a macro-free Excel
 file. Other export formats remain separate exports and do not preserve VBA.
+
+## VBA macros
+
+The procedures of a workbook's `vbaProject.bin` run in the engine, in the language of the `celdas-vba`
+crate (a lexer, parser and interpreter for VBA: modules and classes, `Sub`/`Function`, `Dim` with
+types, `With`, `For Each`, `Select Case`, `On Error`, arrays, `Collection`, `Scripting.Dictionary`,
+the string, math, date and `Format` functions) and an Excel object model behind it.
+
+- `vba.list {}` → the project's modules, procedures (module, name, sub or function, public, takes
+  arguments) and the modules that did not compile.
+- `vba.source {module?}` → the source text.
+- `vba.run {procedure, caller?, approve?}` runs `Name` or `Module.Name` (a shape's `'Book.xlsm'!Name`
+  also works). It is **one undo step and all or nothing**: when the macro fails, the cells,
+  formatting, sheets, shapes and charts it changed, and every file it would have written, stay as
+  they were, and the error names the module, procedure and line. The result is
+  `{procedure, messages: [{title, text}], files, steps}`: what `MsgBox` said, the files written
+  and how many statements ran (a runaway loop stops at a step limit). `caller` is what
+  `Application.Caller` answers, the name of the shape that was clicked.
+- **Approval.** A workbook opened from a file asks first (`approve: true` answers it; the answer
+  holds for that project in the session), because a macro can write files and read the
+  environment. A workbook created here runs without asking.
+
+What the object model covers: `Application` (`ActiveSheet`, `ThisWorkbook`, `Caller`,
+`ScreenUpdating`, `Calculation`, `WorksheetFunction`, `Evaluate`, `Workbooks.Add`, `SaveAs`),
+`Sheets`/`Worksheets` (find by name ignoring case and accents, add, delete, activate), `Range`
+and `Cells` (values, formulas, `Offset`, `Resize`, `End`, `CurrentRegion`, `UsedRange`, merge,
+fonts, fills, borders, number formats, alignment, sizes, `AutoFit`, copy and paste, sort, clear),
+`Shapes` (text boxes, shapes, `OnAction`, `TextFrame2`), charts (`AddChart2`, series, titles,
+axes), text files (`Open … For Input/Output/Append`, `Print #`, `Line Input #`, `EOF`, `Dir`,
+`MkDir`, `Kill`; a file is written whole when it is closed) and the `xl*` constants. A cell loop
+is turned into a few range writes, so a macro that fills thousands of cells one by one stays fast.
+
+Not covered: UserForms, ActiveX and form-control events, workbook and worksheet event procedures,
+the VBA editor, PivotTables and most dialogs. A procedure that uses one fails with an error
+naming it, and changes nothing.
+
+In the window, **Macros** lists the public `Sub`s without arguments beside Celdas macros and
+scripts (marked "VBA"); Run asks for approval when the workbook came from a file, shows what
+`MsgBox` said, and a click on a shape with a macro assigned runs it (Ctrl/Cmd+click selects the
+shape instead).
+
+`CELDAS_TURBO_XLSM=/path/book.xlsm cargo test -p celdas-engine --lib a_real_workbook` runs a real
+workbook's macros and compares every number with what Excel left in the file; the synthetic
+suite in `crates/engine/src/vba/tests.rs` covers the same ground without a file.

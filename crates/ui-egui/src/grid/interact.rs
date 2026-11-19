@@ -144,6 +144,20 @@ pub(super) fn interact(app: &mut SheetApp, ui: &mut egui::Ui, resp: &egui::Respo
         if let Some(p) = at
             && let Some((obj, _, _)) = under
         {
+            // A click on a shape that has a macro assigned runs it, as in Excel; Ctrl/Cmd+click
+            // selects the shape instead.
+            if primary_clicked
+                && !primary_drag
+                && !(mods.command || mods.ctrl)
+                && obj.kind == ObjKind::Shape
+                && let Some(s) = sh.shapes.iter().find(|s| s.id == obj.id)
+                && !s.macro_name.trim().is_empty()
+                && !s.name.is_empty()
+                && wb.vba_project.is_some()
+            {
+                crate::macro_ui::call(app, "Run Macro", "vba.run", json!({"procedure": s.macro_name, "caller": s.name}));
+                return;
+            }
             app.selected_object = Some(obj);
             if resp.double_clicked() && app.open_object(obj) != crate::objects::OpenAction::Select {
                 return;

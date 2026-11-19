@@ -362,6 +362,8 @@ fn sample() -> Workbook {
     });
     s.shapes.push(Shape {
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
         id: 11,
         kind: ShapeKind::Ellipse,
         anchor: Anchor { cell: at("E10"), dx: 0.0, dy: 0.0, width: 64.0, height: 40.0, mode: AnchorMode::Absolute },
@@ -372,6 +374,8 @@ fn sample() -> Workbook {
     });
     s.shapes.push(Shape {
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
         id: 12,
         kind: ShapeKind::Arrow,
         anchor: Anchor { cell: at("E14"), dx: 0.0, dy: 0.0, width: 64.0, height: 0.0, ..Default::default() },
@@ -382,6 +386,8 @@ fn sample() -> Workbook {
     });
     s.shapes.push(Shape {
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
         id: 13,
         kind: ShapeKind::TextBox,
         anchor: Anchor { cell: at("E16"), dx: 0.0, dy: 0.0, width: 64.0, height: 40.0, ..Default::default() },
@@ -431,6 +437,7 @@ fn sample() -> Workbook {
         source: None,
         by_rows: false,
         pivot: None,
+        name: String::new(),
     };
     for kind in [
         ChartKind::ColumnClustered,
@@ -912,7 +919,7 @@ fn vba_project_roundtrip() {
 
     let (back, rep) = read_xlsx(&bytes).unwrap();
     assert_eq!(back.vba_project.as_deref(), Some(&vba), "vbaProject survives the read");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert!(rep.warnings.iter().any(|w| w.contains("were kept")), "{:?}", rep.warnings);
 
     // A workbook without macros stays macro-free and free of VBA warnings.
     let (plain, rp) = read_xlsx(&write_xlsx(&Workbook::new()).unwrap()).unwrap();
@@ -932,7 +939,7 @@ fn vba_project_read_from_foreign_file() {
     );
     let (wb, rep) = read_xlsx(&bytes).unwrap();
     assert!(wb.vba_project.is_some(), "VBA blob captured");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert!(rep.warnings.iter().any(|w| w.contains("were kept")), "{:?}", rep.warnings);
     let _ = vba;
 }
 

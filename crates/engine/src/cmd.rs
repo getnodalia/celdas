@@ -176,6 +176,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(inspect::specs());
         v.extend(extra::specs());
         v.extend(macros::specs());
+        v.extend(crate::vba::specs());
         v.extend(draw::specs());
         v.extend(wordart::specs());
         v.extend(spelling::specs());

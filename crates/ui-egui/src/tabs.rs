@@ -418,7 +418,7 @@ pub fn status_bar(app: &mut SheetApp, ui: &mut Ui) {
                         ui.add_space(12.0);
                         text(
                             ui,
-                            egui::RichText::new(crate::i18n::ui_tr(ui, "Macros preserved (not executed)")).font(theme::ui_font(12.5)).color(t.danger),
+                            egui::RichText::new(crate::i18n::ui_tr(ui, "VBA macros in this workbook")).font(theme::ui_font(12.5)).color(t.text_dim),
                         );
                     }
                     if d.wb.calc.mode == celdas_engine::model::CalcMode::Manual {

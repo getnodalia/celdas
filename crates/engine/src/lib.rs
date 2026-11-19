@@ -25,6 +25,7 @@ pub mod record;
 pub mod sample;
 pub mod selection;
 pub mod tables;
+pub mod vba;
 pub mod windows;
 
 use std::sync::Arc;

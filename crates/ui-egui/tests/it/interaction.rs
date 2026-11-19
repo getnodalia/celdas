@@ -1420,7 +1420,7 @@ fn circle_invalid_data_warns_when_its_scan_was_cut_short() {
 
 #[test]
 fn opening_a_macro_workbook_shows_a_notice() {
-    // The reader's "macros kept but not executed" warning must reach a dismissible info bar,
+    // The reader's "macros kept" warning must reach a dismissible info bar,
     // not be silently dropped (issue #6 follow-up: Excel-style message bar).
     let mut h = harness(blank());
     let b64 = celdas_engine::io::base64_encode(&macro_workbook_bytes());
@@ -1454,7 +1454,7 @@ fn dropped_macro_warning_never_promises_to_keep_macros() {
         assert_eq!(n.kind, celdas_ui_egui::NoticeKind::Warning);
         assert!(n.text.contains("dropped") && !n.text.contains("keeps them"), "{}", n.text);
     }
-    h.state_mut().show_open_warnings(&json!({"warnings": ["macros (VBA project) were kept but not executed"]}));
+    h.state_mut().show_open_warnings(&json!({"warnings": ["macros (VBA project) were kept"]}));
     assert!(h.state().notice.clone().unwrap().text.contains("keeps them when you save as .xlsm"));
 }
 
