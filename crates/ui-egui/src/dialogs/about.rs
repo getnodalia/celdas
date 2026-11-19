@@ -1,11 +1,13 @@
-use egui::{Align, Layout, RichText, TextureHandle, vec2};
+use egui::TextureHandle;
+use nodalia_theme::about as ndl;
+use nodalia_theme::creator::Look;
 
 use super::Dialog;
 use crate::theme::{self, Tokens};
 
 /// Celdas's icon for the About dialog, decoded once.
 fn icon(ctx: &egui::Context) -> Option<TextureHandle> {
-    let id = egui::Id::unique("celdas.about.icon");
+    let id = egui::Id::NULL.with("celdas.about.icon");
     if let Some(t) = ctx.data(|d| d.get_temp::<TextureHandle>(id)) {
         return Some(t);
     }
@@ -18,37 +20,38 @@ fn icon(ctx: &egui::Context) -> Option<TextureHandle> {
     Some(texture)
 }
 
-/// Help ▸ About Celdas, as every Nodalia app shows it: the icon, the name and version, the suite,
-/// and links to the website and the licence. Work by other authors is credited in NOTICE.
+/// Help ▸ About Celdas, as every Nodalia app shows it (`nodalia_theme::about`): the page with the
+/// icon, the name and version, the suite and the links. Work by other authors is credited in NOTICE.
 pub(super) fn about(ui: &mut egui::Ui, _d: &mut Dialog) {
     let t = Tokens::get(ui.ctx());
     let lang = crate::i18n::current(ui.ctx());
-    ui.with_layout(Layout::top_down(Align::Center), |ui| {
-        ui.add_space(8.0);
-        if let Some(tex) = icon(ui.ctx()) {
-            ui.add(egui::Image::new(&tex).fit_to_exact_size(vec2(96.0, 96.0)));
+    let look = Look::new(theme::palette_of(&t)).strong_family(theme::ui_bold(1.0).family).medium_family(theme::ui_font(1.0).family);
+    about_page(ui, &look, &lang);
+}
+
+fn about_page(ui: &mut egui::Ui, look: &Look, lang: &crate::i18n::Language) {
+    let version = format!("{} {}", lang.tr("Version"), env!("CARGO_PKG_VERSION"));
+    let links = [
+        ndl::Link { label: lang.tr("Website"), url: "https://getnodalia.com/celdas" },
+        ndl::Link { label: lang.tr("Licence: MIT or Apache-2.0"), url: "https://github.com/getnodalia/celdas/blob/main/LICENSE-MIT" },
+    ];
+    let info = ndl::Info {
+        name: "Celdas",
+        version: &version,
+        tagline: lang.tr("The spreadsheet of Nodalia's office apps."),
+        suite: lang.tr("Part of Nodalia"),
+        links: &links,
+        footer: lang.tr("Includes work by the ArtCraft Team and other open-source authors (see NOTICE)."),
+    };
+    let icon = icon(ui.ctx());
+    let page = ndl::page(ui, look, &info, |ui, rect| {
+        if let Some(tex) = &icon {
+            egui::Image::new(tex).fit_to_exact_size(rect.size()).paint_at(ui, rect);
         }
-        ui.add_space(10.0);
-        ui.label(RichText::new("Celdas").font(theme::ui_bold(22.0)).color(t.text));
-        ui.label(RichText::new(format!("{} {}", lang.tr("Version"), env!("CARGO_PKG_VERSION"))).font(theme::ui_font(13.0)).color(t.text_dim));
-        ui.add_space(6.0);
-        ui.label(RichText::new(lang.tr("The spreadsheet of Nodalia's office apps.")).font(theme::ui_font(13.5)).color(t.text));
-        ui.label(RichText::new(lang.tr("Part of Nodalia")).font(theme::ui_font(12.5)).color(t.text_dim));
-        ui.add_space(10.0);
-        ui.horizontal(|ui| {
-            // Centre the two links as one row.
-            let w = 230.0;
-            ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
-            ui.hyperlink_to(lang.tr("Website"), "https://getnodalia.com/celdas");
-            ui.label(RichText::new("·").color(t.text_dim));
-            ui.hyperlink_to(lang.tr("Licence: MIT or Apache-2.0"), "https://github.com/getnodalia/celdas/blob/main/LICENSE-MIT");
-        });
-        ui.add_space(10.0);
-        ui.label(
-            RichText::new(lang.tr("Includes work by the ArtCraft Team and other open-source authors (see NOTICE)."))
-                .font(theme::ui_font(11.5))
-                .color(t.text_dim),
-        );
-        ui.add_space(6.0);
     });
+    if let Some(i) = page.picked
+        && let Some(link) = links.get(i)
+    {
+        ui.ctx().open_url(egui::OpenUrl::new_tab(link.url));
+    }
 }
