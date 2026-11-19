@@ -141,6 +141,9 @@ pub(super) fn keyboard(app: &mut SheetApp, ctx: &egui::Context, resp: &egui::Res
                     Key::F8 if m.alt => {
                         app.open_dialog("macros", json!({}));
                     }
+                    Key::F11 if m.alt => {
+                        app.open_dialog("vbaEditor", json!({}));
+                    }
                     Key::F9 => app.run_or_alert("formulas.calculateNow", json!({})),
                     Key::F4 if !cmd => {}
                     // Ctrl+Shift+letter (⌘⇧letter) runs the macro with that shortcut, unless Celdas uses it.

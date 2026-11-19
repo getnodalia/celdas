@@ -511,9 +511,14 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
                 *open = false;
                 app.open_dialog("macroEditor", json!({"macro": target, "debug": true}));
             }
-            if ui.add_enabled(is_macro, egui::Button::new(crate::i18n::ui_tr(ui, "Edit")).min_size(w)).clicked() {
+            let is_vba = found.as_ref().is_some_and(|e| e.kind == Kind::Vba);
+            if ui.add_enabled(is_macro || is_vba, egui::Button::new(crate::i18n::ui_tr(ui, "Edit")).min_size(w)).clicked() {
                 *open = false;
-                app.open_dialog("macroEditor", json!({"macro": target}));
+                if is_vba {
+                    app.open_dialog("vbaEditor", json!({"procedure": found.as_ref().map(|e| e.name.clone()).unwrap_or_default()}));
+                } else {
+                    app.open_dialog("macroEditor", json!({"macro": target}));
+                }
             }
             let free = !target.is_empty() && !list.iter().any(|e| e.kind == Kind::Macro && e.name.eq_ignore_ascii_case(&target));
             if ui

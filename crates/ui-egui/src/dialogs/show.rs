@@ -151,6 +151,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
         "about" => nodalia_theme::about::measures::WIDTH,
         "insertFunction" | "commandSearch" | "nameManager" | "manageRules" | "journal" | "agents" | "equation" => 520.0,
         "macros" => 480.0,
+        "vbaEditor" => 820.0,
         "recommendedCharts" => 600.0,
         "analysisToolPak" => 420.0,
         "solver" => 460.0,
@@ -228,6 +229,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
                     });
                 }
                 "macros" => crate::macro_ui::macros_dialog(app, ui, &mut d, &mut open),
+                "vbaEditor" => crate::vba_editor::body(app, ui, &mut d, &mut open),
                 "recordMacro" => crate::macro_ui::record_dialog(app, ui, &mut d, &mut open),
                 "statistics" | "accessibility" | "errorChecking" | "evaluateFormula" | "comments" => {
                     let r = if d.name == "comments" {
@@ -408,6 +410,11 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
         // In Solver Options, Escape (or closing the window) cancels the options only.
         if in_solver_options(&d) {
             cancel_solver_options(&mut d);
+        } else if d.name == "vbaEditor" {
+            // Unsaved code asks first; Escape while a question is up answers that question.
+            if d.values.get("askClose").is_none() && d.values.get("askRemove").is_none() {
+                crate::vba_editor::request_close(&mut d, &mut open);
+            }
         } else {
             open = false;
         }

@@ -57,6 +57,7 @@ mod updates_ui;
 pub mod widgets;
 pub mod window_controls;
 mod window_ui;
+pub mod vba_editor;
 pub mod wordart;
 
 pub use window_ui::WindowUi;

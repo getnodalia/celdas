@@ -70,6 +70,11 @@ pub(super) fn automate(app: &mut SheetApp, ui: &mut Ui) {
         }
     });
     sep(ui);
+    let __k = big_button(ui, Icon::Script, "Visual\nBasic", "View and edit the VBA code of this workbook (Alt+F11)", false);
+    control_keytip(app, ui, &__k, "vbaEditor");
+    if __k.clicked() {
+        app.open_dialog("vbaEditor", json!({}));
+    }
     let __k = big_button(ui, Icon::Script, "Command\nPalette", "Search and run any command", false);
     control_keytip(app, ui, &__k, "commandSearch");
     if __k.clicked() {
