@@ -4,26 +4,14 @@ use super::{Color32, Icon, Rect, Sense, SheetApp, Stroke, StrokeKind, Tokens, Ui
 /// macOS draws the window into the title bar (`with_fullsize_content_view`) and AppKit paints the
 /// traffic lights itself, centred in its standard 28 pt title-bar band. Moving them would take
 /// AppKit calls (`unsafe`, forbidden here), so on macOS the title bar is that band: the lights sit
-/// vertically centred in it, with the controls beside them (#170).
+/// vertically centred in it, with the controls beside them (#170). `nodalia_theme::titlebar`
+/// says how much of the bar's left end the lights take.
 const MAC: bool = cfg!(target_os = "macos");
 
 pub const MAC_TITLE_BAR: f32 = 28.0;
 
-/// The traffic lights as AppKit lays them out: button diameter, centre-to-centre pitch and the
-/// first button's left edge (8–10 pt depending on the macOS version; the larger value keeps the
-/// gap after them from shrinking).
-const MAC_LIGHT: f32 = 12.0;
-
-const MAC_LIGHT_PITCH: f32 = 20.0;
-
-const MAC_LIGHTS_LEFT: f32 = 10.0;
-
-/// Where title-bar content starts on macOS: the end of the three lights plus the gap the lights
-/// keep from the top of the window.
-pub const MAC_CONTENT_LEFT: f32 = MAC_LIGHTS_LEFT + 2.0 * MAC_LIGHT_PITCH + MAC_LIGHT + (MAC_TITLE_BAR - MAC_LIGHT) / 2.0;
-
-/// Leave room for the macOS traffic lights when the content extends into the title bar.
-pub const TITLE_LEFT_PAD: f32 = if MAC { MAC_CONTENT_LEFT } else { 8.0 };
+/// The bar's padding at an end the window buttons do not take.
+const TITLE_PAD: f32 = 8.0;
 
 pub(super) const TITLE_BAR_H: f32 = if MAC { MAC_TITLE_BAR } else { 44.0 };
 
@@ -35,7 +23,7 @@ pub(super) const TITLE_CONTROL_H: f32 = if MAC { 22.0 } else { 28.0 };
 pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let ch = TITLE_CONTROL_H;
-    let captions = crate::window_controls::reserved(app);
+    let placement = crate::window_controls::placement(app);
     egui::Panel::top("title_bar").exact_size(TITLE_BAR_H).show_separator_line(false).frame(egui::Frame::NONE.fill(t.window)).show(ui, |ui| {
         let full = ui.max_rect();
         // Dragging the empty title area moves the window.
@@ -47,9 +35,13 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
             crate::window_controls::toggle_maximize(ui.ctx());
         }
         crate::window_controls::caption_buttons(app, ui, full);
-        let rect = Rect::from_min_max(full.min, pos2(full.max.x - captions, full.max.y));
+        let fullscreen = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
+        // What the window buttons take from each end, with the gap to the first control: the lights
+        // under a macOS title bar, or Nodalia's buttons on the desktop's side.
+        let insets = placement.insets(MAC && !fullscreen);
+        let rect = placement.content_rect(full, MAC && !fullscreen);
         ui.horizontal_centered(|ui| {
-            ui.add_space(TITLE_LEFT_PAD);
+            ui.add_space(insets.left.max(TITLE_PAD));
             app_menu(app, ui, ch);
             ui.add_space(4.0);
             // AutoSave toggle (saves after each change when the workbook has a file).
@@ -125,7 +117,7 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
             });
             let left_end = ui.min_rect().right();
             let right = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.add_space(8.0 + captions);
+                ui.add_space(insets.right.max(TITLE_PAD));
                 let __k = icon_button(ui, Icon::Search, t.text_dim, "Search commands", vec2(28.0, ch));
                 control_keytip(app, ui, &__k, "commandSearch");
                 if __k.clicked() {
@@ -388,14 +380,6 @@ pub fn window_frame(app: &mut SheetApp, ctx: &egui::Context) {
 #[cfg(test)]
 mod title_bar_tests {
     use super::*;
-
-    #[test]
-    fn mac_title_bar_centres_and_clears_the_traffic_lights() {
-        // The lights are centred in the bar, and content keeps the same gap after them.
-        let margin = (MAC_TITLE_BAR - MAC_LIGHT) / 2.0;
-        let lights_end = MAC_LIGHTS_LEFT + 2.0 * MAC_LIGHT_PITCH + MAC_LIGHT;
-        assert_eq!(MAC_CONTENT_LEFT - lights_end, margin);
-    }
 
     #[test]
     fn title_fits_between_the_controls() {
