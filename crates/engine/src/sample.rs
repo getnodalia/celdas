@@ -43,6 +43,9 @@ pub const SAMPLES: &[(&str, &str)] = &[
     ("loan", "Loan Calculator"),
     ("inventory", "Stock Inventory"),
     ("timesheet", "Weekly Timesheet"),
+    ("savings", "Savings Goal"),
+    ("expenses", "Expense Report"),
+    ("planner", "Weekly Planner"),
 ];
 
 const SPANISH_TITLES: &[(&str, &str)] = &[
@@ -54,6 +57,9 @@ const SPANISH_TITLES: &[(&str, &str)] = &[
     ("loan", "Calculadora de préstamo"),
     ("inventory", "Inventario de existencias"),
     ("timesheet", "Hoja de horas semanal"),
+    ("savings", "Objetivo de ahorro"),
+    ("expenses", "Informe de gastos"),
+    ("planner", "Planificador semanal"),
 ];
 
 pub fn title(name: &str) -> String {
@@ -85,6 +91,9 @@ pub fn build_in(name: &str, lang: Lang) -> Option<Workbook> {
             "loan" => lang.pick("Loan", "Préstamo"),
             "inventory" => lang.pick("Inventory", "Inventario"),
             "timesheet" => lang.pick("Timesheet", "Horas"),
+            "savings" => lang.pick("Savings", "Ahorro"),
+            "expenses" => lang.pick("Expenses", "Gastos"),
+            "planner" => lang.pick("Planner", "Semana"),
             _ => return None,
         }
         .into();
@@ -99,6 +108,9 @@ pub fn build_in(name: &str, lang: Lang) -> Option<Workbook> {
         "loan" => loan(&mut s, lang),
         "inventory" => inventory(&mut s, lang),
         "timesheet" => timesheet(&mut s, lang),
+        "savings" => savings(&mut s, lang),
+        "expenses" => expenses(&mut s, lang),
+        "planner" => planner(&mut s, lang),
         _ => false,
     };
     if !ok {
@@ -605,6 +617,143 @@ fn timesheet(s: &mut Session, lang: Lang) -> bool {
     ok &= run(s, "home.columnWidth", json!({"cols": "A:A", "width": 20}));
     ok &= run(s, "home.columnWidth", json!({"cols": "B:B", "width": 150}));
     ok &= run(s, "home.columnWidth", json!({"cols": "C:H", "width": 72}));
+    ok &= run(s, "selection.set", json!({"cell": "B2"}));
+    ok
+}
+
+/// A savings goal: three inputs, how many months it takes, and a year of progress toward it.
+fn savings(s: &mut Session, lang: Lang) -> bool {
+    let mut ok = heading(
+        s,
+        lang.pick("Savings goal", "Objetivo de ahorro"),
+        lang.pick("Change the three blue cells and the plan follows", "Cambia las tres celdas azules y el plan se ajusta"),
+    );
+    let labels = match lang {
+        Lang::En => [["Goal"], ["Saved so far"], ["Saved each month"], ["Months to go"], ["Progress"]],
+        Lang::Es => [["Objetivo"], ["Ahorrado hasta ahora"], ["Ahorro mensual"], ["Meses que faltan"], ["Avance"]],
+    };
+    ok &= run(s, "range.setValues", json!({"range": "B5", "values": labels}));
+    ok &= run(s, "cell.set", json!({"cell": "C5", "input": "12000"}));
+    ok &= run(s, "cell.set", json!({"cell": "C6", "input": "2500"}));
+    ok &= run(s, "cell.set", json!({"cell": "C7", "input": "400"}));
+    ok &= run(s, "cell.set", json!({"cell": "C8", "input": "=IF(C7>0,MAX(0,ROUNDUP((C5-C6)/C7,0)),0)"}));
+    ok &= run(s, "cell.set", json!({"cell": "C9", "input": "=IF(C5>0,MIN(1,C6/C5),0)"}));
+    ok &= run(s, "home.numberFormat", json!({"range": "C5:C7", "code": "#,##0"}));
+    ok &= run(s, "home.numberFormat", json!({"range": "C9", "code": "0%"}));
+    ok &= run(s, "home.fontColor", json!({"range": "C5:C7", "color": "#1F5FBF"}));
+    ok &= run(s, "home.fillColor", json!({"range": "C5:C7", "color": "#EAF1FB"}));
+    ok &= run(s, "home.bold", json!({"range": "B8:C8", "on": true}));
+    let head = match lang {
+        Lang::En => [["Month", "Saved", "Of the goal"]],
+        Lang::Es => [["Mes", "Ahorrado", "Del objetivo"]],
+    };
+    ok &= run(s, "range.setValues", json!({"range": "B12", "values": head}));
+    ok &= run(s, "home.cellStyle", json!({"range": "B12:D12", "name": "Heading 3"}));
+    for (i, r) in (13..=24).enumerate() {
+        ok &= run(s, "cell.set", json!({"cell": format!("B{r}"), "input": (i + 1).to_string()}));
+        ok &= run(s, "cell.set", json!({"cell": format!("C{r}"), "input": format!("=MIN($C$5,$C$6+$C$7*B{r})")}));
+        ok &= run(s, "cell.set", json!({"cell": format!("D{r}"), "input": format!("=IF($C$5>0,C{r}/$C$5,0)")}));
+    }
+    ok &= run(s, "home.numberFormat", json!({"range": "C13:C24", "code": "#,##0"}));
+    ok &= run(s, "home.numberFormat", json!({"range": "D13:D24", "code": "0%"}));
+    ok &= run(s, "home.conditionalFormat", json!({"range": "D13:D24", "rule": {"type": "dataBar", "color": "#63BE7B"}}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "A:A", "width": 20}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "B:B", "width": 170}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "C:D", "width": 120}));
+    ok &= run(s, "selection.set", json!({"cell": "B2"}));
+    ok
+}
+
+/// An expense report: dated lines by category, and what each category and the whole trip came to.
+fn expenses(s: &mut Session, lang: Lang) -> bool {
+    let (travel, meals, lodging) = (lang.pick("Travel", "Viajes"), lang.pick("Meals", "Comidas"), lang.pick("Lodging", "Alojamiento"));
+    let mut ok = heading(
+        s,
+        lang.pick("Expense report", "Informe de gastos"),
+        lang.pick("Add a line under the last one; the totals follow", "Añade una línea bajo la última; los totales se ajustan"),
+    );
+    let rows = match lang {
+        Lang::En => json!([
+            ["Date", "Category", "Description", "Amount"],
+            ["2026-10-12", travel, "Train to the book fair", 64.5],
+            ["2026-10-12", meals, "Lunch with the editor", 28.9],
+            ["2026-10-13", lodging, "Two nights, guesthouse", 140],
+            ["2026-10-14", travel, "Taxi to the station", 18],
+            ["2026-10-14", meals, "Dinner on the way home", 22.4],
+        ]),
+        Lang::Es => json!([
+            ["Fecha", "Categoría", "Descripción", "Importe"],
+            ["2026-10-12", travel, "Tren a la feria del libro", 64.5],
+            ["2026-10-12", meals, "Comida con la editora", 28.9],
+            ["2026-10-13", lodging, "Dos noches, casa de huéspedes", 140],
+            ["2026-10-14", travel, "Taxi a la estación", 18],
+            ["2026-10-14", meals, "Cena de camino a casa", 22.4],
+        ]),
+    };
+    ok &= run(s, "range.setValues", json!({"range": "B5", "values": rows}));
+    ok &= run(s, "home.cellStyle", json!({"range": "B5:E5", "name": "Heading 3"}));
+    ok &= run(s, "home.numberFormat", json!({"range": "E6:E10", "code": "#,##0.00"}));
+    ok &= run(
+        s,
+        "range.setValues",
+        json!({"range": "B13", "values": [[lang.pick("By category", "Por categoría")], [travel], [meals], [lodging], [lang.pick("Total", "Total")]]}),
+    );
+    ok &= run(s, "home.cellStyle", json!({"range": "B13:C13", "name": "Heading 3"}));
+    for r in 14..=16 {
+        ok &= run(s, "cell.set", json!({"cell": format!("C{r}"), "input": format!("=SUMIF($C$6:$C$10,B{r},$E$6:$E$10)")}));
+    }
+    ok &= run(s, "cell.set", json!({"cell": "C17", "input": "=SUM(C14:C16)"}));
+    ok &= run(s, "home.cellStyle", json!({"range": "B17:C17", "name": "Total"}));
+    ok &= run(s, "home.numberFormat", json!({"range": "C14:C17", "code": "#,##0.00"}));
+    ok &= run(
+        s,
+        "data.validation",
+        json!({"range": "C6:C10", "type": "list", "formula1": format!("\"{travel},{meals},{lodging}\""), "dropdown": true}),
+    );
+    ok &= run(s, "home.columnWidth", json!({"cols": "A:A", "width": 20}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "B:C", "width": 120}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "D:D", "width": 230}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "E:E", "width": 100}));
+    ok &= run(s, "selection.set", json!({"cell": "B2"}));
+    ok
+}
+
+/// A week at a glance: three parts of the day for each weekday, the weekend tinted.
+fn planner(s: &mut Session, lang: Lang) -> bool {
+    let mut ok = heading(
+        s,
+        lang.pick("Weekly planner", "Planificador semanal"),
+        lang.pick("One line for each part of the day", "Una línea para cada parte del día"),
+    );
+    let rows = match lang {
+        Lang::En => json!([
+            ["Day", "Morning", "Afternoon", "Evening"],
+            ["Monday", "Plan the week", "Studio: sketches", "Swim"],
+            ["Tuesday", "Emails and invoices", "Studio: inks", "Cook for friends"],
+            ["Wednesday", "Library", "Client call at 3", ""],
+            ["Thursday", "Studio: colour", "Open studio evening setup", "Open studio"],
+            ["Friday", "Revisions", "Send proofs", "Film night"],
+            ["Saturday", "Market", "Garden", ""],
+            ["Sunday", "Long breakfast", "Walk by the harbour", "Read"],
+        ]),
+        Lang::Es => json!([
+            ["Día", "Mañana", "Tarde", "Noche"],
+            ["Lunes", "Planificar la semana", "Taller: bocetos", "Natación"],
+            ["Martes", "Correos y facturas", "Taller: tintas", "Cena con amigos"],
+            ["Miércoles", "Biblioteca", "Llamada con el cliente a las 15:00", ""],
+            ["Jueves", "Taller: color", "Preparar la tarde abierta", "Taller abierto"],
+            ["Viernes", "Revisiones", "Enviar pruebas", "Noche de cine"],
+            ["Sábado", "Mercado", "Jardín", ""],
+            ["Domingo", "Desayuno largo", "Paseo por el puerto", "Leer"],
+        ]),
+    };
+    ok &= run(s, "range.setValues", json!({"range": "B5", "values": rows}));
+    ok &= run(s, "home.cellStyle", json!({"range": "B5:E5", "name": "Heading 3"}));
+    ok &= run(s, "home.bold", json!({"range": "B6:B12", "on": true}));
+    ok &= run(s, "home.fillColor", json!({"range": "B11:E12", "color": "#EEF4F5"}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "A:A", "width": 20}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "B:B", "width": 110}));
+    ok &= run(s, "home.columnWidth", json!({"cols": "C:E", "width": 200}));
     ok &= run(s, "selection.set", json!({"cell": "B2"}));
     ok
 }
