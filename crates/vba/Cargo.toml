@@ -1,0 +1,15 @@
+[package]
+name = "celdas-vba"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Celdas VBA: reads a workbook's VBA project and runs its procedures against a host's object model"
+
+[lints]
+workspace = true
+
+[dependencies]
+celdas-core = { workspace = true }
+celdas-numfmt = { workspace = true }
+nodalia-cfb = { workspace = true }
+nodalia-codepage = { workspace = true }

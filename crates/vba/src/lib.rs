@@ -1,0 +1,26 @@
+//! A VBA interpreter: the language and its own library, with the application's object model left to
+//! a [`Host`].
+//!
+//! [`Project`] holds the modules of a workbook's `vbaProject.bin`; a [`Vm`] runs one of its
+//! procedures against a host. Nothing here touches files, windows or the clock except through the
+//! host, so the crate builds for the web.
+
+#![forbid(unsafe_code)]
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+
+pub mod ast;
+mod builtins;
+mod format;
+pub mod host;
+mod interp;
+mod lexer;
+mod native;
+mod ops;
+mod parser;
+pub mod project;
+pub mod value;
+
+pub use host::{arg, CallArg, Host, NoHost};
+pub use interp::{ErrorSite, Vm, DEFAULT_MAX_STEPS};
+pub use project::{ModuleKind, ProcInfo, Project, SourceModule};
+pub use value::{HostObject, Obj, VArray, Value, VbError};

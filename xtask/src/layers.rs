@@ -35,6 +35,8 @@ pub const TABLE: &[(&str, Class)] = &[
     ("functions", Class::Layer(1)),
     // Equation layout (LaTeX to glyphs, rules and paths) and OMML, on top of RaTeX.
     ("math", Class::Layer(1)),
+    // The VBA interpreter; the application's object model comes from the engine through a trait.
+    ("vba", Class::Layer(1)),
     ("model", Class::Layer(2)),
     ("calc", Class::Layer(2)),
     ("xlsx", Class::Layer(2)),

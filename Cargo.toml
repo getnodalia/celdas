@@ -14,6 +14,7 @@ repository = "https://github.com/getnodalia/celdas"
 # internal
 celdas-core = { path = "crates/core" }
 celdas-numfmt = { path = "crates/numfmt" }
+celdas-vba = { path = "crates/vba" }
 celdas-sandbox = { path = "crates/sandbox" }
 celdas-formula = { path = "crates/formula" }
 celdas-functions = { path = "crates/functions" }
@@ -39,6 +40,8 @@ nodalia-stream-codecs = { git = "https://github.com/getnodalia/foundation", rev 
 # Compound files ([MS-CFB]) and password-encrypted OOXML packages ([MS-OFFCRYPTO]).
 nodalia-cfb = { git = "https://github.com/getnodalia/foundation", rev = "57933793e2a2ef8904338640547fdfd673cbc0f9", version = "0.1.0" }
 nodalia-offcrypto = { git = "https://github.com/getnodalia/foundation", rev = "57933793e2a2ef8904338640547fdfd673cbc0f9", version = "0.1.0" }
+# Legacy 8-bit code pages (Mac OS Roman, Windows pages): a VBA project stores its source in one.
+nodalia-codepage = { git = "https://github.com/getnodalia/foundation", rev = "57933793e2a2ef8904338640547fdfd673cbc0f9", version = "0.1.0" }
 # OPC zip packages (parts, relationships, the zip writer) under `crates/xlsx/src/package.rs`.
 nodalia-opc = { git = "https://github.com/getnodalia/foundation", rev = "57933793e2a2ef8904338640547fdfd673cbc0f9", version = "0.1.0" }
 # Delimited text (CSV, TSV) and SYLK; `crates/xlsx/src/csv.rs` and `crates/engine/src/io/sylk.rs`
