@@ -3274,11 +3274,21 @@ fn the_new_samples_calculate() {
     let sheet = sample_session("timesheet", "en");
     assert_eq!(number(&sheet, "H10"), 3.0 + 4.0 + 2.0 + 2.0 + 1.0 + 4.0 + 5.0 + 3.0 + 1.0 + 1.0 + 2.0 + 5.0);
     assert_eq!(number(&sheet, "C13"), number(&sheet, "H10") * 45.0);
+
+    let savings = sample_session("savings", "en");
+    assert_eq!(number(&savings, "C8"), 24.0, "9,500 to go at 400 a month");
+    assert!((number(&savings, "C9") - 2500.0 / 12000.0).abs() < 1e-9);
+    assert_eq!(number(&savings, "C24"), 7300.0, "twelve months of saving");
+
+    let expenses = sample_session("expenses", "en");
+    assert!((number(&expenses, "C14") - 82.5).abs() < 1e-9, "travel");
+    assert!((number(&expenses, "C15") - 51.3).abs() < 1e-9, "meals");
+    assert!((number(&expenses, "C17") - 273.8).abs() < 1e-9, "the whole trip");
 }
 
 #[test]
 fn spanish_samples_calculate_the_same_and_speak_spanish() {
-    for name in ["invoice", "loan", "tracker", "inventory", "timesheet", "budget", "sales", "grades"] {
+    for name in ["invoice", "loan", "tracker", "inventory", "timesheet", "budget", "sales", "grades", "savings", "expenses", "planner"] {
         let en = sample_session(name, "en");
         let es = sample_session(name, "es-ES");
         let (en_sheet, es_sheet) = (en.doc().unwrap().wb.active().unwrap().cells.len(), es.doc().unwrap().wb.active().unwrap().cells.len());
