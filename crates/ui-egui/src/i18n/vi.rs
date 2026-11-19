@@ -1368,9 +1368,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char có đối số không phải số {argument}",
         "\\@char with invalid code point {code}" => "\\@char có điểm mã không hợp lệ {code}",
         "Invalid environment name character: {character}" => "Ký tự không hợp lệ trong tên môi trường: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Sổ làm việc này chứa VBA. Hãy lưu dưới dạng .xlsm hoặc .xltm để giữ lại."
-        }
         "Macros preserved (not executed)" => "Đã giữ macro (không chạy)",
         "Reverse the order" => "Đảo ngược thứ tự",
         "Grab bag" => "Linh tinh",

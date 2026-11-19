@@ -1383,12 +1383,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char hat ein nicht numerisches Argument {argument}",
         "\\@char with invalid code point {code}" => "\\@char mit ungültigem Codepunkt {code}",
         "Invalid environment name character: {character}" => "Ungültiges Zeichen im Umgebungsnamen: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Diese Arbeitsmappe enthält VBA. Speichern Sie sie als .xlsm oder .xltm, um es zu behalten."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} benötigt {count} Prämisse(n), aber nur {available} verfügbar"
-        }
         "Macros preserved (not executed)" => "Makros erhalten (nicht ausgeführt)",
         "Reverse the order" => "Reihenfolge umkehren",
         "Grab bag" => "Sonstiges",
@@ -1512,10 +1506,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "insert" => "einfügen",
         "true" => "wahr",
         "false" => "falsch",
-        "Save the workbook under another name or in another folder." => {
-            "Die Arbeitsmappe unter einem anderen Namen oder in einem anderen Ordner speichern."
-        }
-        "without {key}: another macro took it while recording" => "ohne {key}: ein anderes Makro hat ihn während der Aufzeichnung belegt",
         _ => return None,
     })
 }

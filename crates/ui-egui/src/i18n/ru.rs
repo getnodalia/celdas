@@ -1379,10 +1379,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "У \\@char нечисловой аргумент {argument}",
         "\\@char with invalid code point {code}" => "\\@char с недопустимой кодовой точкой {code}",
         "Invalid environment name character: {character}" => "Недопустимый символ в имени окружения: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Эта книга содержит VBA. Сохраните её как .xlsm или .xltm, чтобы сохранить его."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => "Для {command} нужно посылок: {count}, а доступно только {available}",
         "Macros preserved (not executed)" => "Макросы сохранены (не выполняются)",
         "Reverse the order" => "Обратить порядок",
         "Grab bag" => "Разное",

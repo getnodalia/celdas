@@ -1385,12 +1385,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "Το \\@char έχει μη αριθμητικό όρισμα {argument}",
         "\\@char with invalid code point {code}" => "\\@char με μη έγκυρο σημείο κώδικα {code}",
         "Invalid environment name character: {character}" => "Μη έγκυρος χαρακτήρας στο όνομα περιβάλλοντος: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Αυτό το βιβλίο εργασίας περιέχει VBA. Αποθηκεύστε το ως .xlsm ή .xltm για να το διατηρήσετε."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "Η εντολή {command} χρειάζεται {count} προκείμενες, αλλά υπάρχουν μόνο {available}"
-        }
         "Macros preserved (not executed)" => "Οι μακροεντολές διατηρήθηκαν (δεν εκτελούνται)",
         "Reverse the order" => "Αντιστροφή σειράς",
         "Grab bag" => "Διάφορα",
@@ -1516,9 +1510,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "insert" => "εισαγωγή",
         "true" => "αληθές",
         "false" => "ψευδές",
-        "\\tag must appear at the end of the row after the equation body" => {
-            "Το \\tag πρέπει να βρίσκεται στο τέλος της γραμμής, μετά το σώμα της εξίσωσης"
-        }
         _ => return None,
     })
 }

@@ -1379,12 +1379,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char має нечисловий аргумент {argument}",
         "\\@char with invalid code point {code}" => "\\@char з неприпустимою кодовою точкою {code}",
         "Invalid environment name character: {character}" => "Неприпустимий символ у назві середовища: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Ця книга містить VBA. Збережіть її як .xlsm або .xltm, щоб зберегти його."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "Для {command} потрібно засновків: {count}, а доступно лише {available}"
-        }
         "Macros preserved (not executed)" => "Макроси збережено (не виконуються)",
         "Reverse the order" => "Обернути порядок",
         "Grab bag" => "Різне",

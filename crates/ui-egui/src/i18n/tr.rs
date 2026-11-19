@@ -1378,12 +1378,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char sayısal olmayan bir bağımsız değişkene sahip: {argument}",
         "\\@char with invalid code point {code}" => "\\@char geçersiz bir kod noktası içeriyor: {code}",
         "Invalid environment name character: {character}" => "Ortam adında geçersiz karakter: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Bu çalışma kitabı VBA içeriyor. Korumak için .xlsm veya .xltm olarak kaydedin."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} için {count} öncül gerekiyor, ancak yalnızca {available} var"
-        }
         "Macros preserved (not executed)" => "Makrolar korundu (çalıştırılmaz)",
         "Reverse the order" => "Sırayı tersine çevir",
         "Grab bag" => "Çeşitli",

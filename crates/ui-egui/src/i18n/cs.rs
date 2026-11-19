@@ -1376,12 +1376,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char má nečíselný argument {argument}",
         "\\@char with invalid code point {code}" => "\\@char s neplatným kódovým bodem {code}",
         "Invalid environment name character: {character}" => "Neplatný znak v názvu prostředí: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Tento sešit obsahuje VBA. Uložte jej jako .xlsm nebo .xltm, abyste jej zachovali."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} potřebuje {count} předpokladů, ale k dispozici je jen {available}"
-        }
         "Macros preserved (not executed)" => "Makra zachována (nespouštějí se)",
         "Reverse the order" => "Obrátit pořadí",
         "Grab bag" => "Různé",

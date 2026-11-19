@@ -1375,12 +1375,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char ma nienumeryczny argument {argument}",
         "\\@char with invalid code point {code}" => "\\@char z nieprawidłowym punktem kodowym {code}",
         "Invalid environment name character: {character}" => "Nieprawidłowy znak w nazwie środowiska: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Ten skoroszyt zawiera VBA. Zapisz go jako .xlsm lub .xltm, aby go zachować."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} wymaga przesłanek: {count}, ale dostępnych jest tylko {available}"
-        }
         "Macros preserved (not executed)" => "Makra zachowane (nie są uruchamiane)",
         "Reverse the order" => "Odwróć kolejność",
         "Grab bag" => "Różne",

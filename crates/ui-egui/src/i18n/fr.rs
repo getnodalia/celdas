@@ -1385,12 +1385,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char a un argument non numérique {argument}",
         "\\@char with invalid code point {code}" => "\\@char avec un point de code non valide {code}",
         "Invalid environment name character: {character}" => "Caractère non valide dans le nom d'environnement : {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Ce classeur contient du VBA. Enregistrez-le en .xlsm ou .xltm pour le conserver."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} a besoin de {count} prémisse(s), mais seulement {available} disponible(s)"
-        }
         "Macros preserved (not executed)" => "Macros conservées (non exécutées)",
         "Reverse the order" => "Inverser l’ordre",
         "Grab bag" => "Divers",
@@ -1514,8 +1508,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "insert" => "insérer",
         "true" => "vrai",
         "false" => "faux",
-        "Save the sheet as a PDF document that keeps its page layout." => "Enregistrer la feuille en document PDF qui conserve sa mise en page.",
-        "Maximum Iterations must be a whole number from 1 to 32767." => "Le nombre maximal d’itérations doit être un entier de 1 à 32767.",
         _ => return None,
     })
 }

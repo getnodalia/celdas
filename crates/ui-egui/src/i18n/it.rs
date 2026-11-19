@@ -1390,12 +1390,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char ha un argomento non numerico {argument}",
         "\\@char with invalid code point {code}" => "\\@char con punto di codice non valido {code}",
         "Invalid environment name character: {character}" => "Carattere non valido nel nome dell'ambiente: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Questa cartella di lavoro contiene VBA. Salvala come .xlsm o .xltm per conservarlo."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} richiede {count} premessa/e, ma ne sono disponibili solo {available}"
-        }
         "Macros preserved (not executed)" => "Macro conservate (non eseguite)",
         "Reverse the order" => "Inverti l’ordine",
         "Grab bag" => "Varie",
@@ -1521,7 +1515,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "insert" => "inserisci",
         "true" => "vero",
         "false" => "falso",
-        "Maximum Iterations must be a whole number from 1 to 32767." => "Il numero massimo di iterazioni deve essere un intero da 1 a 32767.",
         _ => return None,
     })
 }

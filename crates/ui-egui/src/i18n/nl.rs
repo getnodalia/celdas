@@ -1379,10 +1379,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char heeft een niet-numeriek argument {argument}",
         "\\@char with invalid code point {code}" => "\\@char met ongeldig codepunt {code}",
         "Invalid environment name character: {character}" => "Ongeldig teken in de omgevingsnaam: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => "Deze werkmap bevat VBA. Sla op als .xlsm of .xltm om het te behouden.",
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} heeft {count} premisse(n) nodig, maar er zijn er slechts {available} beschikbaar"
-        }
         "Macros preserved (not executed)" => "Macro’s behouden (niet uitgevoerd)",
         "Reverse the order" => "Volgorde omkeren",
         "Grab bag" => "Diversen",

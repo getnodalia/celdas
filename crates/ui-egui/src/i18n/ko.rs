@@ -1367,9 +1367,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char 의 인수 {argument} 이(가) 숫자가 아닙니다",
         "\\@char with invalid code point {code}" => "\\@char 의 코드 포인트 {code} 이(가) 잘못되었습니다",
         "Invalid environment name character: {character}" => "환경 이름에 잘못된 문자가 있습니다: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "이 통합 문서에는 VBA가 들어 있습니다. 유지하려면 .xlsm 또는 .xltm으로 저장하세요."
-        }
         "Macros preserved (not executed)" => "매크로 보존됨(실행되지 않음)",
         "Reverse the order" => "순서 뒤집기",
         "Grab bag" => "기타",

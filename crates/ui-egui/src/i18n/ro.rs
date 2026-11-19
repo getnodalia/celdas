@@ -1384,12 +1384,6 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char are un argument nenumeric {argument}",
         "\\@char with invalid code point {code}" => "\\@char cu punct de cod nevalid {code}",
         "Invalid environment name character: {character}" => "Caracter nevalid în numele mediului: {character}",
-        "This workbook contains VBA. Save as .xlsm or .xltm to keep it." => {
-            "Acest registru conține VBA. Salvați-l ca .xlsm sau .xltm pentru a-l păstra."
-        }
-        "{command} needs {count} premise(s), but only {available} available" => {
-            "{command} are nevoie de {count} premisă/premise, dar sunt disponibile doar {available}"
-        }
         "Macros preserved (not executed)" => "Macrocomenzi păstrate (neexecutate)",
         "Reverse the order" => "Inversează ordinea",
         "Grab bag" => "Diverse",
