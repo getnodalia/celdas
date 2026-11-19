@@ -1383,6 +1383,172 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char tiene un argumento no numérico {argument}",
         "\\@char with invalid code point {code}" => "\\@char con un punto de código no válido {code}",
         "Invalid environment name character: {character}" => "Carácter no válido en el nombre del entorno: {character}",
+        "Macros preserved (not executed)" => "Macros conservadas (no se ejecutan)",
+        "Reverse the order" => "Invertir el orden",
+        "Grab bag" => "Miscelánea",
+        "No contributor data was built into this copy." => "Esta copia no incluye datos de colaboradores.",
+        "No model credits were built into this copy." => "Esta copia no incluye créditos de modelos.",
+        "Run a macro" => "Ejecutar una macro",
+        "Run a command" => "Ejecutar un comando",
+        "Macro name:" => "Nombre de la macro:",
+        "This workbook has no macros yet." => "Este libro aún no tiene macros.",
+        "Run it on:" => "Ejecutarla sobre:",
+        "The selection when the button is pressed" => "La selección al pulsar el botón",
+        "Always this range:" => "Siempre este rango:",
+        "Output to (optional):" => "Salida en (opcional):",
+        "Command:" => "Comando:",
+        "Parameters (JSON):" => "Parámetros (JSON):",
+        "Text:" => "Texto:",
+        "Orientation:" => "Orientación:",
+        "Debugging “{name}”" => "Depurando «{name}»",
+        "Open the macro in the step editor" => "Abrir la macro en el editor de pasos",
+        "Stop recording and save the macro" => "Detener la grabación y guardar la macro",
+        "Scripts in this workbook came from a file and are disabled." => "Los scripts de este libro vienen de un archivo y están desactivados.",
+        "Trust Scripts" => "Confiar en los scripts",
+        "Let this workbook's scripts run for the rest of this session" => {
+            "Permitir que los scripts de este libro se ejecuten durante el resto de la sesión"
+        }
+        "Run" => "Ejecutar",
+        "Step Into" => "Depurar paso a paso",
+        "Open the macro in the step editor and stop before its first step" => {
+            "Abrir la macro en el editor de pasos y detenerse antes de su primer paso"
+        }
+        "Create" => "Crear",
+        "Write a new macro with this name" => "Escribir una macro nueva con este nombre",
+        "Options…" => "Opciones…",
+        "This workbook also has a VBA project. Celdas keeps it when you save but does not run it." => {
+            "Este libro también tiene un proyecto VBA. Celdas lo conserva al guardar, pero no lo ejecuta."
+        }
+        "Macro name: {name}" => "Nombre de la macro: {name}",
+        "Shortcut key:" => "Tecla de método abreviado:",
+        "Description:" => "Descripción:",
+        "Preview" => "Vista previa",
+        "No comments on this sheet yet. Select a cell and choose New Comment." => {
+            "Esta hoja aún no tiene comentarios. Selecciona una celda y elige Nuevo comentario."
+        }
+        "Resolved" => "Resuelto",
+        "Send" => "Enviar",
+        "Reply…" => "Responder…",
+        "Add Watch (active cell)" => "Agregar inspección (celda activa)",
+        "Cell" => "Celda",
+        "Formula" => "Fórmula",
+        "There are no shapes, pictures or charts on this sheet." => "Esta hoja no tiene formas, imágenes ni gráficos.",
+        "Bring Forward" => "Traer adelante",
+        "Send Backward" => "Enviar atrás",
+        "Select a chart to format it." => "Selecciona un gráfico para darle formato.",
+        "The chart no longer exists." => "El gráfico ya no existe.",
+        "Chart Type" => "Tipo de gráfico",
+        "Legend" => "Leyenda",
+        "Elements" => "Elementos",
+        "Data Labels" => "Etiquetas de datos",
+        "Data Table" => "Tabla de datos",
+        "Available for column, bar, line, area and compatible combo charts." => {
+            "Disponible para gráficos de columnas, barras, líneas, áreas y combinados compatibles."
+        }
+        "Fill…" => "Relleno…",
+        "Colors & Layout" => "Colores y diseño",
+        "Layout {n}" => "Diseño {n}",
+        "LaTeX:" => "LaTeX:",
+        "\u{2318}/Ctrl+Enter to {verb}" => "\u{2318}/Ctrl+Intro para {verb}",
+        "Macro: {name}{dirty}" => "Macro: {name}{dirty}",
+        "This macro is in “{title}”. Switch back to it to edit, check or run the macro." => {
+            "Esta macro está en «{title}». Vuelve a ese libro para editarla, comprobarla o ejecutarla."
+        }
+        "Stop debugging" => "Detener la depuración",
+        "Keep the changes the macro has made so far? They are one undo step either way." => {
+            "¿Conservar los cambios que la macro ha hecho hasta ahora? En ambos casos se deshacen en un solo paso."
+        }
+        "Undo Changes" => "Deshacer cambios",
+        "Keep Changes" => "Conservar cambios",
+        "Save changes to macro “{name}”?" => "¿Guardar los cambios de la macro «{name}»?",
+        "Runs with:" => "Se ejecuta con:",
+        "Changed so far: {changes}" => "Cambiado hasta ahora: {changes}",
+        "nothing" => "nada",
+        "Check shows on the grid what the macro reads and writes. Click a step's gutter to set a breakpoint." => {
+            "Comprobar muestra en la cuadrícula lo que la macro lee y escribe. Haz clic en el margen de un paso para poner un punto de interrupción."
+        }
+        "No steps yet. Add Step picks a command, or record one with Automate › Record Macro." => {
+            "Aún no hay pasos. Agregar paso elige un comando, o graba uno con Automatizar › Grabar macro."
+        }
+        "Breakpoint: the debugger stops before this step" => "Punto de interrupción: el depurador se detiene antes de este paso",
+        "Run this step (a disabled step is skipped)" => "Ejecutar este paso (un paso desactivado se omite)",
+        "Search commands, e.g. bold, sort, set…" => "Buscar comandos, p. ej. negrita, ordenar, establecer…",
+        "No command matches." => "Ningún comando coincide.",
+        "Rel" => "Rel",
+        "Relative: a token that follows the input the macro runs on" => "Relativa: un token que sigue a la entrada sobre la que se ejecuta la macro",
+        "Absolute: always these cells" => "Absoluta: siempre estas celdas",
+        "Tokens" => "Tokens",
+        "= {cell} on the example" => "= {cell} en el ejemplo",
+        "Select a step to see its settings." => "Selecciona un paso para ver su configuración.",
+        "Steps here run when the If is {state}. Add Step puts a step in this branch." => {
+            "Los pasos de aquí se ejecutan cuando el Si es {state}. Agregar paso coloca un paso en esta rama."
+        }
+        "Step {path} · {title}" => "Paso {path} · {title}",
+        "Change…" => "Cambiar…",
+        "Enabled" => "Activado",
+        "Breakpoint" => "Punto de interrupción",
+        "For each" => "Para cada",
+        "row" => "fila",
+        "column" => "columna",
+        "of:" => "de:",
+        "At most" => "Como máximo",
+        "times" => "veces",
+        "Inside, Row (or Column) stands for the current one, e.g. Row.right." => "Dentro, Fila (o Columna) representa la actual, p. ej. Row.right.",
+        "If cell" => "Si la celda",
+        "value" => "valor",
+        "Message:" => "Mensaje:",
+        "Undo what the macro did before stopping" => "Deshacer lo que hizo la macro antes de detenerse",
+        "parameter" => "parámetro",
+        "The ranges the macro works on. Each is checked before the macro runs." => {
+            "Los rangos sobre los que trabaja la macro. Cada uno se comprueba antes de ejecutarla."
+        }
+        "No inputs: the macro works on fixed cells only." => "Sin entradas: la macro solo trabaja con celdas fijas.",
+        "Shape:" => "Forma:",
+        "range" => "rango",
+        "single cell" => "celda única",
+        "Data rows:" => "Filas de datos:",
+        "Columns:" => "Columnas:",
+        "First row holds column names" => "La primera fila contiene los nombres de columna",
+        "Every cell must hold something" => "Todas las celdas deben contener algo",
+        "Each column must hold:" => "Cada columna debe contener:",
+        "Example (what Check, Run and Debug use here):" => "Ejemplo (lo que usan aquí Comprobar, Ejecutar y Depurar):",
+        "Use current selection as example" => "Usar la selección actual como ejemplo",
+        "Always run on this range" => "Ejecutar siempre sobre este rango",
+        "Otherwise the macro runs on the selection" => "De lo contrario, la macro se ejecuta sobre la selección",
+        "Output anchor (what the Output token stands for):" => "Ancla de salida (lo que representa el token Output):",
+        "Leave it empty when no step uses Output. A token such as Input.right keeps it beside the data." => {
+            "Déjala vacía si ningún paso usa Output. Un token como Input.right la mantiene junto a los datos."
+        }
+        "When results would land on cells that hold data:" => "Cuando los resultados caerían en celdas que contienen datos:",
+        "Agents and other programs that run the macro get an error instead of the question." => {
+            "Los agentes y otros programas que ejecutan la macro reciben un error en lugar de la pregunta."
+        }
+        "May use files through: {list}" => "Puede usar archivos mediante: {list}",
+        "No macros in this workbook" => "No hay macros en este libro",
+        "Table Name:" => "Nombre de la tabla:",
+        "Can't Undo" => "No se puede deshacer",
+        "Undo {label}" => "Deshacer {label}",
+        "Require Bounds on Variables" => "Exigir límites en las variables",
+        "Reset All" => "Restablecer todo",
+        "Load/Save" => "Cargar o guardar",
+        "Model Range:" => "Rango del modelo:",
+        "Load" => "Cargar",
+        "{range} already holds data. Replace it with the model?" => "{range} ya contiene datos. ¿Reemplazarlos con el modelo?",
+        "Don't Replace" => "No reemplazar",
+        "Reports:" => "Informes:",
+        "{n}. {kind}  applies to {ranges}" => "{n}. {kind}  se aplica a {ranges}",
+        "Celdas is fully drivable by agents. Every menu item, button and gesture is a command:" => {
+            "Celdas puede ser manejado por completo por agentes. Cada elemento de menú, botón y gesto es un comando:"
+        }
+        "{count} engine commands are available. See docs/mcp.md and docs/control-protocol.md." => {
+            "Hay {count} comandos del motor disponibles. Consulta docs/mcp.md y docs/control-protocol.md."
+        }
+        "↑  Sort Ascending" => "↑  Ordenar de forma ascendente",
+        "↓  Sort Descending" => "↓  Ordenar de forma descendente",
+        "apply" => "aplicar",
+        "insert" => "insertar",
+        "true" => "verdadero",
+        "false" => "falso",
         _ => return None,
     })
 }
