@@ -13,7 +13,7 @@
 //! workbook to open and stores what Celdas saves (`host`). A page can host Celdas in its
 //! own document (no iframe) with `data-host="page"` on the canvas, talking over DOM `CustomEvent`s
 //! on the canvas. `&author=` names the user for notes and comments in either host mode.
-//! `window.celdas` (`craft-web-api`) is the page command API in every mode: `request`,
+//! `window.celdas` (`nodalia-web-api`) is the page command API in every mode: `request`,
 //! `execute`, `commands`, `docInspect`, `uiInspect` and `screenshot` over the control methods
 //! (`api`).
 //! `?chrome=none|notitlebar|nofiletab` leaves the title bar and/or the File tab undrawn for a host

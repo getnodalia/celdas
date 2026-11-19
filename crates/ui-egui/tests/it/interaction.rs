@@ -461,7 +461,7 @@ fn renders_every_ribbon_tab_without_panicking() {
 }
 
 #[test]
-/// Language commands are listed and every available locale renders and persists; CJK locales are omitted when craft fonts are absent.
+/// Language commands are listed and every available locale renders and persists; CJK locales are omitted when Nodalia fonts are absent.
 fn language_switch_renders_the_ribbon_and_persists() {
     let mut h = harness(blank());
     // English by default whatever the host's locale: only the desktop app reads the system language.
@@ -476,11 +476,11 @@ fn language_switch_renders_the_ribbon_and_persists() {
         assert!(ids.contains(&id), "engine.commands lists {id}");
     }
     // A minimal CI image has egui's bundled faces but no Japanese/Korean/Chinese face. Those
-    // catalogs are exercised when the pinned craft-fonts input is present; skipping them here is
+    // catalogs are exercised when the pinned nodalia-fonts input is present; skipping them here is
     // the documented no-font gap, not a missing-glyph or accessibility opt-out.
     let languages: Vec<Language> = Language::ALL
         .into_iter()
-        .filter(|l| celdas_ui_egui::theme::craft_fonts_loaded() || !matches!(l, Language::Ja | Language::Ko | Language::Zh))
+        .filter(|l| celdas_ui_egui::theme::nodalia_fonts_loaded() || !matches!(l, Language::Ja | Language::Ko | Language::Zh))
         .collect();
     for language in languages {
         h.state_mut().run("app.language.set", json!({"language": language.code()})).unwrap();
@@ -1277,7 +1277,8 @@ fn about_shows_the_app_without_upstream_credit_lists() {
     h.state_mut().open_dialog("about", json!({}));
     h.run_steps(2);
     assert_eq!(h.state().dialog.as_ref().map(|d| d.name()), Some("about"));
-    assert!(h.query_by_label("Part of Nodalia").is_some());
+    // The shared page paints its text; its links are real widgets.
+    assert!(h.query_by_label("Website").is_some());
     assert!(h.query_by_label("Contributors").is_none());
     assert!(h.query_by_label("Models").is_none());
 }

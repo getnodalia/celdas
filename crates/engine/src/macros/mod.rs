@@ -213,7 +213,7 @@ pub fn json_bytes(wb: &Workbook) -> crate::Result<Vec<u8>> {
     for m in &wb.macros {
         check(m).map_err(crate::EngineError::Other)?;
     }
-    craft_gridcraft_format::write_with_kept(wb, "macros", &wb.macros_unread).map_err(|e| crate::EngineError::Other(e.to_string()))
+    nodalia_celdas_format::write_with_kept(wb, "macros", &wb.macros_unread).map_err(|e| crate::EngineError::Other(e.to_string()))
 }
 
 /// Whether `v` is a macro in a newer format than this build reads.

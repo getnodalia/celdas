@@ -1,5 +1,5 @@
 //! CSV import and export (RFC 4180 with the usual real-world leniency). Decoding, delimiter
-//! sniffing, the record parser and field quoting are `craft-csv`'s; this module turns records into
+//! sniffing, the record parser and field quoting are `nodalia-csv`'s; this module turns records into
 //! typed cells (with each column's date order) and writes a sheet.
 
 use std::sync::Arc;
@@ -14,11 +14,11 @@ use crate::{CsvOptions, IoError, ReadReport};
 /// The largest CSV or tab-separated file written (bytes).
 pub const MAX_CSV_BYTES: usize = 512 << 20;
 
-pub use craft_csv::{decode_text, sniff_delimiter};
+pub use nodalia_csv::{decode_text, sniff_delimiter};
 
-/// [`craft_csv::parse_records`] with a record kept to the grid's [`MAX_COLS`] fields.
+/// [`nodalia_csv::parse_records`] with a record kept to the grid's [`MAX_COLS`] fields.
 fn parse_records(text: &str, delim: char, quote: char, on_record: impl FnMut(Vec<String>) -> bool) {
-    craft_csv::parse_records(text, delim, quote, MAX_COLS as usize, on_record);
+    nodalia_csv::parse_records(text, delim, quote, MAX_COLS as usize, on_record);
 }
 
 /// How many rows and bytes of a text file are read to decide each column's date order.
@@ -361,10 +361,10 @@ pub fn write_csv_limited(sheet: &Sheet, delimiter: u8, limit: usize, mut cell_te
             let t = cell_text(CellRef::new(row, col));
             // The exact size of the field as written (the delimiter was pushed above), so a row
             // never grows past the cap unseen.
-            if out.len().saturating_add(craft_csv::field_len(&t, delim)) > limit {
+            if out.len().saturating_add(nodalia_csv::field_len(&t, delim)) > limit {
                 return Err(too_large(format!("more than {} MiB (stopped at row {})", limit >> 20, row + 1)));
             }
-            craft_csv::push_field(&mut out, &t, delim);
+            nodalia_csv::push_field(&mut out, &t, delim);
         }
         out.push_str("\r\n");
         if out.len() > limit {

@@ -1,5 +1,5 @@
 //! Password-encrypted workbooks. Excel wraps the ordinary OOXML package in a compound file with
-//! two streams, `EncryptionInfo` and `EncryptedPackage`. `craft-offcrypto` reads them (Agile and
+//! two streams, `EncryptionInfo` and `EncryptedPackage`. `nodalia-offcrypto` reads them (Agile and
 //! Standard encryption; RC4, Extensible, certificate-only and rights-managed files are named as
 //! unsupported); this module keeps Celdas's error type.
 
@@ -15,9 +15,9 @@ pub enum DecryptError {
     Malformed(String),
 }
 
-impl From<craft_offcrypto::Error> for DecryptError {
-    fn from(e: craft_offcrypto::Error) -> Self {
-        use craft_offcrypto::Error as E;
+impl From<nodalia_offcrypto::Error> for DecryptError {
+    fn from(e: nodalia_offcrypto::Error) -> Self {
+        use nodalia_offcrypto::Error as E;
         match e {
             E::WrongPassword | E::PasswordRequired => DecryptError::WrongPassword,
             E::Unsupported(scheme) => DecryptError::Unsupported(scheme),
@@ -29,18 +29,18 @@ impl From<craft_offcrypto::Error> for DecryptError {
 
 /// The plain OOXML package (a zip) inside an encrypted workbook.
 pub fn decrypt(bytes: &[u8], password: &str) -> Result<Vec<u8>, DecryptError> {
-    craft_offcrypto::decrypt(bytes, Some(password)).map_err(DecryptError::from)
+    nodalia_offcrypto::decrypt(bytes, Some(password)).map_err(DecryptError::from)
 }
 
 /// Whether the right password could decrypt this encrypted workbook, checked without one. An
 /// error names a scheme no password opens (RC4, rights management…) or damage, so callers can
 /// say so instead of asking for a password first.
 pub fn check_encryption(bytes: &[u8]) -> Result<(), DecryptError> {
-    craft_offcrypto::check(bytes).map_err(DecryptError::from)
+    nodalia_offcrypto::check(bytes).map_err(DecryptError::from)
 }
 
 /// Whether a compound file holds an encryption stream, at any depth. A damaged directory falls
 /// back to a search for the stream names, so the file is still reported as encrypted.
 pub(crate) fn is_encrypted(bytes: &[u8]) -> bool {
-    ["EncryptedPackage", "EncryptionInfo"].iter().any(|n| craft_cfb::has_entry_named(bytes, n, &craft_cfb::Limits::default()))
+    ["EncryptedPackage", "EncryptionInfo"].iter().any(|n| nodalia_cfb::has_entry_named(bytes, n, &nodalia_cfb::Limits::default()))
 }

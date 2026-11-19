@@ -349,7 +349,7 @@ fn rules_past_the_workbook_limit_are_skipped() {
     records.extend(std::iter::repeat_n(one, 65_537));
     let (wb, report) = workbook(&[], &records);
     assert_eq!(wb.sheets[0].validations.len(), 65_536);
-    // craft-xls counts the rules past its cap with the ones it could not read.
+    // nodalia-xls counts the rules past its cap with the ones it could not read.
     assert_eq!(report.warnings.iter().filter(|w| *w == SKIPPED).count(), 1, "{:?}", report.warnings);
     assert!(!report.warnings.iter().any(|w| w == IGNORED), "{:?}", report.warnings);
 }

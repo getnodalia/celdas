@@ -149,7 +149,7 @@ As with the parent bridge, the app starts with an empty workbook instead of a sa
 must be exactly `page`; anything else is ignored, and the app runs as a standalone page with
 downloads.
 
-The messages and both transports are the shared contract of [`craft-web-host`](https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main/crates/web-host) (storytold/craft-libs#420), the same for every Nodalia app: its README lists every message, including `saved`, with the compatibility notes. In `celdas:ready`, `version` is the contract's (`"1"`) and `appVersion` is this app's release. Celdas reads bytes, so a host sends `bytes`, not a `File`.
+The messages and both transports are the shared contract of [`nodalia-web-host`](https://github.com/getnodalia/foundation/tree/nodalia/libs/crates/web-host), the same for every Nodalia app: its README lists every message, including `saved`, with the compatibility notes. In `celdas:ready`, `version` is the contract's (`"1"`) and `appVersion` is this app's release. Celdas reads bytes, so a host sends `bytes`, not a `File`.
 
 ### Trust and limits
 
@@ -159,7 +159,7 @@ The messages and both transports are the shared contract of [`craft-web-host`](h
 
 ### Driving it from the page (`window.celdas`)
 
-Every Celdas web build puts `window.celdas` on the page, from [`craft-web-api`](https://github.com/getnodalia/foundation/tree/vendor/craft-libs/main/crates/web-api) (storytold/craft-libs#413), the same shape in every Nodalia app. `celdas.request(method, params)` calls any method of the control channel the desktop app serves (`docs/control-protocol.md`), and `execute(command, params)`, `commands()`, `docInspect(params)`, `uiInspect(params)` and `screenshot(params)` are shortcuts for the common ones. Each returns a Promise that resolves with the method's result and rejects with an `Error`; a call the app does not answer within 30 seconds rejects, and the app skips it if it has not started it; a call the app has already taken still finishes, so a retry after a timeout can apply a command twice.
+Every Celdas web build puts `window.celdas` on the page, from [`nodalia-web-api`](https://github.com/getnodalia/foundation/tree/nodalia/libs/crates/web-api), the same shape in every Nodalia app. `celdas.request(method, params)` calls any method of the control channel the desktop app serves (`docs/control-protocol.md`), and `execute(command, params)`, `commands()`, `docInspect(params)`, `uiInspect(params)` and `screenshot(params)` are shortcuts for the common ones. Each returns a Promise that resolves with the method's result and rejects with an `Error`; a call the app does not answer within 30 seconds rejects, and the app skips it if it has not started it; a call the app has already taken still finishes, so a retry after a timeout can apply a command twice.
 
 ```js
 const book = await celdas.docInspect();               // sheets, used ranges, tables, charts, names, selection

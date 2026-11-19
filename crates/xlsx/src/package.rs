@@ -1,11 +1,11 @@
-//! OPC package access through `craft-opc`: zip parts read against Celdas's limits,
+//! OPC package access through `nodalia-opc`: zip parts read against Celdas's limits,
 //! relationships with Celdas's `Rel`, part-name resolution, and a deterministic zip writer.
 //! Parts are parsed with this crate's XML reader.
 
 use crate::IoError;
 use crate::xml::{self, El};
 
-pub use craft_opc::{normalize, resolve, split_dir};
+pub use nodalia_opc::{normalize, resolve, split_dir};
 
 /// Largest decompressed part accepted.
 pub const MAX_PART: u64 = 512 * 1024 * 1024;
@@ -14,10 +14,10 @@ pub const MAX_TOTAL: u64 = 1024 * 1024 * 1024;
 /// Most entries accepted in the zip directory.
 pub const MAX_ENTRIES: usize = 200_000;
 
-const LIMITS: craft_opc::Limits = craft_opc::Limits::new(MAX_ENTRIES, MAX_PART, MAX_TOTAL);
+const LIMITS: nodalia_opc::Limits = nodalia_opc::Limits::new(MAX_ENTRIES, MAX_PART, MAX_TOTAL);
 
 pub struct Package<'a> {
-    opc: craft_opc::LazyPackage<'a>,
+    opc: nodalia_opc::LazyPackage<'a>,
 }
 
 /// A relationship.
@@ -33,8 +33,8 @@ pub struct Rel {
 }
 
 /// Celdas's wording of a package error.
-fn error(e: craft_opc::Error) -> IoError {
-    use craft_opc::Error as E;
+fn error(e: nodalia_opc::Error) -> IoError {
+    use nodalia_opc::Error as E;
     match e {
         E::Zip(m) | E::Write(m) => IoError::Zip(m),
         E::TooManyEntries { declared, .. } => IoError::TooLarge(format!("{declared} zip entries")),
@@ -48,7 +48,7 @@ fn error(e: craft_opc::Error) -> IoError {
 
 impl<'a> Package<'a> {
     pub fn open(bytes: &'a [u8]) -> Result<Package<'a>, IoError> {
-        Ok(Package { opc: craft_opc::LazyPackage::open(bytes, &LIMITS).map_err(error)? })
+        Ok(Package { opc: nodalia_opc::LazyPackage::open(bytes, &LIMITS).map_err(error)? })
     }
 
     /// Every part's (normalized) name, sorted.
@@ -101,7 +101,7 @@ impl<'a> Package<'a> {
 
 /// The first part whose declared unpacked size is over [`MAX_PART`], with that size.
 pub fn oversized_part(bytes: &[u8]) -> Option<(String, u64)> {
-    craft_opc::declared_oversized(bytes, &LIMITS)
+    nodalia_opc::declared_oversized(bytes, &LIMITS)
 }
 
 fn prefix(part: &str, e: IoError) -> IoError {
@@ -115,15 +115,15 @@ fn prefix(part: &str, e: IoError) -> IoError {
 
 /// A zip package being written: every entry deflated, with one fixed timestamp.
 pub struct ZipOut {
-    zip: craft_opc::ZipOut,
+    zip: nodalia_opc::ZipOut,
 }
 
 impl ZipOut {
     pub fn new() -> ZipOut {
-        ZipOut { zip: craft_opc::ZipOut::new() }
+        ZipOut { zip: nodalia_opc::ZipOut::new() }
     }
     pub fn add(&mut self, name: &str, data: &[u8]) -> Result<(), IoError> {
-        self.zip.add(name, data, craft_opc::Compression::Deflate).map_err(error)
+        self.zip.add(name, data, nodalia_opc::Compression::Deflate).map_err(error)
     }
     pub fn finish(self) -> Result<Vec<u8>, IoError> {
         self.zip.finish().map_err(error)

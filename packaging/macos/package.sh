@@ -119,7 +119,7 @@ cp "$WORK/bin/celdas" "$APP/Contents/MacOS/Celdas"
 cp "$ROOT/assets/app-icon/celdas.icns" "$APP/Contents/Resources/Celdas.icns"
 # Bundled dependency font notices are installed before the app is signed.
 cp "$ROOT/NOTICE" "$ROOT/ATTRIBUTION.md" "$APP/Contents/Resources/"
-# Licences of the embedded craft-fonts fonts (only when built with CRAFT_FONTS_DIR).
+# Licences of the embedded nodalia-fonts fonts (only when built with NODALIA_FONTS_DIR).
 copy_font_licences "$APP/Contents/Resources"
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
   -e "s/@BUILD_SHA@/${CELDAS_BUILD_SHA:-unknown}/g" \

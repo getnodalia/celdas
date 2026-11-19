@@ -9,7 +9,7 @@ pub(super) fn manage_rules(app: &mut SheetApp, ui: &mut egui::Ui) {
     // serialised every rule and journaled a step 60 times a second.
     let count = app.session.active().and_then(|d| d.wb.active()).map_or(0, |sh| sh.cond_formats.len());
     if count == 0 {
-        ui.label("There are no conditional formatting rules on this sheet.");
+        ui.label(crate::i18n::ui_tr(ui, "There are no conditional formatting rules on this sheet."));
         return;
     }
     let mut action: Option<Json> = None;
@@ -21,14 +21,18 @@ pub(super) fn manage_rules(app: &mut SheetApp, ui: &mut egui::Ui) {
             let kind = serde_json::to_value(&cf.rule).ok().and_then(|r| r.as_object().and_then(|o| o.keys().next().cloned())).unwrap_or_default();
             let ranges = cf.ranges.iter().map(|r| r.a1()).collect::<Vec<_>>().join(",");
             ui.horizontal(|ui| {
-                ui.label(format!("{}. {kind}  applies to {ranges}", i + 1));
+                ui.label(crate::i18n::ui_fill(
+                    ui,
+                    "{n}. {kind}  applies to {ranges}",
+                    &[("n", &(i + 1).to_string()), ("kind", &kind), ("ranges", &ranges)],
+                ));
                 if ui.small_button("▲").clicked() {
                     action = Some(json!({"moveUp": i}));
                 }
                 if ui.small_button("▼").clicked() {
                     action = Some(json!({"moveDown": i}));
                 }
-                if ui.small_button("Delete").clicked() {
+                if ui.small_button(crate::i18n::ui_tr(ui, "Delete")).clicked() {
                     action = Some(json!({"delete": i}));
                 }
             });

@@ -6,6 +6,7 @@
 //! controls brings the desktop's own back on Linux.
 
 use egui::{CursorIcon, Id, LayerId, Order, PointerButton, Rect, ResizeDirection, Sense, Ui, ViewportCommand, pos2, vec2};
+use nodalia_theme::titlebar::{self, Placement, Side};
 use nodalia_theme::window_controls::{self as ndl, Action, Labels};
 
 use crate::SheetApp;
@@ -14,8 +15,6 @@ use crate::theme::{self, Tokens};
 /// Resize zone thickness along an edge, and the side of a corner zone.
 const EDGE: f32 = 6.0;
 const CORNER: f32 = 12.0;
-/// The gap between the last button and the window's edge.
-const END: f32 = 8.0;
 
 /// Which window controls Celdas draws on Linux and the BSDs (File › Options › General).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -51,9 +50,15 @@ impl WindowControls {
     }
 }
 
-/// The width the buttons take at the title bar's right end: zero without Nodalia's controls.
-pub fn reserved(app: &SheetApp) -> f32 {
-    if app.ndl_window_controls { ndl::WIDTH + END } else { 0.0 }
+/// Where the window buttons are and what the title bar leaves free for them: Nodalia's own on the
+/// desktop's side on Linux and the BSDs, otherwise the system's (macOS's lights at the left,
+/// Windows's buttons at the right).
+pub fn placement(app: &SheetApp) -> Placement {
+    placement_for(app.ndl_window_controls, titlebar::system_side())
+}
+
+fn placement_for(nodalia: bool, side: Side) -> Placement {
+    if nodalia { Placement::nodalia(side) } else { Placement::system() }
 }
 
 fn maximized(ctx: &egui::Context) -> bool {
@@ -75,12 +80,13 @@ pub fn caption_buttons(app: &SheetApp, ui: &Ui, bar: Rect) {
     let mode = if t.dark { nodalia_theme::Mode::Dark } else { nodalia_theme::Mode::Light };
     let palette = theme::palette(mode);
     let ctx = ui.ctx().clone();
-    let right = bar.right().min(ctx.content_rect().right()) - END;
-    let rect = Rect::from_min_max(pos2(right - ndl::WIDTH, bar.top()), pos2(right, bar.bottom()));
+    let placement = placement(app);
+    let bar = Rect::from_min_max(bar.min, pos2(bar.right().min(ctx.content_rect().right()), bar.bottom()));
+    let rect = placement.controls_rect(bar);
     let focused = ctx.input(|i| i.viewport().focused.unwrap_or(true));
     let lang = app.ui.language;
     let labels = Labels { minimize: lang.tr("Minimize"), maximize: lang.tr("Maximize"), restore: lang.tr("Restore"), close: lang.tr("Close") };
-    match ndl::show(ui, rect, &palette, mode, focused, maximized(&ctx), labels) {
+    match ndl::show_on(ui, rect, placement.side, &palette, mode, focused, maximized(&ctx), labels) {
         Some(Action::Minimize) => ctx.send_viewport_cmd(ViewportCommand::Minimized(true)),
         Some(Action::Maximize | Action::Restore) => toggle_maximize(&ctx),
         Some(Action::Close) => ctx.send_viewport_cmd(ViewportCommand::Close),

@@ -1,12 +1,12 @@
 //! Desktop spooler adapter. Discovery and submission never run on the UI thread.
 use celdas_ui_egui::printing::{Discover, Duplex, Printer, Settings, Submit};
 
-/// Returns a printer-discovery closure that enumerates `craft_print::printers()` on a named background thread and sends the mapped list through a channel.
+/// Returns a printer-discovery closure that enumerates `nodalia_print::printers()` on a named background thread and sends the mapped list through a channel.
 pub fn discover() -> Discover {
     Box::new(|| {
         let (sender, receiver) = std::sync::mpsc::channel();
         let _ = std::thread::Builder::new().name("print-discovery".into()).spawn(move || {
-            let printers = craft_print::printers()
+            let printers = nodalia_print::printers()
                 .into_iter()
                 .map(|printer| Printer { name: printer.name, label: printer.description, default: printer.default })
                 .collect();
@@ -33,20 +33,20 @@ pub fn submit() -> Submit {
     Box::new(|bytes, settings: Settings| {
         let (sender, receiver) = std::sync::mpsc::channel();
         let worker = std::thread::Builder::new().name("print-submit".into()).spawn(move || {
-            let job = craft_print::Job {
+            let job = nodalia_print::Job {
                 printer: Some(settings.printer),
                 copies: settings.copies.clamp(1, 999),
                 duplex: settings.duplex.map(|value| match value {
-                    Duplex::LongEdge => craft_print::Duplex::LongEdge,
-                    Duplex::ShortEdge => craft_print::Duplex::ShortEdge,
-                    Duplex::Off => craft_print::Duplex::Off,
+                    Duplex::LongEdge => nodalia_print::Duplex::LongEdge,
+                    Duplex::ShortEdge => nodalia_print::Duplex::ShortEdge,
+                    Duplex::Off => nodalia_print::Duplex::Off,
                 }),
                 grayscale: settings.grayscale,
-                scaling: craft_print::Scaling::ShrinkToFit,
+                scaling: nodalia_print::Scaling::ShrinkToFit,
                 title: "Celdas document".into(),
                 ..Default::default()
             };
-            let _ = sender.send(craft_print::submit(&bytes, &job).map_err(|error| error.to_string()));
+            let _ = sender.send(nodalia_print::submit(&bytes, &job).map_err(|error| error.to_string()));
         });
         if let Ok(worker) = worker {
             let mut jobs = JOBS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);

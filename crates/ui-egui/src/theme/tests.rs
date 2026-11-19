@@ -2,7 +2,7 @@ use super::*;
 use crate::i18n::Language;
 
 #[test]
-/// Loaded script-fallback faces end each role chain just before the craft fonts, in the language's order.
+/// Loaded script-fallback faces end each role chain just before the Nodalia fonts, in the language's order.
 fn fallback_faces_are_appended_to_every_family() {
     // Structural: whatever loaded, the non-Latin fallback keys must sit at the end of each chain
     // (after the Latin/default fonts) so Latin still wins for Latin text, in the language's order.
@@ -15,61 +15,61 @@ fn fallback_faces_are_appended_to_every_family() {
         }
         for role in [UI, UI_BOLD, CELL, CELL_BOLD, CELL_ITALIC, CELL_BOLD_ITALIC, SERIF, MONO, MATH, MATH_ITALIC, MATH_BOLD] {
             let chain = fonts.families.get(&FontFamily::Name(role.into())).map(Vec::as_slice).unwrap_or_default();
-            // The optional craft-fonts faces follow the system fallbacks at the very end.
-            let end = chain.iter().rposition(|k| !k.starts_with("craft-")).map_or(0, |i| i + 1);
+            // The optional nodalia-fonts faces follow the system fallbacks at the very end.
+            let end = chain.iter().rposition(|k| !k.starts_with("nodalia-")).map_or(0, |i| i + 1);
             assert!(end >= fb_keys.len(), "{role} chain too short for its fallback");
-            assert_eq!(&chain[end - fb_keys.len()..end], fb_keys.as_slice(), "{role} must end its non-craft chain with the fallback faces");
+            assert_eq!(&chain[end - fb_keys.len()..end], fb_keys.as_slice(), "{role} must end its non-Nodalia chain with the fallback faces");
         }
     }
 }
 
 #[test]
-/// Every font family ends with exactly the permitted craft faces in manifest order.
-fn craft_fonts_are_the_last_fallback_in_every_family() {
-    // Ordering: app/bundled faces, Hack/emoji, system script fallbacks, permitted craft faces.
-    // A craft face must never displace a system face that already covers a glyph.
+/// Every font family ends with exactly the permitted Nodalia faces in manifest order.
+fn nodalia_fonts_are_the_last_fallback_in_every_family() {
+    // Ordering: app/bundled faces, Hack/emoji, system script fallbacks, permitted Nodalia faces.
+    // A Nodalia face must never displace a system face that already covers a glyph.
     let fonts = font_definitions_for_language(Language::En);
-    let expected: Vec<String> = craft_font_faces().into_iter().map(|(key, _)| key).collect();
+    let expected: Vec<String> = nodalia_font_faces().into_iter().map(|(key, _)| key).collect();
     if expected.is_empty() {
         return; // optional input absent
     }
     for (family, chain) in &fonts.families {
-        let first = chain.iter().position(|k| k.starts_with("craft-")).unwrap_or(chain.len());
-        assert_eq!(&chain[first..], expected.as_slice(), "{family:?} must end with exactly the permitted craft faces in manifest order");
+        let first = chain.iter().position(|k| k.starts_with("nodalia-")).unwrap_or(chain.len());
+        assert_eq!(&chain[first..], expected.as_slice(), "{family:?} must end with exactly the permitted Nodalia faces in manifest order");
     }
 }
 
 #[test]
 /// Skips on wasm or when required mode is off; a required native build must embed LXGW with `Hani`/`Hans`.
 fn a_required_native_build_embeds_the_chinese_face() {
-    if cfg!(target_arch = "wasm32") || !craft_fonts_required() {
+    if cfg!(target_arch = "wasm32") || !nodalia_fonts_required() {
         return;
     }
     assert!(
         chinese_font_loaded(),
-        "CRAFT_FONTS_REQUIRED=1 native builds must embed the LXGW Chinese face from fonts/simplified-chinese-manifest.txt"
+        "NODALIA_FONTS_REQUIRED=1 native builds must embed the LXGW Chinese face from fonts/simplified-chinese-manifest.txt"
     );
-    let face = craft_font_scripts().find(|(f, s, _)| *f == "LXGW WenKai Lite" && *s == "Regular");
+    let face = nodalia_font_scripts().find(|(f, s, _)| *f == "LXGW WenKai Lite" && *s == "Regular");
     assert_eq!(face.map(|(_, _, scripts)| scripts), Some(["Hani", "Hans"].as_slice()), "the Chinese manifest's script tags are asserted");
 }
 
 #[test]
-/// No embedded craft face belongs to the barred Noto CJK, Adobe or Source families.
+/// No embedded Nodalia face belongs to the barred Noto CJK, Adobe or Source families.
 fn barred_faces_never_enter_the_font_set() {
-    for (family, _, _) in craft_font_scripts() {
+    for (family, _, _) in nodalia_font_scripts() {
         assert!(!family.contains("CJK"), "the barred Noto CJK collection must never be embedded: {family}");
         assert!(!family.starts_with("Source ") && !family.starts_with("Adobe "), "a barred Adobe/Source face was embedded: {family}");
     }
 }
 
 #[test]
-/// Skips when craft fonts are absent unless required mode is set; otherwise the required faces and their exact script tags are embedded.
-fn the_required_craft_faces_keep_their_exact_scripts() {
-    if !craft_fonts_loaded() {
-        assert!(!craft_fonts_required(), "CRAFT_FONTS_REQUIRED=1 but no craft-fonts faces were embedded");
+/// Skips when Nodalia fonts are absent unless required mode is set; otherwise the required faces and their exact script tags are embedded.
+fn the_required_nodalia_faces_keep_their_exact_scripts() {
+    if !nodalia_fonts_loaded() {
+        assert!(!nodalia_fonts_required(), "NODALIA_FONTS_REQUIRED=1 but no nodalia-fonts faces were embedded");
         return;
     }
-    let faces: Vec<_> = craft_font_scripts().collect();
+    let faces: Vec<_> = nodalia_font_scripts().collect();
     for (family, style, scripts) in [
         ("BIZ UDPGothic", "Regular", ["Jpan", "Latn"].as_slice()),
         ("BIZ UDPGothic", "Bold", ["Jpan", "Latn"].as_slice()),
@@ -178,16 +178,16 @@ fn fallback_faces_load_each_file_once() {
 }
 
 #[test]
-/// Checks that the proportional and cell families have glyphs for every present script sample; samples with no system or craft face are printed as skipped.
+/// Checks that the proportional and cell families have glyphs for every present script sample; samples with no system or Nodalia face are printed as skipped.
 fn fallback_covers_its_script() {
     // Real glyph check, per script: the proportional family (what cells and the UI use) must
     // have a glyph for every non-space character in the sample. A script runs when a system
-    // face or the optional craft-fonts input provides one; the printed skip is a recorded
+    // face or the optional nodalia-fonts input provides one; the printed skip is a recorded
     // gate, and a present face that is not wired in fails.
     type Case = (&'static str, Vec<(String, u32)>, &'static str);
     let cases: [Case; 11] = [
         ("sys-cjk-han-ja", cjk_han_japanese(), "カテゴリ"),
-        // Chinese uses a system Han face or the native-only permitted LXGW craft face; the
+        // Chinese uses a system Han face or the native-only permitted LXGW Nodalia face; the
         // barred Noto CJK collection never supplies it.
         ("sys-cjk-han-zh", cjk_han_simplified(), "页面布局 客户端配置"),
         ("sys-cjk-hangul", cjk_hangul(), "한글"),
@@ -195,8 +195,8 @@ fn fallback_covers_its_script() {
         ("sys-lao", lao(), "ພາສາລາວ"),
         ("sys-hebrew", hebrew(), "עברית"),
         ("sys-arabic", arabic(), "العربية١٢٣"),
-        ("craft-noto-sans-arabic", Vec::new(), "مرحبا"),
-        ("craft-noto-sans-georgian", Vec::new(), "ქართული"),
+        ("nodalia-noto-sans-arabic", Vec::new(), "مرحبا"),
+        ("nodalia-noto-sans-georgian", Vec::new(), "ქართული"),
         ("ui", candidates(UI), "Русский"),
         // Czech interface labels: every Czech accented letter, in both cases.
         ("ui", candidates(UI), "Příliš žluťoučký kůň úpěl ďábelské ódy ŘŠČŽÝÁÍÉÚŮĚŤĎŇÓ"),
@@ -209,11 +209,11 @@ fn fallback_covers_its_script() {
         for family in [FontFamily::Proportional, FontFamily::Name(CELL.into())] {
             let font = FontId::new(14.0, family.clone());
             for (key, cands, sample) in &cases {
-                // A script runs when a system face or the optional craft-fonts input provides
+                // A script runs when a system face or the optional nodalia-fonts input provides
                 // one. The skip is printed: a missing fixture is a recorded gate, not a pass.
                 let system = cands.iter().any(|(p, _)| std::path::Path::new(p).exists());
-                if !system && !craft_fonts_cover(sample) {
-                    eprintln!("skipped {key}: no system face and no craft-fonts face for {sample:?}");
+                if !system && !nodalia_fonts_cover(sample) {
+                    eprintln!("skipped {key}: no system face and no nodalia-fonts face for {sample:?}");
                     continue;
                 }
                 let missing: String = sample.chars().filter(|c| !c.is_whitespace()).filter(|&c| !ctx.fonts_mut(|f| f.has_glyph(&font, c))).collect();
@@ -300,11 +300,11 @@ fn installed_latin_fonts_keep_system_script_fallbacks() {
 }
 
 #[test]
-/// The craft Arabic face reaches workbook fonts and the pinned web set, without help from system faces.
-fn the_craft_arabic_face_reaches_every_chain() {
-    assert!(crate::craft_fonts_policy::web_allowed("Noto Sans Arabic", "Regular"));
-    if !craft_fonts_cover("العربية١٢٣") {
-        assert!(!craft_fonts_required(), "CRAFT_FONTS_REQUIRED=1 but no craft-fonts face covers Arabic");
+/// The Nodalia Arabic face reaches workbook fonts and the pinned web set, without help from system faces.
+fn the_nodalia_arabic_face_reaches_every_chain() {
+    assert!(crate::nodalia_fonts_policy::web_allowed("Noto Sans Arabic", "Regular"));
+    if !nodalia_fonts_cover("العربية١٢٣") {
+        assert!(!nodalia_fonts_required(), "NODALIA_FONTS_REQUIRED=1 but no nodalia-fonts face covers Arabic");
         return;
     }
     let _g = crate::fonts::TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -345,7 +345,7 @@ fn the_fontconfig_arabic_choice_comes_first() {
         let fonts = font_definitions();
         for (family, chain) in fonts.families.iter().filter(|(_, chain)| chain.iter().any(|key| key.starts_with("sys-"))) {
             let preferred = chain.iter().position(|key| key == PREFERRED_ARABIC);
-            let other_arabic = chain.iter().position(|key| key == "sys-arabic" || key.starts_with("craft-"));
+            let other_arabic = chain.iter().position(|key| key == "sys-arabic" || key.starts_with("nodalia-"));
             assert!(preferred.is_some(), "{family:?} lacks the preferred Arabic face");
             assert!(other_arabic.is_none_or(|other| preferred < Some(other)), "{family:?} puts another Arabic face first");
         }

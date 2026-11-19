@@ -548,11 +548,11 @@ fn sheets_share_one_record_budget() {
     let file = compound("Workbook", &stream);
     // About n × 2,000 records in all: over a 100,000 shared allowance, though each sheet alone fits.
     assert!(matches!(
-        crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_records: 100_000, ..Default::default() }, crate::FunctionInfo::default()),
+        crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_records: 100_000, ..Default::default() }, crate::FunctionInfo::default()),
         Err(IoError::TooLarge(_))
     ));
     assert!(
-        crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_records: 10_000_000, ..Default::default() }, crate::FunctionInfo::default())
+        crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_records: 10_000_000, ..Default::default() }, crate::FunctionInfo::default())
             .is_ok()
     );
 
@@ -811,9 +811,10 @@ fn shared_formula_text_counts_against_the_text_allowance() {
     let file = compound("Workbook", &sample(false));
     // The smallest allowance that reads every string: nothing is left for expanded formulas.
     let left = (0..1000)
-        .find(|n| crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_text: *n, ..Default::default() }, Default::default()).is_ok())
+        .find(|n| crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_text: *n, ..Default::default() }, Default::default()).is_ok())
         .unwrap();
-    let (wb, report) = crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_text: left, ..Default::default() }, Default::default()).unwrap();
+    let (wb, report) =
+        crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_text: left, ..Default::default() }, Default::default()).unwrap();
     assert_eq!(ftext(&wb, "B6"), None);
     assert_eq!(v(&wb, 0, "B6"), Value::Number(20.0));
     assert!(report.warnings.iter().any(|w| w.contains("shared-formula text")), "{:?}", report.warnings);
@@ -843,9 +844,9 @@ fn shared_formulas_do_not_starve_a_later_sheets_text() {
     let file = compound("Workbook", &cat(&[&globals([p1, p1 + one.len() as u32]), &one, &two]));
     // The smallest allowance that reads every string leaves nothing for expanded formulas.
     let left = (0..1000)
-        .find(|n| crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_text: *n, ..Default::default() }, Default::default()).is_ok())
+        .find(|n| crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_text: *n, ..Default::default() }, Default::default()).is_ok())
         .unwrap();
-    let (wb, _) = crate::xls::read_xls_budgeted(&file, craft_xls::Limits { max_text: left, ..Default::default() }, Default::default()).unwrap();
+    let (wb, _) = crate::xls::read_xls_budgeted(&file, nodalia_xls::Limits { max_text: left, ..Default::default() }, Default::default()).unwrap();
     assert_eq!(v(&wb, 1, "A1"), Value::text("abcdefgh"));
     assert_eq!(ftext(&wb, "B6"), None);
     assert_eq!(v(&wb, 0, "B6"), Value::Number(20.0));

@@ -58,7 +58,7 @@ fn comments(app: &mut SheetApp, ui: &mut Ui) {
     let Some(sh) = d.wb.active() else { return };
     let list: Vec<(String, celdas_engine::model::Comment)> = sh.comments.iter().map(|(c, m)| (c.a1(), m.clone())).collect();
     if list.is_empty() {
-        ui.label(egui::RichText::new("No comments on this sheet yet. Select a cell and choose New Comment.").italics());
+        ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, "No comments on this sheet yet. Select a cell and choose New Comment.")).italics());
     }
     let t = crate::theme::Tokens::get(ui.ctx());
     for (cell, c) in list {
@@ -76,7 +76,7 @@ fn comments(app: &mut SheetApp, ui: &mut Ui) {
                     }
                     ui.label(egui::RichText::new(&c.author).color(t.text_dim));
                     if c.resolved {
-                        ui.label(egui::RichText::new("Resolved").small().color(t.accent));
+                        ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, "Resolved")).small().color(t.accent));
                     }
                 });
                 ui.label(&c.text);
@@ -89,14 +89,16 @@ fn comments(app: &mut SheetApp, ui: &mut Ui) {
                 // a field sized by a guess wider than the row pushes the resizable pane wider every frame.
                 ui.horizontal(|ui| {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.small_button("Delete").clicked() {
+                        if ui.small_button(crate::i18n::ui_tr(ui, "Delete")).clicked() {
                             app.run_or_alert("review.deleteComment", json!({"cell": cell}));
                         }
                         if ui.small_button(if c.resolved { "Reopen" } else { "Resolve" }).clicked() {
                             app.run_or_alert("review.resolveComment", json!({"cell": cell, "resolved": !c.resolved}));
                         }
-                        let send = ui.small_button("Send").clicked();
-                        let r = ui.add(egui::TextEdit::singleline(&mut draft).hint_text("Reply…").desired_width(ui.available_width()));
+                        let send = ui.small_button(crate::i18n::ui_tr(ui, "Send")).clicked();
+                        let r = ui.add(
+                            egui::TextEdit::singleline(&mut draft).hint_text(crate::i18n::ui_tr(ui, "Reply…")).desired_width(ui.available_width()),
+                        );
                         if (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) || send) && !draft.is_empty() {
                             app.run_or_alert("review.replyComment", json!({"cell": cell, "text": draft}));
                             draft.clear();
@@ -111,7 +113,7 @@ fn comments(app: &mut SheetApp, ui: &mut Ui) {
 
 /// Adds the active cell, lists watch values and formulas, and removes watched entries.
 fn watch(app: &mut SheetApp, ui: &mut Ui) {
-    if ui.button("Add Watch (active cell)").clicked()
+    if ui.button(crate::i18n::ui_tr(ui, "Add Watch (active cell)")).clicked()
         && let Some(d) = app.session.active()
         && let Some(sh) = d.wb.active()
     {
@@ -120,9 +122,9 @@ fn watch(app: &mut SheetApp, ui: &mut Ui) {
     }
     let list = app.session.run("formulas.watchWindow", json!({})).unwrap_or(Json::Null);
     egui::Grid::new("watch_grid").striped(true).num_columns(4).show(ui, |ui| {
-        ui.strong("Cell");
-        ui.strong("Value");
-        ui.strong("Formula");
+        ui.strong(crate::i18n::ui_tr(ui, "Cell"));
+        ui.strong(crate::i18n::ui_tr(ui, "Value"));
+        ui.strong(crate::i18n::ui_tr(ui, "Formula"));
         ui.label("");
         ui.end_row();
         for w in list.as_array().cloned().unwrap_or_default() {
@@ -143,7 +145,7 @@ fn selection(app: &mut SheetApp, ui: &mut Ui) {
     let list = app.session.run("arrange.selectionPane", json!({})).unwrap_or(Json::Null);
     let items = list.as_array().cloned().unwrap_or_default();
     if items.is_empty() {
-        ui.label(egui::RichText::new("There are no shapes, pictures or charts on this sheet.").italics());
+        ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, "There are no shapes, pictures or charts on this sheet.")).italics());
     }
     for it in items.iter().rev() {
         let kind = it["kind"].as_str().unwrap_or("").to_string();
@@ -154,10 +156,10 @@ fn selection(app: &mut SheetApp, ui: &mut Ui) {
             if ui.selectable_label(sel, it["name"].as_str().unwrap_or("")).clicked() {
                 app.selected_object = obj;
             }
-            if ui.small_button("▲").on_hover_text("Bring Forward").clicked() {
+            if ui.small_button("▲").on_hover_text(crate::i18n::ui_tr(ui, "Bring Forward")).clicked() {
                 app.run_or_alert("arrange.bringForward", json!({"kind": kind, "id": id}));
             }
-            if ui.small_button("▼").on_hover_text("Send Backward").clicked() {
+            if ui.small_button("▼").on_hover_text(crate::i18n::ui_tr(ui, "Send Backward")).clicked() {
                 app.run_or_alert("arrange.sendBackward", json!({"kind": kind, "id": id}));
             }
             if crate::widgets::icon_button(ui, crate::icons::Icon::Close, Tokens::get(ui.ctx()).text_dim, "Delete", vec2(18.0, 18.0)).clicked() {
@@ -170,22 +172,22 @@ fn selection(app: &mut SheetApp, ui: &mut Ui) {
 /// Draws the chart format pane: title, type, legend, elements/axis titles, series colors, palettes/layouts and size.
 fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
     let Some(id) = app.selected_chart() else {
-        ui.label(egui::RichText::new("Select a chart to format it.").italics());
+        ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, "Select a chart to format it.")).italics());
         return;
     };
     let Some(chart) = app.session.active().and_then(|d| d.wb.active().and_then(|s| s.charts.iter().find(|c| c.id == id).cloned())) else {
-        ui.label("The chart no longer exists.");
+        ui.label(crate::i18n::ui_tr(ui, "The chart no longer exists."));
         return;
     };
     let theme = app.session.active().map(|d| d.wb.theme.clone()).unwrap_or_default();
     let lang = crate::i18n::current(ui.ctx());
-    ui.collapsing("Chart Title", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Chart Title"), |ui| {
         let field = egui::Id::unique(("celdas.chart_title", id));
         if let Some(title) = crate::widgets::committed_text(ui, field, chart.title.as_deref().unwrap_or(""), None) {
             app.run_or_alert("chart.set", json!({"chart": id, "title": title}));
         }
     });
-    ui.collapsing("Chart Type", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Chart Type"), |ui| {
         ui.horizontal_wrapped(|ui| {
             for (l, k, s) in [
                 ("Column", "column", ""),
@@ -225,7 +227,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
             }
         }
     });
-    ui.collapsing("Legend", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Legend"), |ui| {
         ui.horizontal(|ui| {
             for (l, v) in [("None", "none"), ("Bottom", "bottom"), ("Top", "top"), ("Left", "left"), ("Right", "right")] {
                 let cur = format!("{:?}", chart.legend).eq_ignore_ascii_case(v);
@@ -235,38 +237,38 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
             }
         });
     });
-    ui.collapsing("Elements", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Elements"), |ui| {
         let mut dl = chart.data_labels;
-        if ui.checkbox(&mut dl, "Data Labels").changed() {
+        if ui.checkbox(&mut dl, crate::i18n::ui_tr(ui, "Data Labels")).changed() {
             app.run_or_alert("chart.set", json!({"chart": id, "dataLabels": dl}));
         }
         let mut gl = chart.gridlines;
-        if ui.checkbox(&mut gl, "Gridlines").changed() {
+        if ui.checkbox(&mut gl, crate::i18n::ui_tr(ui, "Gridlines")).changed() {
             app.run_or_alert("chart.set", json!({"chart": id, "gridlines": gl}));
         }
         ui.horizontal(|ui| {
-            ui.label("Horizontal axis title:");
+            ui.label(crate::i18n::ui_tr(ui, "Horizontal axis title:"));
             let field = egui::Id::unique(("celdas.chart_x_title", id));
             if let Some(xt) = crate::widgets::committed_text(ui, field, chart.x_title.as_deref().unwrap_or(""), None) {
                 app.run_or_alert("chart.set", json!({"chart": id, "xTitle": if xt.is_empty() { Json::Null } else { json!(xt) }}));
             }
         });
         ui.horizontal(|ui| {
-            ui.label("Vertical axis title:");
+            ui.label(crate::i18n::ui_tr(ui, "Vertical axis title:"));
             let field = egui::Id::unique(("celdas.chart_y_title", id));
             if let Some(yt) = crate::widgets::committed_text(ui, field, chart.y_title.as_deref().unwrap_or(""), None) {
                 app.run_or_alert("chart.set", json!({"chart": id, "yTitle": if yt.is_empty() { Json::Null } else { json!(yt) }}));
             }
         });
     });
-    ui.collapsing("Data Table", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Data Table"), |ui| {
         let supported = chart.supports_data_table();
         let mut on = chart.data_table.is_some();
         if ui.add_enabled(supported, egui::Checkbox::new(&mut on, "Show Data Table")).changed() {
             app.run_or_alert("chart.set", json!({"chart": id, "dataTable": on}));
         }
         if !supported {
-            ui.label("Available for column, bar, line, area and compatible combo charts.");
+            ui.label(crate::i18n::ui_tr(ui, "Available for column, bar, line, area and compatible combo charts."));
         }
         if let Some(table) = &chart.data_table {
             for (label, key, mut value) in [
@@ -281,7 +283,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
             }
         }
     });
-    ui.collapsing("Series", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Series"), |ui| {
         let data = app.session.active().map(|d| celdas_chart::resolve(&d.wb, d.wb.active_sheet(), &chart));
         for (i, s) in chart.series.iter().enumerate() {
             let name = data.as_ref().and_then(|d| d.series.get(i)).map(|x| x.name.clone()).unwrap_or_else(|| format!("Series {}", i + 1));
@@ -292,7 +294,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
                 ui.painter().rect_filled(r, 2.0, col);
                 ui.label(&name);
                 ui.label(egui::RichText::new(&s.values).small().color(crate::theme::Tokens::get(ui.ctx()).text_dim));
-                ui.menu_button("Fill…", |ui| {
+                ui.menu_button(crate::i18n::ui_tr(ui, "Fill…"), |ui| {
                     if let Some(c) = crate::widgets::color_palette_fixed(ui, &theme.colors, "Automatic") {
                         app.run_or_alert(
                             "chart.formatSelection",
@@ -304,7 +306,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
             });
         }
     });
-    ui.collapsing("Colors & Layout", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Colors & Layout"), |ui| {
         ui.horizontal_wrapped(|ui| {
             for p in ["colorful", "monochrome", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6"] {
                 if ui.button(p).clicked() {
@@ -314,13 +316,13 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
         });
         ui.horizontal(|ui| {
             for n in 1..=6 {
-                if ui.button(format!("Layout {n}")).clicked() {
+                if ui.button(crate::i18n::ui_fill(ui, "Layout {n}", &[("n", &n.to_string())])).clicked() {
                     app.run_or_alert("chart.quickLayout", json!({"chart": id, "layout": n}));
                 }
             }
         });
     });
-    ui.collapsing("Size", |ui| {
+    ui.collapsing(crate::i18n::ui_tr(ui, "Size"), |ui| {
         // Keep the value being typed or dragged between frames; reloading it from the chart every frame threw the edit away.
         let draft = egui::Id::unique(("celdas.chart_size_draft", id));
         let current = (chart.anchor.width, chart.anchor.height);

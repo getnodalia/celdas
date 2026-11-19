@@ -1,6 +1,6 @@
 //! Host modes: a page that runs Celdas (as an iframe, or in its own document) opens workbooks
 //! in it and stores what it saves instead of the browser downloading. The messages and the two
-//! transports are `craft-web-host`'s (getnodalia/foundation (vendor/craft-libs)), the same contract as the other Nodalia
+//! transports are `nodalia-web-host`'s (getnodalia/foundation (vendor/nodalia-libs)), the same contract as the other Nodalia
 //! apps' bridges, with the `celdas:` prefix. This module is Celdas's part of it.
 //!
 //! - `?host=parent` (an `<iframe>`, such as a Nextcloud app) talks to the same-origin parent over
@@ -27,7 +27,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use celdas_ui_egui::{Inbox, Services, SheetApp};
-use craft_web_host::web::{FileData, Host, Message};
+use nodalia_web_host::web::{FileData, Host, Message};
 
 use crate::hostmode::open_name;
 

@@ -370,6 +370,16 @@ pub fn current(ctx: &egui::Context) -> Language {
     ctx.data(|d| d.get_temp(lang_key())).unwrap_or_default()
 }
 
+/// Translates `text` for the language of the frame `ui` is drawing (English when untranslated).
+pub(crate) fn ui_tr<'a>(ui: &egui::Ui, text: &'a str) -> &'a str {
+    current(ui.ctx()).tr(text)
+}
+
+/// Translates `template` for the language of the frame `ui` is drawing and fills its `{name}` placeholders.
+pub(crate) fn ui_fill(ui: &egui::Ui, template: &str, values: &[(&str, &str)]) -> String {
+    current(ui.ctx()).tr_fill(template, values)
+}
+
 /// Sets the language for the current frame; call once per frame before anything is drawn.
 pub fn set_current(ctx: &egui::Context, language: Language) {
     ctx.data_mut(|d| d.insert_temp(lang_key(), language));
@@ -417,7 +427,7 @@ mod tests {
         }
     }
 
-    /// Ukrainian Chart uses the shared craft-i18n term, which is not the Diagram word.
+    /// Ukrainian Chart uses the shared nodalia-i18n term, which is not the Diagram word.
     #[test]
     fn ukrainian_chart_uses_the_shared_term() {
         assert_eq!(Language::Uk.translated("Chart"), Some("Діаграма"));
@@ -437,6 +447,15 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn the_macro_editor_and_the_dialogs_speak_spanish() {
+        let es = Language::Es;
+        assert_eq!(es.tr("Stop debugging"), "Detener la depuración");
+        assert_eq!(es.tr("Find what:"), "Buscar:");
+        assert_eq!(es.tr_fill("Step {path} · {title}", &[("path", "1.2"), ("title", "Sort")]), "Paso 1.2 · Sort");
+        assert_eq!(Language::En.tr_fill("Step {path} · {title}", &[("path", "1"), ("title", "Sort")]), "Step 1 · Sort");
     }
 
     #[test]

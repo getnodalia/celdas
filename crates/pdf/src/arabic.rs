@@ -490,7 +490,7 @@ impl Subset {
     }
 
     /// Writes the subset fonts into `out` and returns their page resource entries.
-    pub(crate) fn write_objects(&self, next: &mut u32, out: &mut craft_pdf::classic::Writer) -> Result<String, Error> {
+    pub(crate) fn write_objects(&self, next: &mut u32, out: &mut nodalia_pdf::classic::Writer) -> Result<String, Error> {
         let mut resources = String::new();
         for (batch, glyphs) in self.glyphs.chunks(255).enumerate() {
             let id = *next;

@@ -107,7 +107,7 @@ fn wrapping_keeps_combining_marks_with_their_letters() {
 
 #[test]
 fn arabic_cells_headers_and_charts_export_searchable_shaped_text() {
-    if !arabic_face_available() && std::env::var_os("CRAFT_FONTS_REQUIRED").is_none() {
+    if !arabic_face_available() && std::env::var_os("NODALIA_FONTS_REQUIRED").is_none() {
         return;
     }
     let mut s = s();
@@ -149,7 +149,7 @@ fn arabic_cells_headers_and_charts_export_searchable_shaped_text() {
 
 #[test]
 fn arabic_reading_order_export_artifact() {
-    if !arabic_face_available() && std::env::var_os("CRAFT_FONTS_REQUIRED").is_none() {
+    if !arabic_face_available() && std::env::var_os("NODALIA_FONTS_REQUIRED").is_none() {
         return;
     }
     let mut s = s();
