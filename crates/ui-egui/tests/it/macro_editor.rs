@@ -578,8 +578,14 @@ fn the_editor_fits_a_narrow_window() {
         three(&mut h);
         h.run_steps(4);
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, size);
-        let window = h.get_by_label_contains("Macro: Three").rect();
-        assert!(screen.contains_rect(window), "the editor at {window:?} is outside the {size:?} window");
+        // The window and its NDL header both carry the title.
+        let mut titled = 0;
+        for node in h.query_all_by_label_contains("Macro: Three") {
+            let r = node.rect();
+            assert!(screen.contains_rect(r), "the editor at {r:?} is outside the {size:?} window");
+            titled += 1;
+        }
+        assert!(titled > 0, "the editor is open");
         // The editor's own controls (Delete is left out: the ribbon has one too).
         for label in ["Add Step", "Duplicate", "Check", "Run", "Step", "Continue", "Run to Here", "Stop", "Details", "Inputs", "Output", "Save"] {
             let r = h.get_by_label(label).rect();
