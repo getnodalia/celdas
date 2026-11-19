@@ -293,6 +293,11 @@ fn draw_sheet(p: &egui::Painter, inner: Rect, t: &Tokens, sample: Option<usize>)
     }
 }
 
+/// The language the built-in samples are written in: Spanish in a Spanish interface, else English.
+fn sample_lang(lang: Language) -> celdas_engine::sample::Lang {
+    if lang == Language::Es { celdas_engine::sample::Lang::Es } else { celdas_engine::sample::Lang::En }
+}
+
 /// Blank workbook and the built-in samples.
 fn new_tiles(app: &mut SheetApp, ui: &mut Ui, out: &mut Outcome) {
     let lang = app.ui.language;
@@ -300,7 +305,9 @@ fn new_tiles(app: &mut SheetApp, ui: &mut Ui, out: &mut Outcome) {
     let samples = celdas_engine::sample::SAMPLES;
     // Thumbnail 0 is the blank workbook; thumbnail k is sample k - 1.
     let draws: Vec<_> = (0..=samples.len()).map(|k| move |p: &egui::Painter, r: Rect| draw_sheet(p, r, &t, k.checked_sub(1))).collect();
-    let names: Vec<&str> = std::iter::once(lang.tr("Blank workbook")).chain(samples.iter().map(|(_, title)| *title)).collect();
+    let sample_lang = sample_lang(lang);
+    let sample_titles: Vec<String> = samples.iter().map(|(name, _)| celdas_engine::sample::title_in(name, sample_lang)).collect();
+    let names: Vec<&str> = std::iter::once(lang.tr("Blank workbook")).chain(sample_titles.iter().map(String::as_str)).collect();
     let list: Vec<office::Template> = names.iter().zip(&draws).map(|(name, draw)| office::Template { name, draw }).collect();
     match office::templates(ui, &look(&t), &list) {
         Some(0) => {
@@ -309,7 +316,10 @@ fn new_tiles(app: &mut SheetApp, ui: &mut Ui, out: &mut Outcome) {
         }
         Some(i) => {
             if let Some((name, _)) = samples.get(i - 1) {
-                app.run_or_alert("file.new", json!({"sample": name}));
+                app.run_or_alert(
+                    "file.new",
+                    json!({"sample": name, "lang": if sample_lang == celdas_engine::sample::Lang::Es { "es" } else { "en" }}),
+                );
                 out.close = true;
             }
         }

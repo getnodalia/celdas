@@ -7,7 +7,7 @@ use crate::DocState;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!(noundo "file.new", "New Workbook", ["File"], Some("Cmd+N"), "{sample?: \"budget\"|\"sales\"|\"grades\"}", always, new_workbook),
+        cmd!(noundo "file.new", "New Workbook", ["File"], Some("Cmd+N"), "{sample?: \"budget\"|\"sales\"|\"grades\"|\"invoice\"|\"tracker\"|\"loan\"|\"inventory\"|\"timesheet\", lang?: \"en\"|\"es\" (the language a sample is written in; default en)}", always, new_workbook),
         cmd!(noundo "file.open", "Open…", ["File"], Some("Cmd+O"), "{path} | {name, base64}, plus {password} for a password-protected workbook and {csvAsText?: bool} to keep every csv/tsv/txt field as text, with no number or date conversion (xlsx, xlsm, xls import, xlsb and ods data import, csv, tsv, txt, json)", always, open),
         cmd!(noundo "file.save", "Save", ["File"], Some("Cmd+S"), "{path?, discardVba?: bool} (xlsx by default; .csv/.tsv/.json/.html/.pdf by extension; discardVba explicitly permits removing a VBA project when saving .xlsx/.xltx)", has_doc, save),
         cmd!(noundo "file.saveAs", "Save As…", ["File"], Some("Cmd+Shift+S"), "{path, discardVba?: bool} (.xlsx, .xlsm, .xltx, .xltm, .csv, .tsv, .json, .html, or .pdf; discardVba explicitly permits removing VBA when saving .xlsx/.xltx)", has_doc, save_as),
@@ -34,8 +34,9 @@ pub fn specs() -> Vec<CommandSpec> {
 fn new_workbook(s: &mut Session, p: &Json) -> Result<Json> {
     let i = match str_param(p, "sample") {
         Some(name) => {
-            let wb = crate::sample::build(name).ok_or_else(|| bad("file.new", format!("unknown sample `{name}`")))?;
-            let title = crate::sample::title(name);
+            let lang = str_param(p, "lang").map(crate::sample::Lang::parse).unwrap_or_default();
+            let wb = crate::sample::build_in(name, lang).ok_or_else(|| bad("file.new", format!("unknown sample `{name}`")))?;
+            let title = crate::sample::title_in(name, lang);
             s.add_document(DocState::new(wb, None, title, crate::Trust::Local))
         }
         None => s.new_workbook(),
