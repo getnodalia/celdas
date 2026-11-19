@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 
 use crate::ast::{Bin, Un, VType};
-use crate::value::{parse_number, round_even, Result, Value, VbError};
+use crate::value::{Result, Value, VbError, parse_number, round_even};
 
 /// Converts `v` to the declared type of a variable (what an assignment does).
 pub fn coerce(ty: &VType, v: Value) -> Result<Value> {
@@ -175,7 +175,13 @@ pub fn compare(a: &Value, b: &Value) -> Result<Option<Ordering>> {
         (Value::Str(x), Value::Str(y)) => Ok(Some(x.as_ref().cmp(y.as_ref()))),
         (Value::Empty, Value::Str(s)) | (Value::Str(s), Value::Empty) => {
             let o = s.is_empty();
-            let ord = if o { Ordering::Equal } else if matches!(a, Value::Empty) { Ordering::Less } else { Ordering::Greater };
+            let ord = if o {
+                Ordering::Equal
+            } else if matches!(a, Value::Empty) {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            };
             Ok(Some(ord))
         }
         (Value::Str(s), n) if n.as_number().is_some() || matches!(n, Value::Empty) => compare_text_number(s, n, false),
@@ -299,7 +305,9 @@ fn like_at(t: &[char], ti: usize, p: &[char], pi: usize, depth: u32) -> bool {
             let mut hit = false;
             let mut i = 0;
             while let Some(&lo) = set.get(i) {
-                if set.get(i + 1) == Some(&'-') && let Some(&hi) = set.get(i + 2) {
+                if set.get(i + 1) == Some(&'-')
+                    && let Some(&hi) = set.get(i + 2)
+                {
                     hit |= (lo..=hi).contains(&c);
                     i += 3;
                 } else {

@@ -168,7 +168,7 @@ Format Cells, Insert Function (search, Most Recently Used, All and each category
 Replace, Go To and Go To Special, Sort,
 Name Manager, Data Validation, Paste Special, Conditional Formatting manager, Page Setup (margins and the page order), Goal
 Seek, Scenario Manager, Data Analysis, Forecast Sheet, Macros (macros, Automate scripts and a
-note on a VBA project; Run, Step Into, Edit, Create, Delete, Options), Record Macro, the macro step
+VBA procedures; Run, Step Into, Edit, Create, Delete, Options), Record Macro, the macro step
 editor (Excel's VBA editor has no counterpart here) and others exist. Missing or partial: Options,
 Solver, Power Query editor, Insert Object, Protect/Allow Edit Ranges,
 Workbook Links, Accessibility checker. Like Excel's, every dialog opens centred and moves by its

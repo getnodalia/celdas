@@ -919,7 +919,7 @@ fn vba_project_roundtrip() {
 
     let (back, rep) = read_xlsx(&bytes).unwrap();
     assert_eq!(back.vba_project.as_deref(), Some(&vba), "vbaProject survives the read");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert!(rep.warnings.iter().any(|w| w.contains("were kept")), "{:?}", rep.warnings);
 
     // A workbook without macros stays macro-free and free of VBA warnings.
     let (plain, rp) = read_xlsx(&write_xlsx(&Workbook::new()).unwrap()).unwrap();
@@ -939,7 +939,7 @@ fn vba_project_read_from_foreign_file() {
     );
     let (wb, rep) = read_xlsx(&bytes).unwrap();
     assert!(wb.vba_project.is_some(), "VBA blob captured");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert!(rep.warnings.iter().any(|w| w.contains("were kept")), "{:?}", rep.warnings);
     let _ = vba;
 }
 

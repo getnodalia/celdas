@@ -20,7 +20,7 @@ mod parser;
 pub mod project;
 pub mod value;
 
-pub use host::{arg, CallArg, Host, NoHost};
-pub use interp::{ErrorSite, Vm, DEFAULT_MAX_STEPS};
+pub use host::{CallArg, Host, NoHost, arg};
+pub use interp::{DEFAULT_MAX_STEPS, ErrorSite, Vm};
 pub use project::{ModuleKind, ProcInfo, Project, SourceModule};
 pub use value::{HostObject, Obj, VArray, Value, VbError};

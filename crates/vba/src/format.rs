@@ -2,7 +2,7 @@
 
 use celdas_core::{DateSystem, Value as CoreValue};
 
-use crate::value::{parse_number, Result, Value, VbError};
+use crate::value::{Result, Value, VbError, parse_number};
 
 /// `Format(value, code)`. Decimal and thousands separators are the English ones.
 pub fn format(v: &Value, code: &str) -> Result<String> {

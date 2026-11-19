@@ -2,7 +2,7 @@
 
 **Stage: alpha** · next: beta, ~25 points of "ready for real work" and ~160–240 h away
 
-> **Last reviewed:** 2026-11-15 · **Last updated:** 2026-11-15 · **Change:** minor (performance: formula entry and XLSX save win back time lost since 23829d8c (#2654), 465 → 420 ms and 540 → 488 ms on the 100k-row benchmark; Sandbox refuses fcntl's asynchronous notification and the socket ioctls that notify another process on Linux (#3846); CI provisions pinned fonts for coverage tests; the oversized pivot-cache warning's test names the part limit; readiness estimates unchanged) · **Target:** Microsoft Excel (Microsoft 365)
+> **Last reviewed:** 2026-11-15 · **Last updated:** 2026-11-19 · **Change:** minor (VBA macros run: an `.xlsm`'s procedures run from the Macros dialog and from a shape; earlier: performance: formula entry and XLSX save win back time lost since 23829d8c (#2654), 465 → 420 ms and 540 → 488 ms on the 100k-row benchmark; Sandbox refuses fcntl's asynchronous notification and the socket ioctls that notify another process on Linux (#3846); CI provisions pinned fonts for coverage tests; the oversized pivot-cache warning's test names the part limit; readiness estimates unchanged) · **Target:** Microsoft Excel (Microsoft 365)
 > **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-05 · **Change:** minor (CJK fallback text shares the Latin baseline; earlier: form controls: buttons, sliders and spin buttons; earlier: RefEdit reference boxes in dialogs: Goal Seek, Solver and Data Analysis take ranges by selection on the grid; earlier: Python mode in the formula bar; earlier: Python cells stored and kept in files; earlier: equations: Insert › Equation, editor, celdas-math; earlier: What-if and analysis: Solver Sensitivity report for Simplex LP and GRG Nonlinear; earlier: floating objects: one selection, eight resize handles, keyboard delete; earlier: Chart data tables: live source values beneath column, bar, line, area and compatible combo charts; legend keys and borders; XLSX round-trip and print/PDF; earlier: Formulas › Function Library as labelled buttons with category menus; Recently Used and Insert Function categories; XLSX workbook-view selection, bounded tab ratios and sheet-edit regressions; readiness estimates unchanged; earlier: CSV and text open detects each column's date order, so day-first dates are not silently swapped) · **Target:** Microsoft Excel (Microsoft 365)
 
 Celdas aims at full Microsoft Excel parity, and at being better in places: faster, open (XLSX
@@ -66,7 +66,7 @@ collaboration, mobile, AI).
 | Localization | ~10% (ribbon in 6 languages) | 100–165 | [localization-parity.md](docs/localization-parity.md) |
 | Hardware (multi-core calc, GPU, pen, multi-window) | ~40% | 25–40 | [hardware-parity.md](docs/hardware-parity.md) |
 | Platforms | ~80% (no iOS/Android; ahead on Linux, BSD, RISC-V) | 30–60 | [target-app-parity.md](docs/target-app-parity.md#platforms) |
-| Ecosystem / add-ins | ~10% (VBA out of scope; own scripts, MCP, CLI) | 25–40 | [target-app-parity.md](docs/target-app-parity.md#ecosystem-and-ai) |
+| Ecosystem / add-ins | ~15% (VBA projects run through an Excel object model; own scripts, MCP, CLI) | 25–40 | [target-app-parity.md](docs/target-app-parity.md#ecosystem-and-ai) |
 | AI features | ~15% (agent control strong; no in-app assistant) | 30–50 | [target-app-parity.md](docs/target-app-parity.md#ecosystem-and-ai) |
 | **Total** | **~50%** | **~700–1,100** | |
 
@@ -86,7 +86,7 @@ collaboration, mobile, AI).
 | Get & Transform, external data, data model | ~15% | ~10% | 60–100 | [target-app-parity.md](docs/target-app-parity.md#feature-areas) |
 | Insert objects (pictures, shapes, ink, SmartArt, equations) | ~55% | ~45% | 25–40 | [target-app-parity.md](docs/target-app-parity.md#feature-areas) |
 | Review, comments, protection, collaboration | ~55% | ~40% | 35–55 | [target-app-parity.md](docs/target-app-parity.md#feature-areas) |
-| Automation (recorded scripts; typed macros with a recorder, a Macros dialog and a step editor; no VBA) | ~30% | ~20% | 12–20 | [target-app-parity.md](docs/target-app-parity.md#feature-areas) |
+| Automation (recorded scripts; typed macros with a recorder, a Macros dialog and a step editor; VBA procedures of an `.xlsm` run) | ~35% | ~25% | 12–20 | [target-app-parity.md](docs/target-app-parity.md#feature-areas) |
 
 ## Languages
 
@@ -147,6 +147,7 @@ Ranked; estimates in Opus 5.5 agent-hours. Detail and the full beta-gate list in
 | 2026-11-01 | XLSX keeps the first visible workbook window's active sheet and display settings together, falling back to the first view when all are hidden. Tab ratios are normalized to 0–1000 on import and export; invalid numeric text uses 600. Synthetic round trips cover isolated attributes, missing views, and active tabs after sheet deletion/reordering; firstSheet remains separate #2264 work (#3057). |
 | 2026-10-31 | Esc in File › Info, Print or Options first leaves the text field; the next Esc returns to the sheet (#3035) |
 | 2026-10-31 | CSV and text open detects each column's date order: a value that reads only day first (`31/05/2026`) makes the column day first, a value that reads only month first (`12/31/2026`) makes it month first, an all-ambiguous column keeps month first with a warning, and a column with both kinds stays text with a warning (#2765) |
+| 2026-11-19 | VBA macros run ([macros.md](docs/macros.md#vba-macros)): `vba.list`, `vba.source` and `vba.run` execute the procedures of an `.xlsm`'s `vbaProject.bin` as one undo step that rolls back whole on an error, through an Excel object model (ranges, sheets, shapes and charts, `WorksheetFunction`, `Evaluate`, text files, new workbooks); the Macros dialog lists them and a click on a shape runs its macro; a workbook opened from a file asks before its first run. A turbomachinery coursework workbook reproduces Excel's own results cell for cell |
 | 2026-10-31 | Recently Used lists the functions most recently entered in a formula from any source (ribbon, control channel, MCP, scripts), kept with the preferences and returned by `formulas.recentlyUsed`; the Insert Function dialog takes Excel's title and a working category list (Most Recently Used, All, each category) |
 | 2026-10-31 | Formulas › Function Library as a big Insert Function button, the AutoSum split button and three columns of labelled small buttons, each category book in its own colour; category menus end with Insert Function… on that category; More Functions cascades into the remaining categories; Home › Editing shares the AutoSum menu; the MR key tip opens Recently Used |
 | 2026-10-31 | System and embedded CJK fallback text shares the Latin baseline in cells, editors and window titles (#1265, #2621). Symbol and emoji alignment, manual row heights and clipping are unchanged |

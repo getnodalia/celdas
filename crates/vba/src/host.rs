@@ -78,6 +78,12 @@ pub trait Host {
         Err(unsupported("File access"))
     }
 
+    /// `EOF(number)`: whether the file open for input has nothing left to read.
+    fn file_eof(&mut self, number: i32) -> Result<bool> {
+        let _ = number;
+        Err(unsupported("File access"))
+    }
+
     /// Closes file `number`, or every open file with `None`.
     fn file_close(&mut self, number: Option<i32>) -> Result<()> {
         let _ = number;

@@ -74,7 +74,13 @@ impl Project {
                 if !matches!(p.kind, ProcKind::Sub | ProcKind::Function) {
                     continue;
                 }
-                out.push(ProcInfo { module: m.name.clone(), name: p.display.clone(), is_function: p.kind == ProcKind::Function, public: p.public, has_params: !p.params.is_empty() });
+                out.push(ProcInfo {
+                    module: m.name.clone(),
+                    name: p.display.clone(),
+                    is_function: p.kind == ProcKind::Function,
+                    public: p.public,
+                    has_params: !p.params.is_empty(),
+                });
             }
         }
         out
@@ -105,7 +111,10 @@ impl Project {
 
     /// A property procedure (`Property Get`/`Let`/`Set`).
     pub fn find_property(&self, name: &str, kind: ProcKind) -> Option<(usize, &Proc)> {
-        self.modules.iter().enumerate().find_map(|(i, m)| m.parsed.as_ref().ok()?.procs.iter().find(|p| &*p.name == name && p.kind == kind).map(|p| (i, p)))
+        self.modules
+            .iter()
+            .enumerate()
+            .find_map(|(i, m)| m.parsed.as_ref().ok()?.procs.iter().find(|p| &*p.name == name && p.kind == kind).map(|p| (i, p)))
     }
 }
 

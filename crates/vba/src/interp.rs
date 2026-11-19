@@ -125,7 +125,10 @@ impl<'a> Vm<'a> {
         };
         let wanted = proc_name.to_lowercase();
         let located = match module_hint {
-            Some(m) => project.module_index(m).and_then(|mi| project.find_proc(&wanted, Some(mi))).filter(|(found, _)| project.module_index(module_hint.unwrap_or("")) == Some(*found)),
+            Some(m) => project
+                .module_index(m)
+                .and_then(|mi| project.find_proc(&wanted, Some(mi)))
+                .filter(|(found, _)| project.module_index(module_hint.unwrap_or("")) == Some(*found)),
             None => project.find_proc(&wanted, None),
         };
         let Some((mi, p)) = located else {
@@ -276,7 +279,13 @@ impl<'a> Vm<'a> {
 
     fn exec_kind(&mut self, f: &mut Frame, s: &'a Stmt) -> Result<Flow> {
         match &s.kind {
-            StmtKind::If { .. } | StmtKind::For { .. } | StmtKind::ForEach { .. } | StmtKind::Do { .. } | StmtKind::While(..) | StmtKind::Select { .. } | StmtKind::With(..) => self.exec_control(f, &s.kind),
+            StmtKind::If { .. }
+            | StmtKind::For { .. }
+            | StmtKind::ForEach { .. }
+            | StmtKind::Do { .. }
+            | StmtKind::While(..)
+            | StmtKind::Select { .. }
+            | StmtKind::With(..) => self.exec_control(f, &s.kind),
             StmtKind::Exit(k) => Ok(Flow::Exit(*k)),
             StmtKind::Goto(l) => Ok(Flow::Goto(l.clone())),
             StmtKind::Label(_) | StmtKind::Nop => Ok(Flow::Next),
@@ -322,7 +331,9 @@ impl<'a> Vm<'a> {
             }
             StmtKind::ReDim { preserve, items } => items.iter().try_for_each(|i| self.redim(f, i, *preserve)),
             StmtKind::Assign(target, e) => {
-                let v = self.eval_r(f, e)?;
+                // A property of a host object takes the object itself (`series.Values = range`):
+                // the host decides what that stands for. Anything else takes the default member.
+                let v = if targets_member(target) { self.eval(f, e)? } else { self.eval_r(f, e)? };
                 self.assign(f, target, v)
             }
             StmtKind::SetAssign(target, e) => {
@@ -567,10 +578,12 @@ impl<'a> Vm<'a> {
             let arr = VArray { bounds: vec![(0, -1)], data: Vec::new() };
             return Ok(Var { value: Value::array(arr), ty: item.ty.clone() });
         }
-        let value = if item.is_new { self.new_object(match &item.ty {
-            VType::Object(c) => c,
-            _ => return Err(VbError::type_mismatch()),
-        })? } else {
+        let value = if item.is_new {
+            self.new_object(match &item.ty {
+                VType::Object(c) => c,
+                _ => return Err(VbError::type_mismatch()),
+            })?
+        } else {
             ops::default_value(&item.ty)
         };
         Ok(Var { value, ty: item.ty.clone() })
@@ -588,7 +601,11 @@ impl<'a> Vm<'a> {
         }
         let ty = match self.var_mut(f, &item.name) {
             Some(v) if !matches!(item.ty, VType::Variant) || matches!(v.ty, VType::Variant) => {
-                if matches!(item.ty, VType::Variant) { v.ty.clone() } else { item.ty.clone() }
+                if matches!(item.ty, VType::Variant) {
+                    v.ty.clone()
+                } else {
+                    item.ty.clone()
+                }
             }
             Some(v) => v.ty.clone(),
             None => item.ty.clone(),
@@ -645,14 +662,25 @@ impl<'a> Vm<'a> {
             Expr::Call(base, args) => self.assign_call(f, base, args, value),
             Expr::Member(base, name) => {
                 let obj = self.eval_object(f, base)?;
-                self.member(&obj, name, &[], Some(value)).map(|_| ())
+                self.assign_member(&obj, name, &[], value)
             }
             Expr::WithMember(name) => {
                 let obj = self.with_object(f)?;
-                self.member(&obj, name, &[], Some(value)).map(|_| ())
+                self.assign_member(&obj, name, &[], value)
             }
             _ => Err(VbError::new(451, "Property let procedure not defined and property get procedure did not return an object")),
         }
+    }
+
+    /// Sets a property. The interpreter's own objects take the value of an object assigned to
+    /// them; a host object gets it as it is.
+    fn assign_member(&mut self, obj: &Obj, name: &str, args: &[CallArg], value: Value) -> Result<()> {
+        let native = obj.downcast::<ErrObject>().is_some()
+            || obj.downcast::<DebugObject>().is_some()
+            || obj.downcast::<Collection>().is_some()
+            || obj.downcast::<Dictionary>().is_some();
+        let value = if native { self.rvalue(value)? } else { value };
+        self.member(obj, name, args, Some(value)).map(|_| ())
     }
 
     fn assign_call(&mut self, f: &mut Frame, base: &Expr, args: &[Arg], value: Value) -> Result<()> {
@@ -680,11 +708,11 @@ impl<'a> Vm<'a> {
             },
             Expr::Member(b, name) => {
                 let obj = self.eval_object(f, b)?;
-                self.member(&obj, name, &argv, Some(value)).map(|_| ())
+                self.assign_member(&obj, name, &argv, value)
             }
             Expr::WithMember(name) => {
                 let obj = self.with_object(f)?;
-                self.member(&obj, name, &argv, Some(value)).map(|_| ())
+                self.assign_member(&obj, name, &argv, value)
             }
             _ => Err(VbError::new(451, "Property let procedure not defined and property get procedure did not return an object")),
         }
@@ -1008,9 +1036,7 @@ fn print_text(v: &Value, quoted: bool) -> Result<String> {
                 s.to_string()
             }
         }
-        Value::Bool(b) => {
-            if *b { "True" } else { "False" }.to_string()
-        }
+        Value::Bool(b) => if *b { "True" } else { "False" }.to_string(),
         Value::Null => if quoted { "#NULL#" } else { "Null" }.to_string(),
         Value::Empty | Value::Missing => String::new(),
         other => {
@@ -1051,5 +1077,14 @@ fn copy_overlap(old: &VArray, new: &mut VArray) {
             }
             *slot = new.bounds.get(d).map_or(0, |b| b.0);
         }
+    }
+}
+
+/// Whether an assignment target is a property of an object (`a.b = …`, `.b = …`, `a.b(1) = …`).
+fn targets_member(target: &Expr) -> bool {
+    match target {
+        Expr::Member(..) | Expr::WithMember(_) => true,
+        Expr::Call(base, _) => matches!(**base, Expr::Member(..) | Expr::WithMember(_)),
+        _ => false,
     }
 }

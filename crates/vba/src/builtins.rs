@@ -4,7 +4,7 @@ use celdas_core::date::{self, DateSystem};
 
 use crate::host::CallArg;
 use crate::interp::Vm;
-use crate::value::{round_even, val_prefix, Result, VArray, Value, VbError};
+use crate::value::{Result, VArray, Value, VbError, round_even, val_prefix};
 
 /// The value of a VBA constant (`vbCrLf`, `vbYes`, `True`…), by lower-case name.
 pub fn vb_constant(name: &str) -> Option<Value> {
@@ -134,6 +134,7 @@ impl Vm<'_> {
             "createobject" => text(v, 0).and_then(|p| self.new_object(&p.to_lowercase().replace("scripting.", ""))),
             "getobject" => Err(VbError::new(429, "ActiveX component can't create object")),
             "freefile" => Ok(Value::Long((1..=255).find(|n| !self.files.contains(n)).unwrap_or(1))),
+            "eof" => int_or(v, 0, 0).and_then(|n| self.host.file_eof(n)).map(Value::Bool),
             "dir" => {
                 let pattern = opt(v, 0).map(Value::to_text).transpose();
                 let attrs = int_or(v, 1, 0);
@@ -190,7 +191,15 @@ fn math(vm: &mut Vm<'_>, name: &str, v: &[Value]) -> Option<Result<Value>> {
         "log" => num(v, 0).and_then(|n| if n <= 0.0 { Err(VbError::invalid_call()) } else { Ok(Value::Double(n.ln())) }),
         "int" => need(v, 0).and_then(|a| a.to_f64().map(|n| same_kind(a, n.floor()))),
         "fix" => need(v, 0).and_then(|a| a.to_f64().map(|n| same_kind(a, n.trunc()))),
-        "sgn" => num(v, 0).map(|n| Value::Int(if n > 0.0 { 1 } else if n < 0.0 { -1 } else { 0 })),
+        "sgn" => num(v, 0).map(|n| {
+            Value::Int(if n > 0.0 {
+                1
+            } else if n < 0.0 {
+                -1
+            } else {
+                0
+            })
+        }),
         "round" => round(v),
         _ => return None,
     })
@@ -458,7 +467,9 @@ fn info(name: &str, v: &[Value]) -> Option<Result<Value>> {
     Some(match name {
         "isnumeric" => flag(&|a| match a {
             Value::Str(s) => crate::value::parse_number(s).is_some(),
-            Value::Bool(_) | Value::Empty | Value::Null | Value::Date(_) | Value::Error(_) | Value::Array(_) | Value::Object(_) | Value::Missing => false,
+            Value::Bool(_) | Value::Empty | Value::Null | Value::Date(_) | Value::Error(_) | Value::Array(_) | Value::Object(_) | Value::Missing => {
+                false
+            }
             _ => true,
         }),
         "isdate" => flag(&|a| match a {
@@ -529,8 +540,12 @@ fn dates(vm: &mut Vm<'_>, name: &str, v: &[Value]) -> Option<Result<Value>> {
                 (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e),
             }
         }
-        "datevalue" => text(v, 0).and_then(|s| crate::lexer::parse_date_literal(&s).map(|n| Value::Date(n.floor())).ok_or_else(VbError::type_mismatch)),
-        "timevalue" => text(v, 0).and_then(|s| crate::lexer::parse_date_literal(&s).map(|n| Value::Date(n - n.floor())).ok_or_else(VbError::type_mismatch)),
+        "datevalue" => {
+            text(v, 0).and_then(|s| crate::lexer::parse_date_literal(&s).map(|n| Value::Date(n.floor())).ok_or_else(VbError::type_mismatch))
+        }
+        "timevalue" => {
+            text(v, 0).and_then(|s| crate::lexer::parse_date_literal(&s).map(|n| Value::Date(n - n.floor())).ok_or_else(VbError::type_mismatch))
+        }
         "dateadd" => date_add(v),
         "datediff" => date_diff(v),
         "monthname" => num(v, 0).and_then(|n| month_name(n as i32, opt(v, 1).is_some_and(|a| a.to_bool().unwrap_or(false)))),

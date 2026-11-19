@@ -210,7 +210,6 @@ fn lex_ident(chars: &[char], i: &mut usize) -> (String, Option<char>) {
         // `x& y` is not a suffix when it is the concatenation operator followed by a name; a
         // suffix is glued to the name and followed by something that is not a name start.
         && !(s == '&' && chars.get(*i + 1).is_some_and(|c| *c == ' ' && chars.get(*i + 2).is_some_and(|d| is_ident_start(*d) || *d == '"')))
-       
     {
         suffix = Some(s);
         *i += 1;

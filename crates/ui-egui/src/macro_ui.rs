@@ -168,6 +168,10 @@ pub fn note_result(app: &mut SheetApp, id: &str, params: &Json, v: &Json) {
         app.macros.debug_result = Some(v.clone());
         return;
     }
+    if id == "vba.run" {
+        note_vba_result(app, v);
+        return;
+    }
     if id != "macro.run" {
         return;
     }
@@ -186,6 +190,23 @@ pub fn note_result(app: &mut SheetApp, id: &str, params: &Json, v: &Json) {
         }
     };
     app.toast = Some((text, crate::now_ms()));
+}
+
+/// After a VBA procedure ran: what its `MsgBox` calls said (one message at the end, as the macro
+/// ran without stopping at each), or a note that it ran.
+pub fn note_vba_result(app: &mut SheetApp, v: &Json) {
+    let name = v["procedure"].as_str().unwrap_or_default();
+    let messages: Vec<&Json> = v["messages"].as_array().map(|m| m.iter().collect()).unwrap_or_default();
+    if !messages.is_empty() {
+        let title = messages.iter().filter_map(|m| m["title"].as_str()).find(|t| !t.is_empty()).unwrap_or("Celdas");
+        let text = messages.iter().filter_map(|m| m["text"].as_str()).collect::<Vec<_>>().join("\n\n");
+        app.message = Some((title.to_string(), text));
+        return;
+    }
+    let steps = v["steps"].as_u64().unwrap_or(0);
+    let lang = app.ui.language;
+    let ran_text = if steps == 1 { "Ran macro “{name}” ({steps} step)" } else { "Ran macro “{name}” ({steps} steps)" };
+    app.toast = Some((lang.tr_fill(ran_text, &[("name", name), ("steps", &steps.to_string())]), crate::now_ms()));
 }
 
 /// Drops the step editor once its workbook is closed, or once no window shows it (the window it
@@ -309,6 +330,8 @@ pub enum Kind {
     Macro,
     /// An Automate script (`automate.*`).
     Script,
+    /// A procedure of the workbook's VBA project, run by `vba.run`.
+    Vba,
 }
 
 impl Kind {
@@ -316,6 +339,7 @@ impl Kind {
         match self {
             Kind::Macro => "macro",
             Kind::Script => "script",
+            Kind::Vba => "vba",
         }
     }
 }
@@ -352,9 +376,19 @@ pub fn entries(app: &SheetApp, d: &Dialog) -> (Vec<Entry>, bool) {
         .unwrap_or_default();
     let mut vba = false;
     for it in d.result.as_ref().and_then(Json::as_array).into_iter().flatten() {
-        if it.get("kind").and_then(Json::as_str) == Some("vba") {
-            vba = true;
-            continue;
+        match it.get("kind").and_then(Json::as_str) {
+            Some("vba") => {
+                vba = true;
+                continue;
+            }
+            Some("vbaProc") => {
+                if let Some(name) = it.get("name").and_then(Json::as_str) {
+                    let module = it.get("module").and_then(Json::as_str).unwrap_or_default();
+                    out.push(Entry { name: format!("{module}.{name}"), kind: Kind::Vba, description: String::new(), shortcut: None, steps: 0 });
+                }
+                continue;
+            }
+            _ => {}
         }
         let Some(name) = it.get("name").and_then(Json::as_str) else { continue };
         let steps = it.get("steps").and_then(Json::as_u64).unwrap_or(0);
@@ -417,7 +451,11 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     }
     let (list, vba) = entries(app, d);
     let mut name = d.values.get("name").and_then(Json::as_str).unwrap_or("").to_string();
-    let mut kind = if d.values.get("kind").and_then(Json::as_str) == Some("script") { Kind::Script } else { Kind::Macro };
+    let mut kind = match d.values.get("kind").and_then(Json::as_str) {
+        Some("script") => Kind::Script,
+        Some("vba") => Kind::Vba,
+        _ => Kind::Macro,
+    };
     let t = Tokens::get(ui.ctx());
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
@@ -437,6 +475,7 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
                             (Kind::Macro, Some(k)) => format!("{}    {k}", e.name),
                             (Kind::Macro, None) => e.name.clone(),
                             (Kind::Script, _) => format!("{}    (script, {} step{})", e.name, e.steps, if e.steps == 1 { "" } else { "s" }),
+                            (Kind::Vba, _) => format!("{}    (VBA)", e.name),
                         };
                         let selected = e.kind == kind && e.name.eq_ignore_ascii_case(name.trim());
                         let r = ui.add(egui::Button::selectable(selected, label).min_size(vec2(322.0, 20.0)));
@@ -485,12 +524,14 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
                 *open = false;
                 app.open_dialog("macroEditor", json!({"new": target}));
             }
-            if ui.add_enabled(found.is_some(), egui::Button::new(crate::i18n::ui_tr(ui, "Delete")).min_size(w)).clicked()
+            if ui
+                .add_enabled(found.as_ref().is_some_and(|e| e.kind != Kind::Vba), egui::Button::new(crate::i18n::ui_tr(ui, "Delete")).min_size(w))
+                .clicked()
                 && let Some(e) = &found
             {
                 let (title, command, what) = match e.kind {
                     Kind::Macro => ("Delete Macro", "macro.delete", "macro"),
-                    Kind::Script => ("Delete Script", "automate.deleteScript", "script"),
+                    Kind::Script | Kind::Vba => ("Delete Script", "automate.deleteScript", "script"),
                 };
                 app.macros.question = Some(Question {
                     doc: app.session.active().map_or(0, |d| d.uid),
@@ -522,8 +563,11 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     if vba {
         ui.add_space(6.0);
         ui.label(
-            egui::RichText::new(crate::i18n::ui_tr(ui, "This workbook also has a VBA project. Celdas keeps it when you save but does not run it."))
-                .color(t.text_dim),
+            egui::RichText::new(crate::i18n::ui_tr(
+                ui,
+                "This workbook also has a VBA project. Celdas runs its macros (it asks first) and keeps the project when you save.",
+            ))
+            .color(t.text_dim),
         );
     }
     d.values.insert("name".into(), json!(name));
@@ -536,6 +580,9 @@ fn run_entry(app: &mut SheetApp, e: &Entry) {
         Kind::Macro => run_macro(app, &e.name),
         Kind::Script => {
             call(app, "Run Script", "automate.runScript", json!({"name": e.name}));
+        }
+        Kind::Vba => {
+            call(app, "Run Macro", "vba.run", json!({"procedure": e.name}));
         }
     }
 }

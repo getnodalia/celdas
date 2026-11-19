@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 #[allow(clippy::wildcard_imports)]
 use crate::ast::*;
-use crate::lexer::{lex, SyntaxError, Tok, Token};
+use crate::lexer::{SyntaxError, Tok, Token, lex};
 use crate::value::Value;
 
 type PResult<T> = Result<T, SyntaxError>;
@@ -23,6 +23,8 @@ pub fn parse_module(name: &str, src: &str) -> PResult<Module> {
 
 struct Parser {
     toks: Vec<Token>,
+    /// Each identifier as it was spelled, for the names a person sees (`toks` holds them lower case).
+    spelled: Vec<Option<Rc<str>>>,
     pos: usize,
     depth: u32,
 }
@@ -34,12 +36,16 @@ fn is_block_end_word(w: &str) -> bool {
 
 impl Parser {
     fn new(mut toks: Vec<Token>) -> Parser {
+        let mut spelled = Vec::with_capacity(toks.len());
         for t in &mut toks {
             if let Tok::Ident(n, _) = &mut t.tok {
+                spelled.push(Some(n.clone()));
                 *n = Rc::from(n.to_lowercase().as_str());
+            } else {
+                spelled.push(None);
             }
         }
-        Parser { toks, pos: 0, depth: 0 }
+        Parser { toks, spelled, pos: 0, depth: 0 }
     }
 
     // ---- token access ----
@@ -189,7 +195,10 @@ impl Parser {
         }
         let _ = is_static;
         match self.word() {
-            Some("option" | "attribute" | "implements" | "event" | "declare" | "deftype" | "defint" | "deflng" | "defdbl" | "defstr" | "defbool" | "defvar") => {
+            Some(
+                "option" | "attribute" | "implements" | "event" | "declare" | "deftype" | "defint" | "deflng" | "defdbl" | "defstr" | "defbool"
+                | "defvar",
+            ) => {
                 self.skip_line();
                 Ok(())
             }
@@ -282,8 +291,8 @@ impl Parser {
             }
         };
         self.advance();
-        let display = match self.peek() {
-            Some(Tok::Ident(n, _)) => n.to_string(),
+        let display = match (self.peek(), self.spelled.get(self.pos)) {
+            (Some(Tok::Ident(n, _)), Some(spelled)) => spelled.as_ref().map_or_else(|| n.to_string(), |s| s.to_string()),
             _ => return self.err("expected the procedure's name"),
         };
         let name = self.ident()?;
@@ -1072,7 +1081,9 @@ mod tests {
 
     #[test]
     fn procedures_and_parameters() {
-        let m = parse("Option Explicit\nPublic Function F(ByVal a As Double, Optional b = 2) As Double\n F = a + b\nEnd Function\nPrivate Sub S()\nEnd Sub\n");
+        let m = parse(
+            "Option Explicit\nPublic Function F(ByVal a As Double, Optional b = 2) As Double\n F = a + b\nEnd Function\nPrivate Sub S()\nEnd Sub\n",
+        );
         assert_eq!(m.procs.len(), 2);
         assert_eq!(m.procs[0].params.len(), 2);
         assert!(m.procs[0].params[0].by_val);
@@ -1082,7 +1093,9 @@ mod tests {
 
     #[test]
     fn blocks_and_single_line_if() {
-        let m = parse("Sub S()\nIf a > 1 Then b = 2 Else b = 3\nIf a Then\n x = 1\nElseIf b Then\n x = 2\nElse\n x = 3\nEnd If\nFor i = 1 To 10 Step 2\n s = s + i\nNext i\nDo\n x = x + 1\nLoop While x < 5\nEnd Sub");
+        let m = parse(
+            "Sub S()\nIf a > 1 Then b = 2 Else b = 3\nIf a Then\n x = 1\nElseIf b Then\n x = 2\nElse\n x = 3\nEnd If\nFor i = 1 To 10 Step 2\n s = s + i\nNext i\nDo\n x = x + 1\nLoop While x < 5\nEnd Sub",
+        );
         assert_eq!(m.procs[0].body.len(), 4);
     }
 
@@ -1110,7 +1123,9 @@ mod tests {
 
     #[test]
     fn with_select_and_labels() {
-        let m = parse("Sub S()\nWith ws.Range(\"A1\")\n .Value = 1\nEnd With\nSelect Case n\nCase 1, 2\n x = 1\nCase Is > 5\n x = 2\nCase Else\n x = 3\nEnd Select\nOn Error GoTo Oops\nExit Sub\nOops:\nx = 0\nEnd Sub");
+        let m = parse(
+            "Sub S()\nWith ws.Range(\"A1\")\n .Value = 1\nEnd With\nSelect Case n\nCase 1, 2\n x = 1\nCase Is > 5\n x = 2\nCase Else\n x = 3\nEnd Select\nOn Error GoTo Oops\nExit Sub\nOops:\nx = 0\nEnd Sub",
+        );
         assert_eq!(m.procs[0].body.len(), 6);
         assert!(matches!(m.procs[0].body[3].kind, StmtKind::Exit(_)));
         assert!(matches!(m.procs[0].body[4].kind, StmtKind::Label(_)));

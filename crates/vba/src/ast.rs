@@ -147,30 +147,70 @@ pub struct Stmt {
 
 #[derive(Clone, Debug)]
 pub enum StmtKind {
-    Dim { items: Vec<DimItem>, is_static: bool },
+    Dim {
+        items: Vec<DimItem>,
+        is_static: bool,
+    },
     Const(Vec<(Name, Expr)>),
-    ReDim { preserve: bool, items: Vec<DimItem> },
+    ReDim {
+        preserve: bool,
+        items: Vec<DimItem>,
+    },
     Assign(Expr, Expr),
     SetAssign(Expr, Expr),
     Call(Expr),
-    If { branches: Vec<(Expr, Vec<Stmt>)>, otherwise: Option<Vec<Stmt>> },
-    For { var: Expr, from: Expr, to: Expr, step: Option<Expr>, body: Vec<Stmt> },
-    ForEach { var: Expr, collection: Expr, body: Vec<Stmt> },
+    If {
+        branches: Vec<(Expr, Vec<Stmt>)>,
+        otherwise: Option<Vec<Stmt>>,
+    },
+    For {
+        var: Expr,
+        from: Expr,
+        to: Expr,
+        step: Option<Expr>,
+        body: Vec<Stmt>,
+    },
+    ForEach {
+        var: Expr,
+        collection: Expr,
+        body: Vec<Stmt>,
+    },
     /// `Do [While|Until c] … Loop [While|Until c]`: `until` flips the sense of `cond`; `post`
     /// says the test comes after the body.
-    Do { cond: Option<Expr>, until: bool, post: bool, body: Vec<Stmt> },
+    Do {
+        cond: Option<Expr>,
+        until: bool,
+        post: bool,
+        body: Vec<Stmt>,
+    },
     While(Expr, Vec<Stmt>),
-    Select { subject: Expr, cases: Vec<(Vec<CaseTest>, Vec<Stmt>)>, otherwise: Option<Vec<Stmt>> },
+    Select {
+        subject: Expr,
+        cases: Vec<(Vec<CaseTest>, Vec<Stmt>)>,
+        otherwise: Option<Vec<Stmt>>,
+    },
     With(Expr, Vec<Stmt>),
     Exit(ExitKind),
     OnError(OnError),
     Goto(Name),
     Label(Name),
     Resume(bool),
-    Open { path: Expr, mode: FileMode, number: Expr },
+    Open {
+        path: Expr,
+        mode: FileMode,
+        number: Expr,
+    },
     Close(Vec<Expr>),
-    Print { number: Expr, items: Vec<Expr>, newline: bool, quoted: bool },
-    LineInput { number: Expr, target: Expr },
+    Print {
+        number: Expr,
+        items: Vec<Expr>,
+        newline: bool,
+        quoted: bool,
+    },
+    LineInput {
+        number: Expr,
+        target: Expr,
+    },
     Erase(Vec<Expr>),
     End,
     Nop,

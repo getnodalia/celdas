@@ -15,6 +15,7 @@ celdas-formula = { workspace = true }
 celdas-functions = { workspace = true }
 celdas-model = { workspace = true }
 celdas-calc = { workspace = true }
+celdas-vba = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 web-time = { workspace = true }

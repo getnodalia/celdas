@@ -152,6 +152,36 @@ fn the_macros_dialog_lists_scripts_and_the_vba_project_beside_macros() {
     assert_eq!(h.state().session.active().unwrap().wb.macros.len(), 1);
 }
 
+/// A workbook that carries a small VBA project: `Hola` writes A1, `Doble` is a function (not listed).
+fn vba_harness() -> Harness {
+    let mut h = harness("Home");
+    let bin = celdas_vba::project::write_bin(&[celdas_vba::SourceModule {
+        name: "Module1".into(),
+        kind: celdas_vba::ModuleKind::Standard,
+        source: "Sub Hola()\nRange(\"A1\").Value = \"desde VBA\"\nEnd Sub\nFunction Doble(x)\nDoble = x * 2\nEnd Function\n".into(),
+    }])
+    .unwrap();
+    let doc = h.state_mut().session.active_mut().unwrap();
+    std::sync::Arc::make_mut(&mut doc.wb).vba_project = Some(std::sync::Arc::new(bin));
+    h
+}
+
+#[test]
+fn the_macros_dialog_runs_a_vba_procedure() {
+    let mut h = vba_harness();
+    h.state_mut().open_dialog("macros", json!({}));
+    h.run_steps(2);
+    assert!(h.query_by_label("Module1.Doble    (VBA)").is_none(), "only Subs without arguments are listed");
+    h.get_by_label("Module1.Hola    (VBA)").click();
+    h.run_steps(2);
+    h.get_by_label("Run").click();
+    h.run_steps(3);
+    assert_eq!(value(&h, "A1"), Value::Text("desde VBA".into()));
+    // One undo step undoes the whole run.
+    h.state_mut().run("edit.undo", json!({})).unwrap();
+    assert_eq!(value(&h, "A1"), Value::Empty);
+}
+
 #[test]
 fn options_set_a_shortcut_that_runs_the_macro() {
     let mut h = harness("Home");

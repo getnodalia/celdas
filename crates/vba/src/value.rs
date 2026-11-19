@@ -132,7 +132,11 @@ impl VArray {
                 return Err(VbError::subscript());
             }
             let n = (i64::from(hi) - i64::from(lo) + 1) as usize;
-            off = off.checked_mul(n).ok_or_else(VbError::subscript)?.checked_add((i64::from(i) - i64::from(lo)) as usize).ok_or_else(VbError::subscript)?;
+            off = off
+                .checked_mul(n)
+                .ok_or_else(VbError::subscript)?
+                .checked_add((i64::from(i) - i64::from(lo)) as usize)
+                .ok_or_else(VbError::subscript)?;
         }
         Ok(off)
     }
@@ -408,7 +412,10 @@ pub fn val_prefix(s: &str) -> f64 {
         }
         i += 1;
     }
-    if seen_digit && let Some(&e) = bytes.get(end) && (e == b'e' || e == b'E' || e == b'd' || e == b'D') {
+    if seen_digit
+        && let Some(&e) = bytes.get(end)
+        && (e == b'e' || e == b'E' || e == b'd' || e == b'D')
+    {
         let mut j = end + 1;
         if matches!(bytes.get(j), Some(b'+') | Some(b'-')) {
             j += 1;

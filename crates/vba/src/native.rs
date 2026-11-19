@@ -3,7 +3,7 @@
 use std::any::Any;
 use std::cell::RefCell;
 
-use crate::host::{arg, CallArg};
+use crate::host::{CallArg, arg};
 use crate::value::{HostObject, Result, Value, VbError};
 
 pub struct ErrObject;
@@ -48,7 +48,10 @@ impl Collection {
     fn position(&self, key: &Value) -> Result<usize> {
         let items = self.items.borrow();
         match key {
-            Value::Str(s) => items.iter().position(|(k, _)| k.as_deref().is_some_and(|k| k.eq_ignore_ascii_case(s))).ok_or_else(|| VbError::new(5, "Invalid procedure call or argument")),
+            Value::Str(s) => items
+                .iter()
+                .position(|(k, _)| k.as_deref().is_some_and(|k| k.eq_ignore_ascii_case(s)))
+                .ok_or_else(|| VbError::new(5, "Invalid procedure call or argument")),
             other => {
                 let i = other.to_i32()?;
                 if i >= 1 && (i as usize) <= items.len() { Ok(i as usize - 1) } else { Err(VbError::subscript()) }
@@ -131,7 +134,13 @@ impl Dictionary {
     fn find(&self, key: &Value) -> Option<usize> {
         let text = *self.text_compare.borrow();
         self.entries.borrow().iter().position(|(k, _)| match (k, key) {
-            (Value::Str(a), Value::Str(b)) => if text { a.eq_ignore_ascii_case(b) } else { a == b },
+            (Value::Str(a), Value::Str(b)) => {
+                if text {
+                    a.eq_ignore_ascii_case(b)
+                } else {
+                    a == b
+                }
+            }
             (a, b) => a == b,
         })
     }

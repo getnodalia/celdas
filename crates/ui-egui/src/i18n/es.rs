@@ -1383,7 +1383,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "\\@char has non-numeric argument {argument}" => "\\@char tiene un argumento no numérico {argument}",
         "\\@char with invalid code point {code}" => "\\@char con un punto de código no válido {code}",
         "Invalid environment name character: {character}" => "Carácter no válido en el nombre del entorno: {character}",
-        "Macros preserved (not executed)" => "Macros conservadas (no se ejecutan)",
+        "VBA macros in this workbook" => "Macros VBA en este libro",
         "Reverse the order" => "Invertir el orden",
         "Grab bag" => "Miscelánea",
         "No contributor data was built into this copy." => "Esta copia no incluye datos de colaboradores.",
@@ -1416,8 +1416,8 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Create" => "Crear",
         "Write a new macro with this name" => "Escribir una macro nueva con este nombre",
         "Options…" => "Opciones…",
-        "This workbook also has a VBA project. Celdas keeps it when you save but does not run it." => {
-            "Este libro también tiene un proyecto VBA. Celdas lo conserva al guardar, pero no lo ejecuta."
+        "This workbook also has a VBA project. Celdas runs its macros (it asks first) and keeps the project when you save." => {
+            "Este libro también tiene un proyecto VBA. Celdas ejecuta sus macros (antes pregunta) y conserva el proyecto al guardar."
         }
         "Macro name: {name}" => "Nombre de la macro: {name}",
         "Shortcut key:" => "Tecla de método abreviado:",
