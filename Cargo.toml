@@ -32,7 +32,7 @@ celdas-math = { path = "crates/math" }
 # In-app updates from this app's GitHub releases, with the update windows for egui.
 nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "114848a2ff1a7c29c9a5432fb12e955fbe0aeef2", features = ["egui"] }
 # Nodalia Design for egui: the palette, Celdas's accent, the icon set and the window controls.
-nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "f3317315e65bf0cf44603a636b9f6dc0282e7dce", features = ["egui", "creator"] }
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "89bae5e577bfc892fb3686ddb6834d99dd0f9229", features = ["egui", "creator"] }
 # PDF RunLength encoding; this revision also fixes the vendored JBIG2 dependency for Git consumers.
 craft-pdf = { git = "https://github.com/getnodalia/foundation", rev = "ff142b3ad58aa7306676749428f4f2f9b277b5dd", version = "0.1.0", default-features = false }
 craft-stream-codecs = { git = "https://github.com/getnodalia/foundation", rev = "f7e0d7fd5577e102b4634bcbe062e649eb68165f", version = "0.1.0" }
