@@ -760,7 +760,7 @@ fn keyboard_shortcuts(app: &SheetApp, ui: &mut egui::Ui) {
 }
 
 /// A dialog's header in the Nodalia look: its title, and a round close button at the end.
-fn dialog_header(ui: &mut egui::Ui, title: &str, close: &str, open: &mut bool) {
+pub(crate) fn dialog_header(ui: &mut egui::Ui, title: &str, close: &str, open: &mut bool) {
     let t = crate::theme::Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(title).font(crate::theme::ui_bold(15.0)).color(t.text));
