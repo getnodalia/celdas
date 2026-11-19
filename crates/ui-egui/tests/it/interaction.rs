@@ -1277,7 +1277,8 @@ fn about_shows_the_app_without_upstream_credit_lists() {
     h.state_mut().open_dialog("about", json!({}));
     h.run_steps(2);
     assert_eq!(h.state().dialog.as_ref().map(|d| d.name()), Some("about"));
-    assert!(h.query_by_label("Part of Nodalia").is_some());
+    // The shared page paints its text; its links are real widgets.
+    assert!(h.query_by_label("Website").is_some());
     assert!(h.query_by_label("Contributors").is_none());
     assert!(h.query_by_label("Models").is_none());
 }
