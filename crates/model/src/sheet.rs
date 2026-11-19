@@ -937,6 +937,7 @@ mod tests {
                 source: None,
                 by_rows: false,
                 pivot: None,
+                name: String::new(),
             }),
             ObjKind::Image => s.images.push(Image { id, anchor, data: Arc::new(vec![]), mime: String::new(), alt: String::new() }),
             ObjKind::Shape | ObjKind::Equation => s.shapes.push(Shape {
@@ -948,6 +949,8 @@ mod tests {
                 text: String::new(),
                 format: ShapeFormat::default(),
                 math: EquationCache::default(),
+                name: String::new(),
+                macro_name: String::new(),
             }),
             ObjKind::Slicer => {
                 s.slicers.push(Slicer { id, table: String::new(), column: String::new(), caption: String::new(), anchor, selected: None, columns: 1 })

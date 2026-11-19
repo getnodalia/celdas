@@ -194,6 +194,8 @@ fn insert_word_art(s: &mut Session, p: &Json) -> Result<Json> {
         text: text.clone(),
         format: ShapeFormat { no_line: true, align: Some(ShapeTextAlign::Center), anchor: Some(ShapeTextAnchor::Middle), ..Default::default() },
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
     };
     apply("insert.wordArt", &mut shape, Some(style), p)?;
     // Default box: the longest line at the font size (about 0.62 em per character) plus padding.

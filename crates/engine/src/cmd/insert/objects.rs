@@ -164,6 +164,8 @@ pub(super) fn insert_shape(s: &mut Session, p: &Json) -> Result<Json> {
         text: str_param(p, "text").unwrap_or("").into(),
         format: Default::default(),
         math: Default::default(),
+        name: String::new(),
+        macro_name: String::new(),
     };
     let sheet = d.wb.active_sheet();
     edit(s, |cx| {
