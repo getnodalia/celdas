@@ -3220,10 +3220,77 @@ fn removing_a_rules_top_left_cell_rewrites_its_formulas_for_the_new_one() {
 
 #[test]
 fn samples_build() {
-    for (name, _) in crate::sample::SAMPLES {
-        let wb = crate::sample::build(name).unwrap_or_else(|| panic!("sample {name}"));
-        assert!(!wb.sheets[0].cells.is_empty());
+    use crate::sample::Lang;
+    for lang in [Lang::En, Lang::Es] {
+        for (name, _) in crate::sample::SAMPLES {
+            let wb = crate::sample::build_in(name, lang).unwrap_or_else(|| panic!("sample {name} in {lang:?}"));
+            assert!(!wb.sheets[0].cells.is_empty(), "{name} {lang:?}");
+        }
     }
+    for (name, _) in crate::sample::SAMPLES {
+        assert!(crate::sample::build(name).is_some(), "{name}");
+        assert_ne!(crate::sample::title_in(name, Lang::Es), crate::sample::title_in(name, Lang::En), "{name} has a Spanish title");
+    }
+    assert!(crate::sample::build("nothing").is_none());
+}
+
+fn sample_session(name: &str, lang: &str) -> Session {
+    let mut s = s();
+    s.execute("file.new", json!({"sample": name, "lang": lang})).unwrap();
+    s
+}
+
+fn number(s: &Session, a: &str) -> f64 {
+    match v(s, a) {
+        Value::Number(n) => n,
+        other => panic!("{a} is {other:?}"),
+    }
+}
+
+#[test]
+fn the_new_samples_calculate() {
+    let invoice = sample_session("invoice", "en");
+    assert!((number(&invoice, "E14") - 970.0).abs() < 1e-9);
+    assert!((number(&invoice, "E17") - 1173.7).abs() < 1e-9);
+
+    let loan = sample_session("loan", "en");
+    let payment = number(&loan, "C8");
+    assert!((payment - 901.12).abs() < 0.01, "{payment}");
+    assert!((number(&loan, "C10") - (payment * 300.0 - 180000.0)).abs() < 1e-6);
+    assert!((number(&loan, "F14") - 180000.0 * 0.0).abs() > 1.0, "the first year pays something off");
+    assert!(number(&loan, "F23") < number(&loan, "F14"), "the balance falls year after year");
+    assert!((number(&loan, "E14") + number(&loan, "D14") - payment * 12.0).abs() < 1e-6, "a year's payments are interest plus principal");
+
+    let tracker = sample_session("tracker", "en");
+    assert_eq!(number(&tracker, "I6"), 6.0);
+    assert_eq!(number(&tracker, "I7"), 2.0);
+    assert_eq!(number(&tracker, "I8"), 2.0);
+    assert_eq!(number(&tracker, "I9"), 2.0);
+
+    let inventory = sample_session("inventory", "en");
+    assert_eq!(v(&inventory, "H8"), Value::Text("Reorder".into()));
+    assert_eq!(v(&inventory, "H6"), Value::Text("OK".into()));
+
+    let sheet = sample_session("timesheet", "en");
+    assert_eq!(number(&sheet, "H10"), 3.0 + 4.0 + 2.0 + 2.0 + 1.0 + 4.0 + 5.0 + 3.0 + 1.0 + 1.0 + 2.0 + 5.0);
+    assert_eq!(number(&sheet, "C13"), number(&sheet, "H10") * 45.0);
+}
+
+#[test]
+fn spanish_samples_calculate_the_same_and_speak_spanish() {
+    for name in ["invoice", "loan", "tracker", "inventory", "timesheet", "budget", "sales", "grades"] {
+        let en = sample_session(name, "en");
+        let es = sample_session(name, "es-ES");
+        let (en_sheet, es_sheet) = (en.doc().unwrap().wb.active().unwrap().cells.len(), es.doc().unwrap().wb.active().unwrap().cells.len());
+        assert_eq!(en_sheet, es_sheet, "{name}: the same cells are filled");
+        assert_ne!(en.doc().unwrap().wb.active().unwrap().name, es.doc().unwrap().wb.active().unwrap().name, "{name}: the sheet is named in Spanish");
+    }
+    let es = sample_session("inventory", "es");
+    assert_eq!(v(&es, "H8"), Value::Text("Reponer".into()));
+    let es = sample_session("tracker", "es");
+    assert_eq!(number(&es, "I7"), 2.0, "the summary counts the Spanish statuses");
+    let es = sample_session("sales", "es");
+    assert_eq!(v(&es, "C14"), Value::Text("En línea".into()), "table references use the Spanish column names");
 }
 
 /// Original minimal BIFF12 records, built in source rather than a vendor workbook fixture.
