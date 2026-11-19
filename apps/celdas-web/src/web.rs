@@ -37,7 +37,7 @@ pub fn start() {
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
-        // Host modes (`craft-web-host`): `?host=parent`, a same-origin page framing Celdas (such
+        // Host modes (`nodalia-web-host`): `?host=parent`, a same-origin page framing Celdas (such
         // as a Nextcloud app), opens workbooks in it and stores what it saves (`host`). Unframed
         // there is no parent, so that URL on its own stays the normal app with downloads.
         // `data-host="page"` on the canvas opts a page in instead: it runs Celdas in its own
@@ -76,7 +76,7 @@ pub fn start() {
                         }
                     }
                     // Follow the browser's language, except a CJK one. CJK coverage comes from
-                    // optional craft-fonts input, not a guaranteed web font set, so a CJK browser
+                    // optional nodalia-fonts input, not a guaranteed web font set, so a CJK browser
                     // cannot be assumed to render localized labels without tofu. Users can still
                     // choose a language explicitly.
                     let browser = celdas_ui_egui::i18n::Language::system();

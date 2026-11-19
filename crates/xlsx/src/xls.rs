@@ -1,4 +1,4 @@
-//! Legacy Excel 97-2003 `.xls` (BIFF8) import. `craft-xls` reads the file (the compound file,
+//! Legacy Excel 97-2003 `.xls` (BIFF8) import. `nodalia-xls` reads the file (the compound file,
 //! the Workbook stream, cells, formulas as text, formats, layout and names); this module maps
 //! its workbook onto Celdas's model: formulas parsed, Excel's implicit `@` for legacy
 //! formulas, widths and heights in pixels, formats interned as styles, sheet-name rules, the
@@ -16,7 +16,7 @@ use celdas_model::{
     HAlign, LineInfo, NumFmt, PatternType, Sheet, Style, StyleId, StyleTable, Underline, VAlign, Validation, ValidationKind, VertAlign, Visibility,
     Workbook,
 };
-use craft_xls as x;
+use nodalia_xls as x;
 
 use crate::tables::{col_width_to_px, pt_to_px};
 use crate::{FunctionInfo, IoError, ReadReport};
@@ -114,7 +114,7 @@ pub(crate) fn read_xls_budgeted(bytes: &[u8], limits: x::Limits, functions: Func
     }
     let mut unparsed = false;
     for s in &book.sheets {
-        // Report rules craft-xls kept that the adapter cannot represent. craft-xls already warns
+        // Report rules nodalia-xls kept that the adapter cannot represent. nodalia-xls already warns
         // about records it could not decode.
         for (dropped, skipped) in [
             (!s.conditional_formats.is_empty(), x::Warning::ConditionalFormattingSkipped),

@@ -1,4 +1,4 @@
-//! SYLK (`.slk`) import. `craft_csv::sylk` reads the file (values, formulas rewritten from R1C1 to
+//! SYLK (`.slk`) import. `nodalia_csv::sylk` reads the file (values, formulas rewritten from R1C1 to
 //! A1, number formats, column widths); this module makes it a one-sheet workbook: formulas parsed
 //! (a formula Celdas can't parse is skipped and counted), error values recognised, formats
 //! interned as styles and widths converted from characters.
@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use celdas_core::{CellError, CellRef, Value};
 use celdas_model::{Cell, Formula, NumFmt, Sheet, Style, Workbook};
-use craft_csv::sylk;
+use nodalia_csv::sylk;
 
 use crate::{EngineError, Result};
 

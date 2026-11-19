@@ -1,6 +1,6 @@
 //! Byte-for-byte checks on the native JSON workbook (`.json`, `.scjson`). The files in
-//! `crates/engine/tests/golden` were written before the format moved to `craft-gridcraft-format`
-//! (getnodalia/foundation (vendor/craft-libs)). Saving the same workbook must give the same bytes, and opening a
+//! `crates/engine/tests/golden` were written before the format moved to `nodalia-celdas-format`
+//! (getnodalia/foundation (vendor/nodalia-libs)). Saving the same workbook must give the same bytes, and opening a
 //! golden file and saving it again must give it back.
 //! `CELDAS_BLESS_GOLDEN=1` rewrites them. Only do that for a deliberate format change.
 

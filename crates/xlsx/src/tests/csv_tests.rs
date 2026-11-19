@@ -2,7 +2,7 @@ use celdas_core::{CellRef, DateSystem, MAX_COLS, Value};
 use celdas_model::{Sheet, Workbook};
 
 use crate::{CsvOptions, Format, IoError, read_csv, read_csv_with_report, sniff, write_csv, write_csv_limited};
-use craft_csv::{decode_text, parse_records, sniff_delimiter};
+use nodalia_csv::{decode_text, parse_records, sniff_delimiter};
 
 fn v(wb: &Workbook, r: u32, c: u32) -> Value {
     wb.sheet(0).unwrap().value(CellRef::new(r, c))

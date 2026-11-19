@@ -63,8 +63,8 @@ impl std::fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 
-impl From<craft_pdf::classic::Error> for Error {
-    fn from(error: craft_pdf::classic::Error) -> Self {
+impl From<nodalia_pdf::classic::Error> for Error {
+    fn from(error: nodalia_pdf::classic::Error) -> Self {
         Self(error.to_string())
     }
 }
@@ -985,7 +985,7 @@ pub struct PdfDoc {
 
 /// PackBits-style run-length encoding (PDF `RunLengthDecode`).
 fn run_length(data: &[u8]) -> Vec<u8> {
-    craft_stream_codecs::runlength::encode(data)
+    nodalia_stream_codecs::runlength::encode(data)
 }
 
 /// Longest Info string written, in characters; longer values are cut on a character boundary.
@@ -1095,7 +1095,7 @@ impl PdfDoc {
         let contents: Vec<String> = self.pages.iter_mut().map(|p| std::mem::take(&mut p.content)).collect();
         let page_links: Vec<Vec<LinkAnnotation>> = self.pages.iter_mut().map(|p| std::mem::take(&mut p.links)).collect();
         let reserve = contents.iter().fold(4096usize, |acc, c| acc.saturating_add(c.len()).saturating_add(1024));
-        let mut out = craft_pdf::classic::Writer::with_capacity(reserve)?;
+        let mut out = nodalia_pdf::classic::Writer::with_capacity(reserve)?;
         let mut kids = Vec::new();
         let mut annotations = Vec::new();
         let page_count = self.pages.len();

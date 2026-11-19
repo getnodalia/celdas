@@ -7,12 +7,12 @@ fn main() -> Result<(), String> {
 /// Embed only Arabic fallback faces from the optional, separately licensed font bundle.
 fn arabic_fonts() -> Result<(), String> {
     use std::path::PathBuf;
-    println!("cargo::rerun-if-env-changed=CRAFT_FONTS_DIR");
-    println!("cargo::rerun-if-env-changed=CRAFT_FONTS_REQUIRED");
-    let required = std::env::var_os("CRAFT_FONTS_REQUIRED").is_some();
-    let entries = match std::env::var_os("CRAFT_FONTS_DIR").map(PathBuf::from) {
+    println!("cargo::rerun-if-env-changed=NODALIA_FONTS_DIR");
+    println!("cargo::rerun-if-env-changed=NODALIA_FONTS_REQUIRED");
+    let required = std::env::var_os("NODALIA_FONTS_REQUIRED").is_some();
+    let entries = match std::env::var_os("NODALIA_FONTS_DIR").map(PathBuf::from) {
         Some(dir) => arabic_font_entries(&dir),
-        None if required => Err("CRAFT_FONTS_REQUIRED needs CRAFT_FONTS_DIR".into()),
+        None if required => Err("NODALIA_FONTS_REQUIRED needs NODALIA_FONTS_DIR".into()),
         None => Ok(String::new()),
     };
     let entries = match entries {
@@ -31,7 +31,7 @@ fn arabic_fonts() -> Result<(), String> {
 fn arabic_font_entries(dir: &std::path::Path) -> Result<String, String> {
     use sha2::{Digest, Sha256};
     use skrifa::MetadataProvider;
-    let root = dir.canonicalize().map_err(|e| format!("craft-fonts directory: {e}"))?;
+    let root = dir.canonicalize().map_err(|e| format!("nodalia-fonts directory: {e}"))?;
     let manifest = root.join("fonts/manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
     let text = String::from_utf8(read_font_input(&manifest, 1 << 20)?).map_err(|e| e.to_string())?;
@@ -44,7 +44,7 @@ fn arabic_font_entries(dir: &std::path::Path) -> Result<String, String> {
         }
         let fields: Vec<_> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, _licence, licence_file, checksum, _source] = fields.as_slice() else {
-            return Err(format!("malformed craft-fonts manifest line {}", line_number + 1));
+            return Err(format!("malformed nodalia-fonts manifest line {}", line_number + 1));
         };
         if !scripts.split(',').any(|script| script.trim() == "Arab") {
             continue;
@@ -52,7 +52,7 @@ fn arabic_font_entries(dir: &std::path::Path) -> Result<String, String> {
         let path = root.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
         let licence = root.join(licence_file).canonicalize().map_err(|e| format!("{licence_file}: {e}"))?;
         if !path.starts_with(&root) || !licence.starts_with(&root) {
-            return Err("craft-fonts paths must stay inside the checkout".into());
+            return Err("nodalia-fonts paths must stay inside the checkout".into());
         }
         println!("cargo::rerun-if-changed={}", path.display());
         println!("cargo::rerun-if-changed={}", licence.display());
@@ -68,10 +68,10 @@ fn arabic_font_entries(dir: &std::path::Path) -> Result<String, String> {
         has_regular |= *style != "Bold";
     }
     if out.is_empty() {
-        return Err("craft-fonts manifest contains no Arabic face; update the checkout".into());
+        return Err("nodalia-fonts manifest contains no Arabic face; update the checkout".into());
     }
     if !has_regular {
-        return Err("craft-fonts manifest has only bold Arabic faces; regular text needs a regular or variable face".into());
+        return Err("nodalia-fonts manifest has only bold Arabic faces; regular text needs a regular or variable face".into());
     }
     Ok(out)
 }

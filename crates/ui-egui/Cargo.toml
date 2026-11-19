@@ -9,9 +9,9 @@ description = "Celdas egui frontend (Excel-style UI); swappable — nothing belo
 workspace = true
 
 [dependencies]
-# The shared capture slot (`craft_ui::capture`) comes from the one craft-libs revision every
-# craft-libs dependency uses (see the root Cargo.toml).
-craft-ui = { git = "https://github.com/getnodalia/foundation", rev = "aa84415bae3b765fef6b7ef42404f66ad1cff9d9" }
+# The shared capture slot (`nodalia_ui::capture`) comes from the one nodalia-libs revision every
+# nodalia-libs dependency uses (see the root Cargo.toml).
+nodalia-ui = { git = "https://github.com/getnodalia/foundation", rev = "16e018374e1d87587e1ff60319a1ebd63cf947c0" }
 celdas-engine = { workspace = true }
 celdas-chart = { workspace = true }
 # `monochrome_emoji_fonts` restores the Noto Emoji and emoji-icon faces that 0.37 moved behind
@@ -43,7 +43,7 @@ celdas-xlsx = { workspace = true, features = ["test-support"] }
 nodalia-update = { workspace = true }
 # The desktop's preferred language for the first-run interface language.
 sys-locale = { workspace = true }
-craft-window = { workspace = true }
+nodalia-window = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Read the browser's preferred language for the first-run web interface language.

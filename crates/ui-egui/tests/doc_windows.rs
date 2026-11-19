@@ -458,8 +458,8 @@ fn arrange_all_lays_out_the_native_windows_active_first() {
     // Without parameters, as a script calls it: tiled.
     let r = desk.app.run("view.arrangeAll", json!({})).unwrap();
     assert_eq!(r["arrange"], "tiled");
-    let tiled = celdas_ui_egui::doc_windows::arrange_rects("tiled", 3, craft_window::Rect::new(0.0, 0.0, 1000.0, 800.0));
-    let r = |x, y, w, h| craft_window::Rect::new(x, y, w, h);
+    let tiled = celdas_ui_egui::doc_windows::arrange_rects("tiled", 3, nodalia_window::Rect::new(0.0, 0.0, 1000.0, 800.0));
+    let r = |x, y, w, h| nodalia_window::Rect::new(x, y, w, h);
     assert_eq!(tiled, [r(0.0, 0.0, 500.0, 400.0), r(500.0, 0.0, 500.0, 400.0), r(0.0, 400.0, 1000.0, 400.0)]);
 }
 

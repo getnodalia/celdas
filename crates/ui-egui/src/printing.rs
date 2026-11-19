@@ -1,14 +1,14 @@
 //! Localized print-page wording around the shared, backend-independent controls.
-use craft_ui::printing::Labels;
-pub use craft_ui::printing::{Discover, Duplex, Feedback, Printer, Settings, State, Submit};
+use nodalia_ui::printing::Labels;
+pub use nodalia_ui::printing::{Discover, Duplex, Feedback, Printer, Settings, State, Submit};
 
 /// Draws the shared print controls.
 ///
-/// `craft_ui::printing::State::show` also calls `poll`, so this path polls a second time on top of
+/// `nodalia_ui::printing::State::show` also calls `poll`, so this path polls a second time on top of
 /// [`crate::SheetApp::poll_printing`] in `logic`. That poll is idempotent (it only drains worker
 /// messages into the same state), and the logic-side poll is what lets a hidden window and a
 /// logic-only frame see completion, so it stays. Splitting poll out of the shared `show` API is a
-/// craft-ui follow-up, not a Celdas-local change.
+/// nodalia-ui follow-up, not a Celdas-local change.
 pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate: impl Fn(&str) -> String) {
     let labels = Labels {
         printer: &translate("Printer"),

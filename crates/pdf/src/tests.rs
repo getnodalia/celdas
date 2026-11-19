@@ -1136,7 +1136,7 @@ fn explicit_rtl_standard_text_reorders_without_an_arabic_font() {
     let page = doc.add_page(300.0, 100.0);
     page.text_with_direction(Point::new(10.0, 30.0), 12.0, Font::Helvetica, [0, 0, 0], source, TextDirection::RightToLeft);
     assert!(page.content.contains("(! ABC) Tj"), "{}", page.content);
-    let mut objects = craft_pdf::classic::Writer::with_capacity(0).unwrap();
+    let mut objects = nodalia_pdf::classic::Writer::with_capacity(0).unwrap();
     let mut next = 4;
     assert!(page.arabic.write_objects(&mut next, &mut objects).unwrap().is_empty());
     assert_eq!(next, 4, "Latin-only RTL text must not allocate Arabic font objects");

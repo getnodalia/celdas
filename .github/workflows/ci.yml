@@ -18,11 +18,11 @@ concurrency:
 
 jobs:
   gate:
-    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@ec62c63fd3206e4ed729fccf18a57170f8fa5dd6 # foundation main
+    uses: getnodalia/foundation/.github/workflows/rust-gate.yml@a5325485b557dca4040002a0120a06d72b10ccb5 # foundation main
     with:
-      # The same craft-fonts commit as the release workflows and freebsd.yml, so the gate tests the fonts that ship.
+      # The same nodalia-fonts commit as the release workflows and freebsd.yml, so the gate tests the fonts that ship.
       fonts-repository: getnodalia/foundation
-      fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+      fonts-ref: d4f57e6b31d7c7526b539f7aaaa07312c9908bb8
       packages: >-
         pkg-config libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev
         libgtk-3-dev libfontconfig1-dev libfreetype-dev mesa-vulkan-drivers
@@ -30,7 +30,7 @@ jobs:
   # Every git dependency in Cargo.lock comes from getnodalia or nodalia-design.
   git-sources:
     name: git-sources
-    uses: getnodalia/foundation/.github/workflows/git-sources.yml@ec62c63fd3206e4ed729fccf18a57170f8fa5dd6 # foundation main
+    uses: getnodalia/foundation/.github/workflows/git-sources.yml@a5325485b557dca4040002a0120a06d72b10ccb5 # foundation main
 
 
   # Celdas's own names everywhere; upstream's arrive renamed by the weekly sync.

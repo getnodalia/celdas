@@ -1,6 +1,6 @@
 //! The interface's symbol characters must not render as empty boxes (#197, #54): the UI font often
 //! lacks arrows, check marks and geometric shapes, so egui's bundled symbol faces (Hack and the
-//! monochrome emoji fonts), the optional permitted craft-fonts faces, and code-drawn chrome icons
+//! monochrome emoji fonts), the optional permitted nodalia-fonts faces, and code-drawn chrome icons
 //! back it up.
 //!
 //! The checks ask the font set whether it has a real glyph for each character (`has_glyph`), which
@@ -8,11 +8,11 @@
 //! "differs from the tofu glyph" alone is not evidence that a face has the character.
 //!
 //! Two modes are deliberate:
-//! - no-font/default: no `CRAFT_FONTS_DIR`. Bundled/system faces provide `↘ ◀ ↑ 📋`, and the three
+//! - no-font/default: no `NODALIA_FONTS_DIR`. Bundled/system faces provide `↘ ◀ ↑ 📋`, and the three
 //!   symbols no bundled face has (`✕ ✓ ⌃`) are chrome-only gaps covered by code-drawn icons and
 //!   their ASCII equivalents. `✓` and `⌃` stay documented optional-input/platform gaps.
-//! - extended acceptance: `CRAFT_FONTS_DIR` set (release/acceptance builds also set
-//!   `CRAFT_FONTS_REQUIRED=1`). All seven exact codepoints and Korean UI text must render, or the
+//! - extended acceptance: `NODALIA_FONTS_DIR` set (release/acceptance builds also set
+//!   `NODALIA_FONTS_REQUIRED=1`). All seven exact codepoints and Korean UI text must render, or the
 //!   test fails; it never skips a loaded or required face set.
 
 use celdas_ui_egui::icons::{self, Icon};
@@ -28,14 +28,14 @@ const BUNDLED_REQUIRED_UI_SYMBOLS: &str = "↘◀↑📋";
 /// monochrome emoji faces ⌘ and ★.
 const BUNDLED_UI_SYMBOLS: &str = "▲▼▸▾←→↓↳↗⇧⌘★•›≠≤≥∞";
 
-/// The production union. `✕ ✓ ⌃` have no bundled egui face: with craft-fonts, Noto Sans Symbols 2
+/// The production union. `✕ ✓ ⌃` have no bundled egui face: with nodalia-fonts, Noto Sans Symbols 2
 /// supplies `✕` and `✓`, and Noto Sans Symbols supplies `⌃`; `📋` still comes from egui's emoji.
-const CRAFT_UI_SYMBOLS: &str = "↘✕◀↑📋✓⌃";
+const NODALIA_UI_SYMBOLS: &str = "↘✕◀↑📋✓⌃";
 
 /// Korean interface labels the extended acceptance set must render (not a tiny sample).
 const KOREAN_UI_TEXT: &[&str] = &["데이터", "한글", "파일", "편집", "보기", "삽입", "서식", "저장", "열기", "닫기", "인쇄", "취소", "확인"];
 
-/// A context with the deterministic bundled + pinned craft-fonts set installed, plus the families
+/// A context with the deterministic bundled + pinned nodalia-fonts set installed, plus the families
 /// the interface uses. System fonts are deliberately excluded so this check is the same on CI.
 fn themed() -> egui::Context {
     let ctx = egui::Context::default();
@@ -111,35 +111,35 @@ fn chrome_symbols_without_a_bundled_glyph_have_code_drawn_or_semantic_fallbacks(
 }
 
 #[test]
-/// Without craft fonts it prints the optional `✓`/`⌃` gaps as a diagnostic; the strict bundled checks still run separately.
+/// Without Nodalia fonts it prints the optional `✓`/`⌃` gaps as a diagnostic; the strict bundled checks still run separately.
 fn no_font_mode_documents_the_optional_symbol_gaps() {
-    if theme::craft_fonts_loaded() {
+    if theme::nodalia_fonts_loaded() {
         return;
     }
     let ctx = themed();
     let missing: String = families().iter().map(|family| missing(&ctx, "✓⌃", family.clone())).collect();
     // A diagnostic, not an acceptance skip: the bundled assertions above still run strictly.
     eprintln!(
-        "no-font mode: {missing:?} are optional-input/platform gaps (set CRAFT_FONTS_DIR for the \
+        "no-font mode: {missing:?} are optional-input/platform gaps (set NODALIA_FONTS_DIR for the \
          extended acceptance set); chrome uses code-drawn icons or ASCII fallbacks instead"
     );
 }
 
 #[test]
-/// With craft fonts, the seven-symbol union, Korean samples and exact permitted faces are checked; a required build without them fails instead of skipping.
-fn extended_craft_fonts_cover_the_required_symbol_union_and_korean() {
-    if !theme::craft_fonts_loaded() {
+/// With Nodalia fonts, the seven-symbol union, Korean samples and exact permitted faces are checked; a required build without them fails instead of skipping.
+fn extended_nodalia_fonts_cover_the_required_symbol_union_and_korean() {
+    if !theme::nodalia_fonts_loaded() {
         // Optional-input diagnostic mode only. A required acceptance build must fail, not skip.
-        assert!(!theme::craft_fonts_required(), "CRAFT_FONTS_REQUIRED=1 but the build embedded no craft-fonts faces");
-        eprintln!("diagnostic: no CRAFT_FONTS_DIR; the extended seven-symbol and Korean acceptance checks were not run");
+        assert!(!theme::nodalia_fonts_required(), "NODALIA_FONTS_REQUIRED=1 but the build embedded no nodalia-fonts faces");
+        eprintln!("diagnostic: no NODALIA_FONTS_DIR; the extended seven-symbol and Korean acceptance checks were not run");
         return;
     }
     let ctx = themed();
     for family in families() {
-        let missing_symbols = missing(&ctx, CRAFT_UI_SYMBOLS, family.clone());
+        let missing_symbols = missing(&ctx, NODALIA_UI_SYMBOLS, family.clone());
         assert!(
             missing_symbols.is_empty(),
-            "the craft-fonts production set has no real glyph in {family:?} for {missing_symbols:?}; \
+            "the nodalia-fonts production set has no real glyph in {family:?} for {missing_symbols:?}; \
              Noto Sans Symbols supplies ⌃↘↑ and Noto Sans Symbols 2 supplies ✕◀✓, while egui's emoji supply 📋"
         );
         for sample in KOREAN_UI_TEXT {
@@ -155,7 +155,7 @@ fn extended_craft_fonts_cover_the_required_symbol_union_and_korean() {
 /// example the Thai, Arabic, Georgian and Hebrew faces), so this asserts the required set rather
 /// than claiming the embedded set is limited to the five web faces.
 fn assert_exact_permitted_faces() {
-    let faces: Vec<_> = theme::craft_font_scripts().collect();
+    let faces: Vec<_> = theme::nodalia_font_scripts().collect();
     let expected: &[(&str, &str, &[&str])] = &[
         ("BIZ UDPGothic", "Regular", &["Jpan", "Latn"]),
         ("BIZ UDPGothic", "Bold", &["Jpan", "Latn"]),
@@ -166,7 +166,7 @@ fn assert_exact_permitted_faces() {
     for (family, style, scripts) in expected {
         assert!(
             faces.iter().any(|(f, s, declared)| f == family && s == style && *declared == *scripts),
-            "craft-fonts must embed {family} {style} with scripts {scripts:?}; embedded: {faces:?}"
+            "nodalia-fonts must embed {family} {style} with scripts {scripts:?}; embedded: {faces:?}"
         );
     }
     if theme::chinese_font_loaded() {
@@ -182,11 +182,11 @@ fn assert_exact_permitted_faces() {
 }
 
 #[test]
-/// Advertised script samples resolve in the craft faces; Chinese samples join only when the LXGW face was embedded, and a required build without faces fails.
-fn craft_fonts_cover_the_advertised_scripts() {
-    if !theme::craft_fonts_loaded() {
-        assert!(!theme::craft_fonts_required(), "CRAFT_FONTS_REQUIRED=1 but the build embedded no craft-fonts faces");
-        eprintln!("craft-fonts not embedded (set CRAFT_FONTS_DIR to the pinned checkout); script coverage check not run");
+/// Advertised script samples resolve in the Nodalia faces; Chinese samples join only when the LXGW face was embedded, and a required build without faces fails.
+fn nodalia_fonts_cover_the_advertised_scripts() {
+    if !theme::nodalia_fonts_loaded() {
+        assert!(!theme::nodalia_fonts_required(), "NODALIA_FONTS_REQUIRED=1 but the build embedded no nodalia-fonts faces");
+        eprintln!("nodalia-fonts not embedded (set NODALIA_FONTS_DIR to the pinned checkout); script coverage check not run");
         return;
     }
     // Chinese needs the native-only LXGW face (the only face that could supply it otherwise, Noto
@@ -217,8 +217,8 @@ fn craft_fonts_cover_the_advertised_scripts() {
     }
     for sample in samples {
         assert!(
-            theme::craft_fonts_cover(sample),
-            "the permitted craft-fonts faces have no face for {sample:?}; add the OFL face to craft-fonts rather than relaxing this test"
+            theme::nodalia_fonts_cover(sample),
+            "the permitted nodalia-fonts faces have no face for {sample:?}; add the OFL face to nodalia-fonts rather than relaxing this test"
         );
     }
 }
