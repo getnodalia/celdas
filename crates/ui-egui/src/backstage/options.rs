@@ -69,7 +69,7 @@ fn general_options(app: &mut SheetApp, ui: &mut Ui, lang: Language) {
             _ => "Light",
         };
         let label = setting_label(ui, &look, lang.tr("Display theme"));
-        craft_ui::ComboBox::from_id_salt("backstage_theme")
+        nodalia_ui::ComboBox::from_id_salt("backstage_theme")
             .width(office::CONTROL_WIDTH)
             .selected_text(lang.tr(current))
             .show_ui(ui, |ui| {
@@ -86,7 +86,7 @@ fn general_options(app: &mut SheetApp, ui: &mut Ui, lang: Language) {
         if app.linux_desktop {
             let current = app.ui.window_controls;
             let label = setting_label(ui, &look, lang.tr("Window controls"));
-            craft_ui::ComboBox::from_id_salt("backstage_window_controls")
+            nodalia_ui::ComboBox::from_id_salt("backstage_window_controls")
                 .width(office::CONTROL_WIDTH)
                 .selected_text(lang.tr(current.label()))
                 .show_ui(ui, |ui| {
@@ -101,7 +101,7 @@ fn general_options(app: &mut SheetApp, ui: &mut Ui, lang: Language) {
             ui.end_row();
         }
         let label = setting_label(ui, &look, lang.tr("Interface language"));
-        craft_ui::ComboBox::from_id_salt("backstage_language")
+        nodalia_ui::ComboBox::from_id_salt("backstage_language")
             .width(office::CONTROL_WIDTH)
             .selected_text(lang.name())
             .show_ui(ui, |ui| {

@@ -33,9 +33,9 @@ winit = { version = "0.30", default-features = false, features = ["x11"] }
 winit = { version = "0.30", default-features = false, features = ["x11", "wayland-csd-adwaita-notitle"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-# Same craft-libs revision as the workspace's craft-window (see the root
+# Same nodalia-libs revision as the workspace's nodalia-window (see the root
 # Cargo.toml).
-craft-print = { git = "https://github.com/getnodalia/foundation", rev = "aa84415bae3b765fef6b7ef42404f66ad1cff9d9" }
+nodalia-print = { git = "https://github.com/getnodalia/foundation", rev = "16e018374e1d87587e1ff60319a1ebd63cf947c0" }
 rfd = { workspace = true }
 arboard = { workspace = true, features = ["image-data"] }
 celdas-mcp = { workspace = true }

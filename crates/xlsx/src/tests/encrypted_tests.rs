@@ -44,7 +44,7 @@ fn schemes_no_password_opens_are_named_before_asking_for_one() {
     assert_eq!(check_encryption(&file(&[4, 0, 3, 0, 0, 0, 0, 0])), unsupported("Extensible"));
     // An Agile descriptor whose only key encryptor is a certificate.
     let agile = encrypt_workbook(b"package", "pw");
-    let cf = craft_cfb::CompoundFile::open(&agile).unwrap();
+    let cf = nodalia_cfb::CompoundFile::open(&agile).unwrap();
     let info = cf.read(cf.child(0, "EncryptionInfo").unwrap()).unwrap();
     let mut cert = info[..8].to_vec();
     cert.extend(String::from_utf8(info[8..].to_vec()).unwrap().replace("keyEncryptor/password", "keyEncryptor/certificate").into_bytes());

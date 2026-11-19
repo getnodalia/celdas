@@ -14,7 +14,7 @@ The hardware Excel uses, per platform, against Celdas. Part of
 | Multiple windows and monitors | One window per workbook, New Window for the same workbook, per-monitor DPI | A native window per workbook window on the desktop, New Window for the same workbook; new windows cascade from the last one on its monitor; View › Arrange All tiles, stacks or cascades them over the main window's monitor (web: one window) | Arrange All across monitors; verify per-monitor DPI with windows on two monitors: 2–3 h |
 | High-DPI and display scaling | yes | yes (display scale matched to desktop density; View › Interface size 75–200 % on top, #230) | — |
 | Accessibility hardware (screen readers, braille displays, switch control) | Narrator, JAWS, NVDA, VoiceOver | AccessKit enabled in eframe; grid cells and ribbon not yet exposed as an accessible tree | Counted under UI ([ui-parity.md](ui-parity.md)) |
-| Printers | System print with driver options | Desktop submits through craft-print with printer choice, copies, duplex and grayscale; web browser printing | Counted under print |
+| Printers | System print with driver options | Desktop submits through nodalia-print with printer choice, copies, duplex and grayscale; web browser printing | Counted under print |
 
 ## Revision history
 
@@ -23,7 +23,7 @@ The hardware Excel uses, per platform, against Celdas. Part of
 | 2026-10-31 | trivial | macOS: Intel Macs skip wgpu's indirect-call validation shaders, so they no longer exit on Metal's compiler error there (#2812). Macs run with OpenCore Legacy Patcher on macOS 15 can still fail earlier, on the MSL version (#1116). |
 | 2026-10-22 | minor | View › Arrange All over the main window's monitor. |
 | 2026-10-22 | minor | Multiple windows: each workbook window is a native window of its own (desktop). |
-| 2026-10-12 | minor | Desktop File > Print now discovers printers and submits PDF jobs through pinned craft-print with printer choice, copies, duplex and grayscale; browser printing and PDF export remain available. Remaining print parity includes page ranges and driver-specific tray/options UI; physical printer fidelity needs hardware validation. |
+| 2026-10-12 | minor | Desktop File > Print now discovers printers and submits PDF jobs through pinned nodalia-print with printer choice, copies, duplex and grayscale; browser printing and PDF export remain available. Remaining print parity includes page ranges and driver-specific tray/options UI; physical printer fidelity needs hardware validation. |
 | 2026-10-11 | trivial | Windows: DirectX 12 shaders compiled with FXC, no DXC runtime needed (#339, #354) |
 | 2026-10-11 | trivial | Windows: OpenGL fallback when DirectX 12 has no GPU or fails to start; Vulkan never by default (#120) |
 | 2026-10-10 | major | Created: single-threaded calc, wgpu rendering, no pen pressure, single window |

@@ -11,10 +11,10 @@ use std::fmt::Write as _;
 
 use serde_json::Value;
 
-#[path = "src/craft_fonts_policy.rs"]
-mod craft_fonts_policy;
+#[path = "src/nodalia_fonts_policy.rs"]
+mod nodalia_fonts_policy;
 
-/// Build script: reads the contributor JSON/TOML and writes generated `credits.rs`, then emits `craft_fonts.rs`; missing or malformed optional inputs warn, while required mode reports build errors.
+/// Build script: reads the contributor JSON/TOML and writes generated `credits.rs`, then emits `nodalia_fonts.rs`; missing or malformed optional inputs warn, while required mode reports build errors.
 fn main() {
     // Read when the script runs: `env!` would keep the path from when the script was compiled,
     // which goes stale if the checkout moves (and a missing file reruns the script every build).
@@ -30,13 +30,13 @@ fn main() {
     if let Err(e) = std::fs::write(&out, generate(&json, &people)) {
         println!("cargo::warning=writing {}: {e}", out.display());
     }
-    emit_craft_fonts();
+    emit_nodalia_fonts();
 }
 
-/// The optional craft-fonts build input (<https://github.com/getnodalia/foundation/tree/vendor/craft-fonts/main>, recipe from
-/// its `docs/integration.md`). With `CRAFT_FONTS_DIR=<absolute checkout>` the permitted fonts in
-/// its `fonts/manifest.txt` are embedded as `CRAFT_FONTS` for `theme`'s fallback chains; unset,
-/// the table is empty. Release and acceptance builds also set `CRAFT_FONTS_REQUIRED=1` (exactly
+/// The optional nodalia-fonts build input (<https://github.com/getnodalia/foundation/tree/nodalia/fonts>, recipe from
+/// its `docs/integration.md`). With `NODALIA_FONTS_DIR=<absolute checkout>` the permitted fonts in
+/// its `fonts/manifest.txt` are embedded as `NODALIA_FONTS` for `theme`'s fallback chains; unset,
+/// the table is empty. Release and acceptance builds also set `NODALIA_FONTS_REQUIRED=1` (exactly
 /// `1`; any other value leaves required mode off), which turns a missing checkout, a missing
 /// required face or a malformed row into a build error.
 ///
@@ -44,44 +44,44 @@ fn main() {
 /// configuration: the only input is the environment variable. Barred Adobe/Source/Noto CJK faces
 /// stay in the shared repository for other consumers but are filtered here. A web build embeds
 /// only the explicit `WEB_ALLOWED` faces (no CJK collection). Native builds additionally opt into
-/// craft-fonts' `fonts/simplified-chinese-manifest.txt` (the OFL LXGW face Lámina uses): it is
-/// optional for ordinary builds and required for `CRAFT_FONTS_REQUIRED=1` native builds.
-fn emit_craft_fonts() {
-    println!("cargo::rerun-if-env-changed=CRAFT_FONTS_DIR");
-    println!("cargo::rerun-if-env-changed=CRAFT_FONTS_REQUIRED");
-    let required = craft_fonts_policy::required_mode(std::env::var("CRAFT_FONTS_REQUIRED").ok().as_deref());
+/// nodalia-fonts' `fonts/simplified-chinese-manifest.txt` (the OFL LXGW face Lámina uses): it is
+/// optional for ordinary builds and required for `NODALIA_FONTS_REQUIRED=1` native builds.
+fn emit_nodalia_fonts() {
+    println!("cargo::rerun-if-env-changed=NODALIA_FONTS_DIR");
+    println!("cargo::rerun-if-env-changed=NODALIA_FONTS_REQUIRED");
+    let required = nodalia_fonts_policy::required_mode(std::env::var("NODALIA_FONTS_REQUIRED").ok().as_deref());
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
     let mut src = String::new();
-    let _ = writeln!(src, "pub static CRAFT_FONTS_REQUIRED: bool = {required};");
-    src.push_str("pub static CRAFT_FONTS: &[CraftFont] = &[\n");
-    match std::env::var_os("CRAFT_FONTS_DIR").map(std::path::PathBuf::from) {
-        Some(dir) => match craft_fonts(&dir, wasm, required) {
+    let _ = writeln!(src, "pub static NODALIA_FONTS_REQUIRED: bool = {required};");
+    src.push_str("pub static NODALIA_FONTS: &[NodaliaFont] = &[\n");
+    match std::env::var_os("NODALIA_FONTS_DIR").map(std::path::PathBuf::from) {
+        Some(dir) => match nodalia_fonts(&dir, wasm, required) {
             Ok(entries) => src.push_str(&entries),
             Err(e) if required => {
-                println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
+                println!("cargo::error=NODALIA_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!("cargo::warning=building without nodalia-fonts: NODALIA_FONTS_DIR={}: {e}", dir.display()),
         },
         None if required => {
-            println!("cargo::error=CRAFT_FONTS_REQUIRED=1 requires CRAFT_FONTS_DIR (an absolute craft-fonts checkout)");
+            println!("cargo::error=NODALIA_FONTS_REQUIRED=1 requires NODALIA_FONTS_DIR (an absolute nodalia-fonts checkout)");
         }
         None => {}
     }
     src.push_str("];\n");
-    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("craft_fonts.rs");
+    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("nodalia_fonts.rs");
     if let Err(e) = std::fs::write(&out, src) {
         println!("cargo::error=writing {}: {e}", out.display());
     }
 }
 
-/// One `CraftFont { .. }` initialiser per manifest row Celdas may embed.
-fn craft_fonts(dir: &std::path::Path, wasm: bool, required: bool) -> Result<String, String> {
+/// One `NodaliaFont { .. }` initialiser per manifest row Celdas may embed.
+fn nodalia_fonts(dir: &std::path::Path, wasm: bool, required: bool) -> Result<String, String> {
     // Every file embedded comes from inside the checkout: a manifest row (or a symlink) naming a
     // path outside it would put that file of the build machine into the binary.
     let root = dir.canonicalize().map_err(|e| format!("{}: {e}", dir.display()))?;
     let inside = |path: std::path::PathBuf| -> Result<std::path::PathBuf, String> {
         let real = path.canonicalize().map_err(|e| format!("{}: {e}", path.display()))?;
-        if real.starts_with(&root) { Ok(real) } else { Err(format!("{} is outside the craft-fonts checkout {}", path.display(), root.display())) }
+        if real.starts_with(&root) { Ok(real) } else { Err(format!("{} is outside the nodalia-fonts checkout {}", path.display(), root.display())) }
     };
     // Registered before validation, by the path as given (and its folder, to see the manifest appear
     // or a symlink replaced): a build that skipped the fonts must rebuild once they are there.
@@ -93,19 +93,19 @@ fn craft_fonts(dir: &std::path::Path, wasm: bool, required: bool) -> Result<Stri
     let manifest = inside(manifest_path)?;
     println!("cargo::rerun-if-changed={}", manifest.display());
     let text = std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
-    let rows = craft_fonts_policy::parse_manifest(&text)?;
-    craft_fonts_policy::check_declared_scripts(&rows)?;
+    let rows = nodalia_fonts_policy::parse_manifest(&text)?;
+    nodalia_fonts_policy::check_declared_scripts(&rows)?;
     if required {
-        craft_fonts_policy::check_required(&rows)?;
+        nodalia_fonts_policy::check_required(&rows)?;
     }
     let chinese = if wasm { Vec::new() } else { chinese_font_rows(&root, required)? };
     for row in rows.iter().chain(&chinese) {
-        if craft_fonts_policy::barred(&row.family) {
-            println!("cargo::warning=craft-fonts: not embedding {} {} (repository asset policy)", row.family, row.style);
+        if nodalia_fonts_policy::barred(&row.family) {
+            println!("cargo::warning=nodalia-fonts: not embedding {} {} (repository asset policy)", row.family, row.style);
         }
     }
     let mut out = String::new();
-    for row in craft_fonts_policy::embeddable(&rows, wasm).into_iter().chain(craft_fonts_policy::embeddable(&chinese, wasm)) {
+    for row in nodalia_fonts_policy::embeddable(&rows, wasm).into_iter().chain(nodalia_fonts_policy::embeddable(&chinese, wasm)) {
         let path = inside(root.join(&row.file)).map_err(|e| format!("{}: {e}", row.file))?;
         println!("cargo::rerun-if-changed={}", path.display());
         let scripts: Vec<String> = row.scripts.iter().map(|s| format!("{s:?}")).collect();
@@ -113,20 +113,20 @@ fn craft_fonts(dir: &std::path::Path, wasm: bool, required: bool) -> Result<Stri
         let style = &row.style;
         let _ = writeln!(
             out,
-            "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({path:?}) }},",
+            "    NodaliaFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({path:?}) }},",
             scripts.join(", "),
         );
     }
     Ok(out)
 }
 
-/// The opt-in native Simplified Chinese rows. Older craft-fonts checkouts may lack the manifest, so
+/// The opt-in native Simplified Chinese rows. Older nodalia-fonts checkouts may lack the manifest, so
 /// an ordinary build warns and carries on; a required acceptance build fails rather than passing
 /// Chinese coverage only because the face was silently absent.
-fn chinese_font_rows(dir: &std::path::Path, required: bool) -> Result<Vec<craft_fonts_policy::ManifestRow>, String> {
+fn chinese_font_rows(dir: &std::path::Path, required: bool) -> Result<Vec<nodalia_fonts_policy::ManifestRow>, String> {
     let manifest = dir.join("fonts/simplified-chinese-manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let optional = |e: String| -> Result<Vec<craft_fonts_policy::ManifestRow>, String> {
+    let optional = |e: String| -> Result<Vec<nodalia_fonts_policy::ManifestRow>, String> {
         if required {
             Err(format!("{}: {e}", manifest.display()))
         } else {
@@ -136,12 +136,12 @@ fn chinese_font_rows(dir: &std::path::Path, required: bool) -> Result<Vec<craft_
     };
     // `dir` is the canonical checkout: the manifest itself must not lead out of it either.
     if manifest.canonicalize().is_ok_and(|real| !real.starts_with(dir)) {
-        return optional(format!("{} is outside the craft-fonts checkout", manifest.display()));
+        return optional(format!("{} is outside the nodalia-fonts checkout", manifest.display()));
     }
     match std::fs::read_to_string(&manifest) {
-        Ok(text) => match craft_fonts_policy::parse_manifest(&text).and_then(|rows| {
-            craft_fonts_policy::check_declared_scripts(&rows)?;
-            craft_fonts_policy::check_chinese_required(&rows)?;
+        Ok(text) => match nodalia_fonts_policy::parse_manifest(&text).and_then(|rows| {
+            nodalia_fonts_policy::check_declared_scripts(&rows)?;
+            nodalia_fonts_policy::check_chinese_required(&rows)?;
             Ok(rows)
         }) {
             Ok(rows) => Ok(rows),

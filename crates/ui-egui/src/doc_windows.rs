@@ -18,7 +18,7 @@
 //!
 //! [`Session::windows`]: celdas_engine::Session::windows
 
-use craft_window::{CASCADE_STEP, Frame, Rect, Viewports, WindowEvent, WindowId, WindowList, cascade};
+use nodalia_window::{CASCADE_STEP, Frame, Rect, Viewports, WindowEvent, WindowId, WindowList, cascade};
 use serde_json::json;
 
 use crate::SheetApp;

@@ -20,7 +20,7 @@
 use std::sync::mpsc::Sender;
 
 use celdas_engine::core::CellRef;
-use craft_ui::capture::CaptureSlot;
+use nodalia_ui::capture::CaptureSlot;
 use serde_json::{Value as Json, json};
 
 use crate::SheetApp;

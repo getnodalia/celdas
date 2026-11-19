@@ -1,4 +1,4 @@
-//! craft-fonts build policy shared by `build.rs` and the UI crate.
+//! nodalia-fonts build policy shared by `build.rs` and the UI crate.
 //!
 //! Celdas stays a clean-room application: the shared repository may keep Adobe, Source Han and
 //! Noto CJK faces for other consumers, but Celdas never embeds them. The permitted faces are
@@ -17,7 +17,7 @@
 pub const BARRED_PREFIXES: &[&str] = &["Adobe", "Source Han", "Source Sans", "Source Serif", "Noto Sans CJK", "Noto Serif CJK"];
 
 /// The faces Celdas's production font set relies on, with their exact manifest script tags.
-/// Every release/acceptance build that sets `CRAFT_FONTS_REQUIRED=1` must contain all of them.
+/// Every release/acceptance build that sets `NODALIA_FONTS_REQUIRED=1` must contain all of them.
 pub const REQUIRED_FACES: &[(&str, &str, &[&str])] = &[
     ("BIZ UDPGothic", "Regular", &["Jpan", "Latn"]),
     ("BIZ UDPGothic", "Bold", &["Jpan", "Latn"]),
@@ -27,10 +27,10 @@ pub const REQUIRED_FACES: &[(&str, &str, &[&str])] = &[
     ("Noto Sans Arabic", "Regular", &["Arab"]),
 ];
 
-/// The native-only Simplified Chinese face from craft-fonts' separate
+/// The native-only Simplified Chinese face from nodalia-fonts' separate
 /// `fonts/simplified-chinese-manifest.txt` (the same opt-in Lámina uses). It is OFL and not
 /// barred by the asset policy, but it never enters a web bundle; older native checkouts may omit
-/// the manifest, so only `CRAFT_FONTS_REQUIRED=1` builds demand it.
+/// the manifest, so only `NODALIA_FONTS_REQUIRED=1` builds demand it.
 pub const CHINESE_FACES: &[(&str, &str, &[&str])] = &[("LXGW WenKai Lite", "Regular", &["Hani", "Hans"])];
 
 /// The explicit web allowlist. Browser builds embed only these faces; the Noto CJK collection and
@@ -55,7 +55,7 @@ pub struct ManifestRow {
     pub sha256: String,
 }
 
-/// Whether the `CRAFT_FONTS_REQUIRED` value enables required mode. Only exactly `1` does:
+/// Whether the `NODALIA_FONTS_REQUIRED` value enables required mode. Only exactly `1` does:
 /// `0`, an empty value and other words are not accepted as an implicit yes.
 pub fn required_mode(value: Option<&str>) -> bool {
     value == Some("1")
@@ -76,7 +76,7 @@ pub fn required_scripts(family: &str, style: &str) -> Option<&'static [&'static 
     REQUIRED_FACES.iter().chain(CHINESE_FACES.iter()).find(|(f, s, _)| *f == family && *s == style).map(|(_, _, scripts)| *scripts)
 }
 
-/// Parse the craft-fonts eight-field manifest. Comments and blank lines are skipped; every other
+/// Parse the nodalia-fonts eight-field manifest. Comments and blank lines are skipped; every other
 /// line must be complete and contain a valid SHA-256. A malformed row is an error, never a
 /// silently ignored font.
 pub fn parse_manifest(text: &str) -> Result<Vec<ManifestRow>, String> {
@@ -111,7 +111,7 @@ pub fn parse_manifest(text: &str) -> Result<Vec<ManifestRow>, String> {
     Ok(rows)
 }
 
-/// Check the script tags of every face Celdas knows. The craft-fonts parser accepts arbitrary
+/// Check the script tags of every face Celdas knows. The nodalia-fonts parser accepts arbitrary
 /// strings, so a face relabelled without the scripts Celdas relies on is rejected here.
 pub fn check_declared_scripts(rows: &[ManifestRow]) -> Result<(), String> {
     for row in rows {
@@ -132,22 +132,22 @@ pub fn check_declared_scripts(rows: &[ManifestRow]) -> Result<(), String> {
     Ok(())
 }
 
-/// Every required face must be present. Used only for `CRAFT_FONTS_REQUIRED=1` builds.
+/// Every required face must be present. Used only for `NODALIA_FONTS_REQUIRED=1` builds.
 pub fn check_required(rows: &[ManifestRow]) -> Result<(), String> {
     let present = |family: &str, style: &str| rows.iter().any(|row| row.family == family && row.style == style);
     let missing: Vec<String> = REQUIRED_FACES.iter().filter(|(f, s, _)| !present(f, s)).map(|(f, s, _)| format!("{f} {s}")).collect();
-    if missing.is_empty() { Ok(()) } else { Err(format!("the craft-fonts manifest is missing required faces: {}", missing.join(", "))) }
+    if missing.is_empty() { Ok(()) } else { Err(format!("the nodalia-fonts manifest is missing required faces: {}", missing.join(", "))) }
 }
 
-/// Every native-only Chinese face must be present. Used only for `CRAFT_FONTS_REQUIRED=1` native
-/// builds; ordinary builds may use an older craft-fonts checkout without the opt-in manifest.
+/// Every native-only Chinese face must be present. Used only for `NODALIA_FONTS_REQUIRED=1` native
+/// builds; ordinary builds may use an older nodalia-fonts checkout without the opt-in manifest.
 pub fn check_chinese_required(rows: &[ManifestRow]) -> Result<(), String> {
     let present = |family: &str, style: &str| rows.iter().any(|row| row.family == family && row.style == style);
     let missing: Vec<String> = CHINESE_FACES.iter().filter(|(f, s, _)| !present(f, s)).map(|(f, s, _)| format!("{f} {s}")).collect();
     if missing.is_empty() {
         Ok(())
     } else {
-        Err(format!("the simplified-Chinese craft-fonts manifest is missing required faces: {}", missing.join(", ")))
+        Err(format!("the simplified-Chinese nodalia-fonts manifest is missing required faces: {}", missing.join(", ")))
     }
 }
 

@@ -21,8 +21,8 @@ web-time = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 celdas-xlsx = { workspace = true }
-craft-csv = { workspace = true }
-craft-gridcraft-format = { workspace = true }
+nodalia-csv = { workspace = true }
+nodalia-celdas-format = { workspace = true }
 celdas-chart = { workspace = true }
 celdas-pdf = { workspace = true }
 celdas-math = { workspace = true }

@@ -3,19 +3,19 @@ use super::Blob;
 use super::font_fallback::{load_fallback, load_preferred_arabic};
 use super::{Arc, Color32, FontData, FontDefinitions, FontFamily, FontId};
 
-/// A font from the optional craft-fonts build input (`CRAFT_FONTS_DIR` at build time; see
-/// <https://github.com/getnodalia/foundation/tree/vendor/craft-fonts/main> and its `docs/integration.md`). The slice is empty
+/// A font from the optional nodalia-fonts build input (`NODALIA_FONTS_DIR` at build time; see
+/// <https://github.com/getnodalia/foundation/tree/nodalia/fonts> and its `docs/integration.md`). The slice is empty
 /// when the app is built without the checkout; nothing is downloaded and no font is in this repo.
 #[derive(Debug)]
-pub struct CraftFont {
+pub struct NodaliaFont {
     pub family: &'static str,
     pub style: &'static str,
-    /// ISO 15924 scripts the family is intended for, from the craft-fonts manifest.
+    /// ISO 15924 scripts the family is intended for, from the nodalia-fonts manifest.
     pub scripts: &'static [&'static str],
     pub bytes: &'static [u8],
 }
 
-impl CraftFont {
+impl NodaliaFont {
     /// CJK fallback faces share the primary baseline; symbols keep their centered metrics.
     fn font_data(&self) -> FontData {
         let mut data = FontData::from_static(self.bytes);
@@ -28,9 +28,9 @@ impl CraftFont {
     }
 }
 
-mod craft_fonts {
-    use super::CraftFont;
-    include!(concat!(env!("OUT_DIR"), "/craft_fonts.rs"));
+mod nodalia_fonts {
+    use super::NodaliaFont;
+    include!(concat!(env!("OUT_DIR"), "/nodalia_fonts.rs"));
 }
 
 /// The light or dark value of a colour, by mode.
@@ -194,45 +194,45 @@ pub(crate) fn drop_unparseable_fonts(fonts: &mut FontDefinitions) {
 /// in `epaint_default_fonts`). It is present whenever egui is built with `default_fonts`.
 const HACK: &str = "Hack";
 
-/// The permitted craft-fonts faces with their `FontDefinitions` keys, in manifest order. Empty
-/// without a `CRAFT_FONTS_DIR` checkout at build time. The filter is repeated here so a stale
+/// The permitted nodalia-fonts faces with their `FontDefinitions` keys, in manifest order. Empty
+/// without a `NODALIA_FONTS_DIR` checkout at build time. The filter is repeated here so a stale
 /// generated table can never smuggle in a barred face or a web-build face outside the allowlist.
-pub(super) fn craft_font_faces() -> Vec<(String, &'static CraftFont)> {
+pub(super) fn nodalia_font_faces() -> Vec<(String, &'static NodaliaFont)> {
     let wasm = cfg!(target_arch = "wasm32");
-    craft_fonts::CRAFT_FONTS
+    nodalia_fonts::NODALIA_FONTS
         .iter()
         .enumerate()
-        .filter(|(_, font)| !crate::craft_fonts_policy::barred(font.family))
-        .filter(|(_, font)| !wasm || crate::craft_fonts_policy::web_allowed(font.family, font.style))
-        .map(|(i, font)| (format!("craft-{i}-{}-{}", font.family, font.style), font))
+        .filter(|(_, font)| !crate::nodalia_fonts_policy::barred(font.family))
+        .filter(|(_, font)| !wasm || crate::nodalia_fonts_policy::web_allowed(font.family, font.style))
+        .map(|(i, font)| (format!("nodalia-{i}-{}-{}", font.family, font.style), font))
         .collect()
 }
 
-/// Adds the optional craft-fonts faces to `fonts` and returns their keys.
-fn add_craft_fonts(fonts: &mut FontDefinitions) -> Vec<String> {
+/// Adds the optional nodalia-fonts faces to `fonts` and returns their keys.
+fn add_nodalia_fonts(fonts: &mut FontDefinitions) -> Vec<String> {
     let mut keys = Vec::new();
-    for (key, font) in craft_font_faces() {
+    for (key, font) in nodalia_font_faces() {
         fonts.font_data.insert(key.clone(), Arc::new(font.font_data()));
         keys.push(key);
     }
     keys
 }
 
-/// Whether the optional craft-fonts input was embedded in this build.
-pub fn craft_fonts_loaded() -> bool {
-    !craft_fonts::CRAFT_FONTS.is_empty()
+/// Whether the optional nodalia-fonts input was embedded in this build.
+pub fn nodalia_fonts_loaded() -> bool {
+    !nodalia_fonts::NODALIA_FONTS.is_empty()
 }
 
-/// Whether the native-only Simplified Chinese craft face (LXGW WenKai Lite) was embedded. A web
-/// build or an older craft-fonts checkout without `fonts/simplified-chinese-manifest.txt` has none.
+/// Whether the native-only Simplified Chinese Nodalia face (LXGW WenKai Lite) was embedded. A web
+/// build or an older nodalia-fonts checkout without `fonts/simplified-chinese-manifest.txt` has none.
 pub fn chinese_font_loaded() -> bool {
-    craft_font_faces().iter().any(|(_, f)| f.family == "LXGW WenKai Lite" && f.style == "Regular")
+    nodalia_font_faces().iter().any(|(_, f)| f.family == "LXGW WenKai Lite" && f.style == "Regular")
 }
 
-/// Whether this build was made with `CRAFT_FONTS_REQUIRED=1`. Acceptance tests must fail rather
+/// Whether this build was made with `NODALIA_FONTS_REQUIRED=1`. Acceptance tests must fail rather
 /// than skip when this is true and the faces are absent.
-pub fn craft_fonts_required() -> bool {
-    craft_fonts::CRAFT_FONTS_REQUIRED
+pub fn nodalia_fonts_required() -> bool {
+    nodalia_fonts::NODALIA_FONTS_REQUIRED
 }
 
 /// A bundled-face character with the same meaning as `c`, for interface chrome whose exact symbol
@@ -255,16 +255,16 @@ pub fn available_text(ui: &egui::Ui, text: &str) -> String {
     text.chars().map(|c| if ui.ctx().fonts_mut(|f| f.has_glyph(&font, c)) { c } else { symbol_fallback(c).unwrap_or(c) }).collect()
 }
 
-/// The family, style and scripts of every embedded craft-fonts face (empty without the input).
-pub fn craft_font_scripts() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str])> {
-    craft_font_faces().into_iter().map(|(_, f)| (f.family, f.style, f.scripts))
+/// The family, style and scripts of every embedded nodalia-fonts face (empty without the input).
+pub fn nodalia_font_scripts() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str])> {
+    nodalia_font_faces().into_iter().map(|(_, f)| (f.family, f.style, f.scripts))
 }
 
-/// Whether one embedded craft-fonts face maps every non-whitespace character in `text`. Tests use
+/// Whether one embedded nodalia-fonts face maps every non-whitespace character in `text`. Tests use
 /// this to tell "the pinned fixture covers this script" from "this host has no face for it",
 /// without trusting a manifest script tag alone.
-pub fn craft_fonts_cover(text: &str) -> bool {
-    craft_font_faces().iter().any(|(_, f)| {
+pub fn nodalia_fonts_cover(text: &str) -> bool {
+    nodalia_font_faces().iter().any(|(_, f)| {
         use skrifa::MetadataProvider;
         let Ok(font) = skrifa::FontRef::from_index(f.bytes, 0) else {
             return false;
@@ -472,11 +472,11 @@ pub fn font_definitions_for_language(language: crate::i18n::Language) -> FontDef
     font_definitions_with(language, &[])
 }
 
-/// The bundled faces plus the pinned craft-fonts faces, with no system-font probing or installed
+/// The bundled faces plus the pinned nodalia-fonts faces, with no system-font probing or installed
 /// workbook-font binding.
 ///
 /// Integration tests use this through their shared harness, so a minimal CI image and a developer
-/// machine see the same font set. Craft-fonts remains a pinned build input rather than a repository
+/// machine see the same font set. Nodalia fonts remains a pinned build input rather than a repository
 /// asset; without it only egui's bundled faces are available, which is the documented no-font mode.
 pub fn pinned_font_definitions() -> FontDefinitions {
     font_definitions_impl(crate::i18n::Language::En, Vec::new(), false)
@@ -493,7 +493,7 @@ pub fn font_definitions_with(language: crate::i18n::Language, used: &[String]) -
     font_definitions_impl(language, installed.collect(), true)
 }
 
-/// Builds the role font chains, script fallbacks, installed workbook fonts and optional craft-font faces, drops unparseable data and records which families were bound.
+/// Builds the role font chains, script fallbacks, installed workbook fonts and optional nodalia-font faces, drops unparseable data and records which families were bound.
 pub(super) fn font_definitions_impl(
     language: crate::i18n::Language,
     installed: Vec<(String, Vec<crate::fonts::Face>)>,
@@ -531,12 +531,12 @@ pub(super) fn font_definitions_impl(
     for (family, faces) in installed {
         bound.extend(crate::fonts::bind_faces(&mut fonts, &family, &faces));
     }
-    // The optional craft-fonts faces go at the very end of every family: a system or bundled face
+    // The optional nodalia-fonts faces go at the very end of every family: a system or bundled face
     // that has the script keeps its glyph shapes, while the permitted OFL faces cover scripts and
     // symbols the host image lacks (Japanese, Korean, Thai, Arabic, Georgian and the UI symbols).
     // Chinese comes from the native-only OFL LXGW face when embedded; a system Han face still
     // leads, and the barred Noto CJK collection never enters.
-    append_craft_faces(&mut fonts);
+    append_nodalia_faces(&mut fonts);
     drop_unparseable_fonts(&mut fonts);
     // Only families egui still has data for count as bound (a dropped face can empty a chain).
     bound.retain(|f| fonts.families.get(&FontFamily::Name(f.as_str().into())).is_some_and(|c| !c.is_empty()));
@@ -614,15 +614,15 @@ fn bind_cell_fallback(fonts: &mut FontDefinitions, fallback: &[String]) {
     }
 }
 
-/// Appends the permitted craft-fonts faces to every family, preserving the leading system or
+/// Appends the permitted nodalia-fonts faces to every family, preserving the leading system or
 /// bundled face's glyph shapes.
-fn append_craft_faces(fonts: &mut FontDefinitions) {
-    let craft = add_craft_fonts(fonts);
-    if craft.is_empty() {
+fn append_nodalia_faces(fonts: &mut FontDefinitions) {
+    let nodalia = add_nodalia_fonts(fonts);
+    if nodalia.is_empty() {
         return;
     }
     for chain in fonts.families.values_mut() {
-        for key in &craft {
+        for key in &nodalia {
             if !chain.contains(key) {
                 chain.push(key.clone());
             }
@@ -636,16 +636,16 @@ mod font_binding_tests {
 
     /// Synthetic bytes make this metadata check independent of the host's installed fonts.
     #[test]
-    fn craft_cjk_scripts_opt_into_the_shared_baseline() {
+    fn nodalia_cjk_scripts_opt_into_the_shared_baseline() {
         use egui::epaint::text::FallbackAlign;
         const CJK: &[&[&str]] = &[&["Hani", "Hans"], &["Hant", "Bopo"], &["Jpan", "Latn"], &["Hira", "Kana"], &["Hrkt", "Latn"], &["Hang", "Kore"]];
         for scripts in CJK {
-            let font = CraftFont { family: "Synthetic", style: "Regular", scripts, bytes: epaint_default_fonts::UBUNTU_LIGHT };
+            let font = NodaliaFont { family: "Synthetic", style: "Regular", scripts, bytes: epaint_default_fonts::UBUNTU_LIGHT };
             assert_eq!(font.font_data().tweak.fallback_align, FallbackAlign::Baseline);
         }
         const OTHER: &[&[&str]] = &[&["Zsym", "Zsye"], &["Latn", "Arab"]];
         for scripts in OTHER {
-            let font = CraftFont { family: "Synthetic", style: "Regular", scripts, bytes: epaint_default_fonts::UBUNTU_LIGHT };
+            let font = NodaliaFont { family: "Synthetic", style: "Regular", scripts, bytes: epaint_default_fonts::UBUNTU_LIGHT };
             assert_eq!(font.font_data().tweak.fallback_align, FallbackAlign::Center, "symbols and non-CJK keep their alignment");
         }
     }

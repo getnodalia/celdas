@@ -360,9 +360,9 @@ pub fn parse_streaming(xml: &[u8], split: &[&str], cb: &mut dyn FnMut(El) -> Res
 // ---------------------------------------------------------------- writing helpers
 
 // XML escaping and SpreadsheetML strings are shared; phonetic/model mapping stays here.
-pub use craft_xml::{esc, esc_attr};
+pub use nodalia_xml::{esc, esc_attr};
 #[cfg(test)]
-use craft_xml::{is_xml_char, push_esc};
+use nodalia_xml::{is_xml_char, push_esc};
 
 /// Appends `n` in decimal.
 pub fn push_u64(o: &mut String, mut n: u64) {
@@ -402,7 +402,7 @@ pub fn push_a1(o: &mut String, c: celdas_core::CellRef) {
 }
 
 // Existing call sites and regression coverage use the production shared codec.
-pub use craft_xlsx::{decode_xstring, encode_xstring};
+pub use nodalia_xlsx::{decode_xstring, encode_xstring};
 
 /// `<t>` element with `xml:space="preserve"` when needed.
 pub fn t_el(s: &str) -> String {

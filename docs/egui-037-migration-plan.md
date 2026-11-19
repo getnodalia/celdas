@@ -3,9 +3,9 @@
 Status (2026-10-25): the local migration incorporates main
 `52fa4406c1ebff8b260a2922472f03aba198b9cf`. Canonical pins are egui
 `6d518fc799681571963842f95b55a6b68431b15a`, winit
-`a517b3846ee8457d84ee4975110bfda6797c44dc`, craft-ui/craft-print
-`25da1314d443171b4adeaad2cd9454b273f35c6f` and craft-fonts
-`b076417b5880bd4154bd22f00695b1d28c6bea83`. The regenerated lock SHA256 is
+`a517b3846ee8457d84ee4975110bfda6797c44dc`, nodalia-ui/nodalia-print
+`25da1314d443171b4adeaad2cd9454b273f35c6f` and nodalia-fonts
+`d4f57e6b31d7c7526b539f7aaaa07312c9908bb8`. The regenerated lock SHA256 is
 `426a766291a8246573bf57e3ab3f5f17ff812487582254a32ff5a2ec0db39f27` and passed the dependency-source audit.
 `egui037-grid-final-main-ci-20261025-0854` passed all ten stages: i18n-report,
 fmt, strict workspace all-target clippy, workspace tests, doctest, assets, layers,
@@ -23,7 +23,7 @@ source anchors, baseline inventories and proposed steps below are historical rec
 this status governs current pins and acceptance. Final commit/source/CI bindings are in
 `final-landing/grid-publication0865` in the migration task evidence.
 
-Scope: `getnodalia/celdas` only. The shared `getnodalia/foundation (vendor/craft-libs)`, egui fork and winit fork are
+Scope: `getnodalia/celdas` only. The shared `getnodalia/foundation (vendor/nodalia-libs)`, egui fork and winit fork are
 dependencies of this plan, not files this plan changes. Application document models, commands, undo
 semantics, XLSX persistence and UI policy remain owned by Celdas.
 
@@ -41,14 +41,14 @@ semantics, XLSX persistence and UI policy remain owned by Celdas.
 | Current winit / wgpu | winit 0.30.13 at canonical a517b384; wgpu 30.0.1 |
 | Current accesskit / kittest | accesskit 0.25.1, accesskit_consumer 0.39.1, kittest 0.5.0, accesskit_winit 0.34.1 |
 | Current skrifa | 0.44.0, shared by `epaint` and `celdas-ui-egui` |
-| Shared UI dependency | craft-ui and craft-print both pin canonical 25da1314; the complete 0.37 UI/capture tree is included |
-| Shared capture helper | `craft-ui` CL-2 provisional capture slot; Celdas/Pliego adapters are the pilot and precede CL-2F. CL-1 and CL-2F are the shared gate for the eleven craft-ui consumers |
+| Shared UI dependency | nodalia-ui and nodalia-print both pin canonical 25da1314; the complete 0.37 UI/capture tree is included |
+| Shared capture helper | `nodalia-ui` CL-2 provisional capture slot; Celdas/Pliego adapters are the pilot and precede CL-2F. CL-1 and CL-2F are the shared gate for the eleven nodalia-ui consumers |
 | Target upstream release | egui annotated tag `0.37.0`, peeled commit `841a328ba2dd8f6996beb7189ebb7fc00e668a2a` (2026-10-15) |
 | Historical review candidate egui (superseded by current immutable pin) | `aiongg/egui` `craft/0.37` at `a4f9a17f64a6bae61350fb85804c9df0d9865916`; inspect only, never publish this branch |
 | Historical review candidate winit (superseded by current immutable pin) | `aiongg/winit` `craft/0.30.13-lang` at `8b35388bd719e8cc86a95971ba0bc026c9a8f058`; published base `storytold/winit` `craft/0.30.13` at `ffae5198770d7730e718043f035a772b7dbc3b1b` |
 | Current implementation egui/winit pins |173cc7375d35dc5fbc5b5d0994fdf787f547c5d1 / ae48c756a3b81125eb796c0cc6dccf60990d1181; full P8/E21b and platform/performance acceptance remain separate, explicitly unqualified gates |
 | Stock comparison | egui 0.36.2 `49682f8baa058bf49e011035cfbd6e825f88a5ef`, 0.37.0 `841a328b…`; stock 0.37 is a measurement control only, never a production stage or pin |
-| Existing shared update | `getnodalia/foundation (vendor/craft-libs)` PR 199, branch head `b68de8c5f4f1c060904d211a7b1320aa0f7bce78`; open and conflicting at inspection |
+| Existing shared update | `getnodalia/foundation (vendor/nodalia-libs)` PR 199, branch head `b68de8c5f4f1c060904d211a7b1320aa0f7bce78`; open and conflicting at inspection |
 | Historical diagnostics | `/home/codex/work/ssd2/task-evidence/egui037-audit-20261022/{fork,stock}/celdas.errors` |
 
 The existing audit merge `ec8840af8c5fda695cf195cdd05e5ae078415c07` is not a base: its
@@ -68,7 +68,7 @@ because 0.37.0's egui/epaint/eframe manifests declare 1.95.
 | Web | `celdas-web` (`apps/celdas-web`) | `WebShell::logic` / `WebShell::ui` wrapping `SheetApp` | wasm32, eframe web runner, WebGPU with WebGL2 fallback, rfd async picker, no TCP control channel |
 | UI library/tests | `celdas-ui-egui` | `SheetApp::logic`, `SheetApp::ui`, `examples/snapshot.rs` | 85 integration test files (750 `#[test]` in `tests/`) plus 153 in-crate unit tests: 903 `#[test]` attributes in the crate by static count |
 | CLI/headless | `celdas-cli` | none | no egui dependency; must keep building/tests |
-| Shared controls | `craft-ui` (`printing` only) | `printing::State::show` inside dialogs | Celdas does not use craft-ui docking/tabs/buttons |
+| Shared controls | `nodalia-ui` (`printing` only) | `printing::State::show` inside dialogs | Celdas does not use nodalia-ui docking/tabs/buttons |
 | macOS native menu test | `apps/celdas/tests/mac_menu_appkit.rs` | AppKit/muda, no egui | must still run on macOS |
 | Tooling | `xtask` | `ci`, `layers`, `wasm`, `assets`, `parity`, `keytips` | `cargo xtask ci` is the repository gate |
 
@@ -85,12 +85,12 @@ and the current lock/pins are recorded above. Baseline absence of patches is not
 
 - Root `Cargo.toml`: workspace resolver 3; `egui`, `egui_extras`, `eframe`, `egui_kittest`,
   `epaint_default_fonts` pins; `skrifa = 0.44`; no `[patch]` section anywhere in the repository.
-- `crates/ui-egui/Cargo.toml`: `egui` (workspace, default features), `craft-ui` git revision,
+- `crates/ui-egui/Cargo.toml`: `egui` (workspace, default features), `nodalia-ui` git revision,
   `skrifa`, Linux-only `zbus = "=5.19.0"`, dev `egui_kittest` with `wgpu` + `snapshot`, dev
   `epaint_default_fonts`, `celdas-xlsx` test support, wasm `web-sys`.
 - `apps/celdas/Cargo.toml`: eframe `default-features = false` plus `default_fonts`, `wgpu`,
   `accesskit`, `wayland`, `x11` at baseline; G1 adds native `clipboard` to preserve the
-  0.36 integration-forced OS clipboard. `craft-print` git revision; desktop `rfd`, `arboard`
+  0.36 integration-forced OS clipboard. `nodalia-print` git revision; desktop `rfd`, `arboard`
   (`wayland-data-control` on Linux/FreeBSD), Windows `pollster`, macOS `muda` and
   `fmv-macos-events`, macOS AppKit dev-dependencies.
 - `apps/celdas-web/Cargo.toml`: `egui` workspace; wasm-only eframe `default_fonts`, `wgpu`,
@@ -357,7 +357,7 @@ Design:
 
 - `Shots` keeps request identity, path/reply routing, settle counter, 8 s deadline and the
   `in_flight()` query. Replace the `queued`/`pending` vectors with one slot per admitted request
-  from `craft_ui::capture` (CL-2 provisional revision); do not add a second channel. The app owns
+  from `nodalia_ui::capture` (CL-2 provisional revision); do not add a second channel. The app owns
   the strong slot and the waker; the slot stores at most one `Arc<ColorImage>`, records the
   issuance-time UI logical geometry and geometry epoch, and is released on drop/cancel/timeout.
   The callback holds only `Weak`, unlocks before invoking the slot's waker, and holds no strong
@@ -517,7 +517,7 @@ celdas (eframe + egui + egui-wgpu + egui-winit + epaint)
   -> epaint 0.37 (approved P8 rev, E5/E8/E11/E12/E13/E14/E15/E16/E20)
   -> ecolor/emath 0.37 (approved P8 rev)
   -> winit 0.30.13 (approved completed rev, W17-W27 + W15P + W27 lifecycle)
-  -> craft-ui / craft-print (craft-libs approved rev -> egui 0.37 fork)
+  -> nodalia-ui / nodalia-print (nodalia-libs approved rev -> egui 0.37 fork)
 ```
 
 G1 explicitly enables native `eframe/clipboard`; verify `egui-winit/clipboard` and
@@ -544,36 +544,36 @@ Publication rules:
   candidate. The final SHAs are **not selected yet**; do not pin a candidate head, branch, old SHA
   or invented SHA. S2 and G1 stay blocked until the approved full SHAs are recorded in 1.1 and
   checked in a clean `--locked` build.
-- Keep the old coherent set (current `Cargo.lock` + craft-libs `d27646a5`) as the rollback point.
+- Keep the old coherent set (current `Cargo.lock` + nodalia-libs `d27646a5`) as the rollback point.
 
-### 5.2 `craft-libs` PR 199 and issue 198
+### 5.2 `nodalia-libs` PR 199 and issue 198
 
-Celdas consumes only `craft_ui::printing` today; G1 adds `craft_ui::capture` (CL-2) for
-screenshots. PR 199's role/ID/docking/ellipsis edits are relevant to craft-libs itself, not to
+Celdas consumes only `nodalia_ui::printing` today; G1 adds `nodalia_ui::capture` (CL-2) for
+screenshots. PR 199's role/ID/docking/ellipsis edits are relevant to nodalia-libs itself, not to
 Celdas's source. Integration decisions:
 
 - Do **not** rebase or merge PR 199's tree. Its head `b68de8c` and the audit merge `ec8840a` are
-  stale relative to `49190884278f16c9a9f5823d7698a8ffb5deb062`: they omit `craft-platform` and
+  stale relative to `49190884278f16c9a9f5823d7698a8ffb5deb062`: they omit `nodalia-platform` and
   revert security, settings, docking and printing fixes. Port only the API-port hunks from
   `8614e4a04fae516fba16c22b31ff1008cb6be10b` plus the relevant README change from
   `1764bca` onto current `4919088`, preserving intervening commits; gate the result with a diff
   check against `4919088` that shows only those intended hunks.
 - CL-1 must add the winit patch and a publication-compatible check (registry egui 0.37 build of the
   packaged crate). Celdas needs the fork pin separately.
-- CL-1 and CL-2F are the shared gate for all eleven `craft-ui` consumers at the P8 stage.
+- CL-1 and CL-2F are the shared gate for all eleven `nodalia-ui` consumers at the P8 stage.
   Celdas and Pliego are the CL-2 provisional pilot; both adapters are reviewed before
-  CL-2F freezes the API. A consumer already bumped to an incompatible `craft-ui` revision must
+  CL-2F freezes the API. A consumer already bumped to an incompatible `nodalia-ui` revision must
   land that bump in the same atomic dependency stage as the egui P8 landing; no mixed
-  `craft-ui`/egui graph is acceptable.
-- Bump `craft-ui` **and** `craft-print` to one approved craft-libs revision. Leaving `craft-print`
-  at `d27646a5` while `craft-ui` moves creates two git checkouts of the same repository and an
+  `nodalia-ui`/egui graph is acceptable.
+- Bump `nodalia-ui` **and** `nodalia-print` to one approved nodalia-libs revision. Leaving `nodalia-print`
+  at `d27646a5` while `nodalia-ui` moves creates two git checkouts of the same repository and an
   incoherent graph.
 - Issue 198 is a language-support proposal, not a merged dependency. Do not import its locale or
   formatting roadmap. Celdas keeps its own `i18n` table and formula locale; only consume the
   fork APIs the suite actually selects (for example `Context::set_language` on the fork, E17).
-- If craft-libs' `printing::State` API changes in CL-1, update
+- If nodalia-libs' `printing::State` API changes in CL-1, update
   `crates/ui-egui/src/printing.rs` and `apps/celdas/src/print.rs`; the current wrapper already
-  isolates Celdas from most of craft-ui.
+  isolates Celdas from most of nodalia-ui.
 
 ### 5.3 Vendored fixes and provenance
 
@@ -678,14 +678,14 @@ Anchors: `crates/engine/src/cmd/*` (unchanged), `crates/ui-egui/src/lib.rs::run_
   globally disabling the checks**:
   - `crates/ui-egui/tests/common/mod.rs` is the one harness constructor now used by the `tests/it`
     binary and `keytips.rs`. It installs `theme::pinned_font_definitions()` (egui's bundled faces
-    plus the pinned craft-fonts input, never the host system scan) through
+    plus the pinned nodalia-fonts input, never the host system scan) through
     `HarnessBuilder::with_context_setup`, marks the test `SheetApp` with
     `SheetApp::use_prepared_fonts()` so the first `logic` pass does not replace the pinned set, and
     leaves `check_accessibility = true` and `MissingGlyphPolicy` at `Panic`. The snapshot example
     and `header_autofit_fonts.rs` deliberately keep the production/system-font path where the
     subject of the test is installed-font behavior.
-  - The CI/acceptance font contract is the existing pinned input: set `CRAFT_FONTS_DIR` to the
-    craft-fonts checkout (and `CRAFT_FONTS_REQUIRED=1` for release/acceptance). A minimal image
+  - The CI/acceptance font contract is the existing pinned input: set `NODALIA_FONTS_DIR` to the
+    nodalia-fonts checkout (and `NODALIA_FONTS_REQUIRED=1` for release/acceptance). A minimal image
     without it runs the deterministic bundled-face harness; the one test that renders every
     catalog skips `Ja`/`Ko`/`Zh` in that mode and records the gap, rather than relaxing
     `MissingGlyphPolicy` or accessibility globally.
@@ -699,22 +699,22 @@ Anchors: `crates/engine/src/cmd/*` (unchanged), `crates/ui-egui/src/lib.rs::run_
   - `tests/symbol_glyphs.rs` is the installed-face coverage test and is strict in both modes
     (below); do not weaken it.
   - Do not change production font policy from Tofu.
-- Fonts come from pinned, OFL-licensed faces in `getnodalia/foundation (vendor/craft-fonts)`, never from a copy in this
+- Fonts come from pinned, OFL-licensed faces in `getnodalia/foundation (vendor/nodalia-fonts)`, never from a copy in this
   repository: `BIZ UDPGothic` Regular/Bold (`Jpan,Latn`), `NanumGothic` Regular (`Hang,Kore`),
   `Noto Sans Symbols` Regular and `Noto Sans Symbols 2` Regular (`Zsym`).
-  `crates/ui-egui/src/craft_fonts_policy.rs` is the single policy the build script and the tests
+  `crates/ui-egui/src/nodalia_fonts_policy.rs` is the single policy the build script and the tests
   share: exact family/style plus manifest script tags, the barred-family filter (`Adobe*`,
   `Source Han*`, `Source Sans*`, `Source Serif*`, `Noto Sans CJK*`, `Noto Serif CJK*`, with no
   broad `Noto Sans` prefix that would reject the permitted Symbols faces), the required-face check
-  and the web allowlist. `CRAFT_FONTS_DIR` is the only input (no fixture path lives in Cargo
+  and the web allowlist. `NODALIA_FONTS_DIR` is the only input (no fixture path lives in Cargo
   configuration), and without it the generated table is empty and the build is unchanged.
-  `CRAFT_FONTS_REQUIRED=1` makes a missing checkout, manifest, row, font file or required face a
+  `NODALIA_FONTS_REQUIRED=1` makes a missing checkout, manifest, row, font file or required face a
   build error.
 - Two symbol modes, each asserted exactly:
   - no-font/default: bundled faces must supply `↘ ◀ ↑ 📋` and the rest of the interface set. `✕`,
     `✓` and `⌃` have no bundled egui face, so chrome paints `Icon::Close`/`Icon::Check` and the
     Control-key tooltip falls back to `^`; workbook text still refuses to fake a glyph.
-  - extended acceptance (`CRAFT_FONTS_DIR`, `CRAFT_FONTS_REQUIRED=1`): the exact union
+  - extended acceptance (`NODALIA_FONTS_DIR`, `NODALIA_FONTS_REQUIRED=1`): the exact union
     `↘ ✕ ◀ ↑ 📋 ✓ ⌃` in both `Proportional` and `CELL`, plus the Korean interface labels, must
     render; a loaded or required set that lacks a face fails instead of skipping.
 - Native builds embed **every non-barred row** of `fonts/manifest.txt`, not only the five required
@@ -722,9 +722,9 @@ Anchors: `crates/engine/src/cmd/*` (unchanged), `crates/ui-egui/src/lib.rs::run_
   `Noto Sans Hebrew` and `Noto Sans Thai` rows are also present when the pinned checkout carries
   them. All are OFL/non-barred, so the asset policy holds; the policy and size gate must describe
   the actual set, not claim five faces.
-- Simplified Chinese is a native-only opt-in: the OFL `LXGW WenKai Lite` row from craft-fonts'
+- Simplified Chinese is a native-only opt-in: the OFL `LXGW WenKai Lite` row from nodalia-fonts'
   `fonts/simplified-chinese-manifest.txt` (the face Lámina uses). It is outside `WEB_ALLOWED`
-  and never enters the wasm bundle; `CRAFT_FONTS_REQUIRED=1` native builds require the manifest,
+  and never enters the wasm bundle; `NODALIA_FONTS_REQUIRED=1` native builds require the manifest,
   while ordinary builds tolerate an older checkout without it. System Han faces still lead the
   chain when present. The native font set (including this face) needs its own raw/compressed size
   measurement; the current measured figure is the five-file web allowlist, 12,970,840 bytes raw.
@@ -1088,7 +1088,7 @@ Record the fixture builder's source hash and the exact parameters in every evide
 
 ### 9.1 Baseline before production change
 
-Record the baseline at `b8771d51fb4da60bd48c13cf313d6d6014dc5e66` with the current lock and the reviewed `craft-libs` base
+Record the baseline at `b8771d51fb4da60bd48c13cf313d6d6014dc5e66` with the current lock and the reviewed `nodalia-libs` base
 `3832c47`; the earlier `ac8da7d4`/`d27646a5` pair stays as historical evidence only. No candidate
 numbers may be reported without a paired current baseline. Capture exact SHA, lockfile hash, features, fonts, fixture,
 OS, renderer/driver, DPI, viewport, profile, rustc, hardware and load. Use paired runs, alternate
@@ -1163,12 +1163,12 @@ Freeze these before candidate runs (stricter repo budgets win):
 | Stage | Content | Depends on | Rollback |
 | --- | --- | --- | --- |
 | P0 | This plan; evidence notes | none | delete plan branch |
-| S1 | Shared craft-libs CL-1 for the eleven `craft-ui` consumers: port only `8614e4a` API hunks + `1764bca` README onto `4919088`, final approved egui/winit pins (blocked until those refs exist), registry compatibility, release SHA | P0 review, final refs selected | revert CL-1; keep old `d27646a5` |
+| S1 | Shared nodalia-libs CL-1 for the eleven `nodalia-ui` consumers: port only `8614e4a` API hunks + `1764bca` README onto `4919088`, final approved egui/winit pins (blocked until those refs exist), registry compatibility, release SHA | P0 review, final refs selected | revert CL-1; keep old `d27646a5` |
 | S2 | Complete reviewed/published `storytold` egui **P8** (E1–E21 + E21b, P2b async W15P routing, P7 held-key pairing, P7b/E21b, P7c selected #8763/#8748 fixes, justified perf fixes) and completed winit (W17–W27 + W15P + W27 lifecycle), immutable approved SHAs. No stock 0.37 or intermediate stage | P0 review, fork review, final refs selected and published | revert fork pins; keep 0.36.2/0.36 craft set |
-| CL-2 | craft-libs provisional capture-slot API in `crates/ui/src/capture.rs`; cancellation/out-of-order/shutdown stress; lazy-print tests | P0 review | revert helper with its adapters |
-| CL-2F | Shared capture API freeze for the eleven `craft-ui` consumers after reviewing the Pliego and Celdas CL-2 pilot adapters | CL-2, G1 (Grid adapter), Pliego adapter | keep CL-2 revision; no app change |
+| CL-2 | nodalia-libs provisional capture-slot API in `crates/ui/src/capture.rs`; cancellation/out-of-order/shutdown stress; lazy-print tests | P0 review | revert helper with its adapters |
+| CL-2F | Shared capture API freeze for the eleven `nodalia-ui` consumers after reviewing the Pliego and Celdas CL-2 pilot adapters | CL-2, G1 (Grid adapter), Pliego adapter | keep CL-2 revision; no app change |
 | G0 | Baseline harnesses on `ac8da7d4`: frame bench, phase-tagged frame log, 0.36-compatible geometry/screenshot tests, benchmark evidence (0.37-only assertions arrive in G1/G3) | P0 | remove harnesses; no production behavior change |
-| G1 | Atomic dependency/compile migration: root patches, manifests (native eframe `clipboard`), lock, `craft-ui`/`craft-print` bump, CL-2 slot adapter, E21b/W15P consumption, Role/ID/FontData/screenshot-callback source changes including `drain_screenshots`, timeout and the basic reply, strict shared harness with required names/fonts, style pin | S1+S2+CL-2, G0 baseline | revert G1; restore baseline lock/manifests |
+| G1 | Atomic dependency/compile migration: root patches, manifests (native eframe `clipboard`), lock, `nodalia-ui`/`nodalia-print` bump, CL-2 slot adapter, E21b/W15P consumption, Role/ID/FontData/screenshot-callback source changes including `drain_screenshots`, timeout and the basic reply, strict shared harness with required names/fonts, style pin | S1+S2+CL-2, G0 baseline | revert G1; restore baseline lock/manifests |
 | G2 | Lifecycle: autosave/title/printing in logic, adversarial screenshot byte-budget/discard/timeout/epoch tests, hidden synthetic-input paint | G1 | revert G2; G1 still builds |
 | G3 | Remaining accessibility names/roles, pixel probes, focus/ID tests, broader IME/RTL coverage | G1 (G2 if same files) | revert G3 |
 | G4 | Platform/performance acceptance (staged): Linux X11/Wayland, Windows VM, browser, macOS; print and CL-2 evidence; fix findings | G2+G3+CL-2F | revert G4 fixes; retain evidence |
@@ -1179,7 +1179,7 @@ S1/S2 revisions are fixed and published, and CL-2's provisional API exists. The 
 `storytold` SHAs for egui P8/winit are unknown until that approved implementation; their absence
 blocks S2/G1 rather than being filled with a candidate SHA or a stock/intermediate stage. Each app
 PR is reviewable on its own; do not land an intermediate dependency bump that leaves `main`
-unbuildable. A consumer already carrying an incompatible `craft-ui` bump must put that bump in the
+unbuildable. A consumer already carrying an incompatible `nodalia-ui` bump must put that bump in the
 same atomic dependency stage as the egui P8 landing. G1 is the only atomic “must compile and pass
 CI” PR: it includes the shared strict harness, every accessible name and pinned font needed by the
 existing suite (no suite-wide `allow_missing_glyphs`/`with_accessibility_check(false)`), and the
@@ -1194,12 +1194,12 @@ Before each publication:
 
 - `cargo metadata --locked` and `cargo tree` show one egui-family source/revision and one winit.
 - Root `[patch.crates-io]` entries use full SHAs; no branch/path.
-- `craft-ui` and `craft-print` resolve to one approved craft-libs SHA that contains CL-1, CL-2's
+- `nodalia-ui` and `nodalia-print` resolve to one approved nodalia-libs SHA that contains CL-1, CL-2's
   provisional-or-frozen capture slot and any CL-3 contract fixes Celdas consumes. CL-1 and
   CL-2F are published for the eleven sharing consumers; Celdas/Pliego use the CL-2
   provisional pilot and their adapters precede CL-2F. Do not add a Celdas-local capture
   channel/token map while the shared slot is the selected design, and do not leave a mixed
-  `craft-ui`/egui stage.
+  `nodalia-ui`/egui stage.
 - The lockfile has no second `egui`/`eframe` version and no stale accesskit_consumer duplicates
   except ones proven necessary by an unrelated dependency.
 - `cargo check --locked` in a clean checkout works; CI's dependency check fails on a missing patch.
@@ -1209,9 +1209,9 @@ Before each publication:
 ### 10.3 Rollback
 
 Rollback restores the entire coherent set: `Cargo.toml`, all manifests, `Cargo.lock`, root patches,
-source adaptations, `craft-ui`/`craft-print` revision and any test harness changes. Do not “roll
+source adaptations, `nodalia-ui`/`nodalia-print` revision and any test harness changes. Do not “roll
 back” by changing only the egui version string. Keep the old lockfile, the 0.36.2 registry crates and
-craft-libs `d27646a5` reachable. No persistence format changes are planned; `ui.json`, `prefs.json`, XLSX and
+nodalia-libs `d27646a5` reachable. No persistence format changes are planned; `ui.json`, `prefs.json`, XLSX and
 control JSON remain compatible. If a persistence change becomes necessary, specify backward
 compatibility and preserve unreadable data.
 
@@ -1231,11 +1231,11 @@ separate; the final qualification update records what actually passed.
    1.1 and verify `--locked` before S2/G1. No stock 0.37 or intermediate stage is accepted. Without
    E2/E3, #761's crash/fallback behavior is not qualified; without E4/W15P and E19/E21/E21b,
    Wayland clipboard, PRIMARY, non-Latin and IME behavior regress.
-2. **craft-libs CL-1 and CL-2 exact revisions.** PR 199's tree is stale; CL-1 is the hunk port onto
-   `4919088`, not a rebase. Celdas cannot bump `craft-ui`/`craft-print` until CL-1 and CL-2's
+2. **nodalia-libs CL-1 and CL-2 exact revisions.** PR 199's tree is stale; CL-1 is the hunk port onto
+   `4919088`, not a rebase. Celdas cannot bump `nodalia-ui`/`nodalia-print` until CL-1 and CL-2's
    provisional capture slot exist with clean tests and a coherent lock. CL-1 and CL-2F are the
-   shared gate for the eleven `craft-ui` consumers; Celdas/Pliego are the CL-2 pilot and
-   their adapters are reviewed before CL-2F freezes the API. Any incompatible existing `craft-ui`
+   shared gate for the eleven `nodalia-ui` consumers; Celdas/Pliego are the CL-2 pilot and
+   their adapters are reviewed before CL-2F freezes the API. Any incompatible existing `nodalia-ui`
    bump must land in the same atomic dependency stage.
 3. **PRIMARY and HTML coexistence.** W15P must land in the approved winit revision, and the 6.4
    routing must be proven on wlroots/KWin/Mutter: grid HTML+plain-text copy through the one
@@ -1279,7 +1279,7 @@ separate; the final qualification update records what actually passed.
 12. **Print scope.** PDF construction remains synchronous on the UI path as it is today. A measured
     candidate regression is fixed or explicitly budgeted; moving generation to a background engine
     is a separate, designed change.
-13. **No generic compatibility layer.** craft-ui owns the capture slot because multiple apps need
+13. **No generic compatibility layer.** nodalia-ui owns the capture slot because multiple apps need
     the same completion lifecycle. Celdas keeps its timeout, paths, tokens, JSON and animation
     policy and does not add a local channel alternative.
 
@@ -1302,7 +1302,7 @@ Canonical `getnodalia/celdas` `main` for this migration is `b8771d51fb4da60bd48c
 `/home/codex/work/CraftApps/egui037-migration-20261022/celdas-implementation`). The earlier
 `bdf8b8cc…` and `ac8da7d4…` SHAs and line anchors above are retained as historical review
 evidence; use `b8771d51fb4da60bd48c13cf313d6d6014dc5e66` and its exact lockfile for current-main integration and paired
-measurements. Shared `craft-libs` integration now pins canonical 25da1314; 3832c47 is its
+measurements. Shared `nodalia-libs` integration now pins canonical 25da1314; 3832c47 is its
 historical integration base. The original refs remain reachable. These unpublished immutable
 pins still require an approved publication and clean remote-fetch verification.
 

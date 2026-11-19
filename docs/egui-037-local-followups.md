@@ -15,10 +15,10 @@ push or PR publication is authorized; each requires fresh human approval of cont
 - Root Cargo patches select the egui family at `173cc7375d35dc5fbc5b5d0994fdf787f547c5d1`
   and winit at `ae48c756a3b81125eb796c0cc6dccf60990d1181`. Selected egui packages are 0.37.0;
   there is no machine-local path override or second egui 0.36 source.
-- `craft-ui` and `craft-print` both pin `c488caa9fbc2fb1a86e4674887e9b80b598ebbfa`.
+- `nodalia-ui` and `nodalia-print` both pin `c488caa9fbc2fb1a86e4674887e9b80b598ebbfa`.
   The shared capture slot is consumed through that revision. Canonical Cargo.lock SHA256 is
   `98209e84412b8ce08bf290ab706c20909389ca6d1e6668aca929f717ad55ea2f`.
-- CI, release and FreeBSD select craft-fonts `b076417b5880bd4154bd22f00695b1d28c6bea83`.
+- CI, release and FreeBSD select nodalia-fonts `d4f57e6b31d7c7526b539f7aaaa07312c9908bb8`.
   Local validation uses command-scoped private Git mirrors for unpublished immutable inputs;
   clean remote fetching after approved publication remains a separate gate.
 - The shared capture contract fits Celdas's requirements without changes: one slot per request,
@@ -108,13 +108,13 @@ E21b/W27 acceptance result. No application-local API stub is introduced.
   by the normal CI command; it is not a performance result. No additional CI execution is claimed
   for this documentation-only refresh.
 - Strict `egui_kittest` harness qualification completed for the selected end states: `tests/common/mod.rs` now installs
-  `theme::pinned_font_definitions()` (bundled faces plus the pinned craft-fonts input, no host
+  `theme::pinned_font_definitions()` (bundled faces plus the pinned nodalia-fonts input, no host
   system scan), `SheetApp::use_prepared_fonts()` keeps that set through the first `logic` pass, and
   `MissingGlyphPolicy::Panic` stays on. Since `run_steps` does not invoke kittest's accessibility
   checker, selected ribbon, locale, pane/menu, dialog, active-editor, backstage, text-box and
   capture/repaint end states now call `check_accessibility()` explicitly; these assertions passed in CI07,
-  without claiming coverage of every UI state. `CRAFT_FONTS_DIR` (and
-  `CRAFT_FONTS_REQUIRED=1` for acceptance) is the CI contract; without it the deterministic
+  without claiming coverage of every UI state. `NODALIA_FONTS_DIR` (and
+  `NODALIA_FONTS_REQUIRED=1` for acceptance) is the CI contract; without it the deterministic
   bundled set is used and the all-catalog language test records the `Ja`/`Ko`/`Zh` gap.
 - End-to-end hidden/occluded `ui.screenshot` with a capturable current size and a minimized
   request that waits for restore (or times out), through a real wgpu/kittest or native window; the
@@ -139,11 +139,11 @@ has.
   alone no installed face has `✕` or `📋` (Hack, which the theme adds as a fallback, has the
   arrows and triangles but neither of those).
 - `theme::font_definitions_with` appends egui's bundled `Hack` face (arrows, triangles, `↳`) behind
-  the UI/cell and emoji faces of every family, and appends the optional craft-fonts faces at the
+  the UI/cell and emoji faces of every family, and appends the optional nodalia-fonts faces at the
   very end. The order is: app/bundled faces, Hack/emoji, system script fallbacks, permitted craft
   faces last. A craft face never displaces a system face that already has the glyph.
-- `crates/ui-egui/build.rs` embeds the faces named by `CRAFT_FONTS_DIR` through
-  `crates/ui-egui/src/craft_fonts_policy.rs`, the single policy shared by the build script and the
+- `crates/ui-egui/build.rs` embeds the faces named by `NODALIA_FONTS_DIR` through
+  `crates/ui-egui/src/nodalia_fonts_policy.rs`, the single policy shared by the build script and the
   tests. Nothing reads a fixture path from Cargo configuration: the checked `.cargo/config.toml`
   holds only the `xtask` alias, so every local and managed run sets the variable explicitly. With
   it unset the generated table is empty and the app builds, tests and runs; a script that no
@@ -153,7 +153,7 @@ has.
   `BIZ UDPGothic` `Regular` and `Bold` (`Jpan,Latn`), `NanumGothic` `Regular` (`Hang,Kore`),
   `Noto Sans Symbols` `Regular` (`Zsym`) and `Noto Sans Symbols 2` `Regular` (`Zsym`).
   `NanumGothic` has no space, and `Noto Sans Symbols` is not `Noto Sans Symbols 2`.
-- `CRAFT_FONTS_REQUIRED=1` turns a missing `CRAFT_FONTS_DIR`, a missing `fonts/manifest.txt`, a
+- `NODALIA_FONTS_REQUIRED=1` turns a missing `NODALIA_FONTS_DIR`, a missing `fonts/manifest.txt`, a
   malformed manifest row, a missing font file, an unexpected style of a required family or any
   missing required face into a build error.
 - Barred families never enter the font set, although the shared repository keeps them for other
@@ -165,9 +165,9 @@ has.
   CJK collection and no document-only face. Those five files are 12,970,840 bytes raw. Raw font
   bytes, raw wasm and compressed wasm are **not measured yet**: the size gate is a parent
   acceptance item, not a claim made here.
-- Native builds opt into the OFL `LXGW WenKai Lite` face from craft-fonts'
+- Native builds opt into the OFL `LXGW WenKai Lite` face from nodalia-fonts'
   `fonts/simplified-chinese-manifest.txt` (the same face Lámina uses). The barred `Noto Sans CJK`
-  collection still never enters; system Han faces still lead when installed. `CRAFT_FONTS_REQUIRED=1`
+  collection still never enters; system Han faces still lead when installed. `NODALIA_FONTS_REQUIRED=1`
   native builds require the Chinese manifest, ordinary builds tolerate an older checkout without
   it, and `WEB_ALLOWED` excludes it. The Chinese samples join the strict script test only when the
   face is embedded.
@@ -183,15 +183,15 @@ has.
   (`theme::symbol_fallback` through `theme::available_text`). Only workbook text still needs a real
   glyph, because its characters are the user's data. The test documents `✓`/`⌃` as optional-input
   gaps rather than claiming them.
-- Extended acceptance mode (`CRAFT_FONTS_DIR` set, and `CRAFT_FONTS_REQUIRED=1` for release):
+- Extended acceptance mode (`NODALIA_FONTS_DIR` set, and `NODALIA_FONTS_REQUIRED=1` for release):
   `tests/symbol_glyphs.rs` requires the exact union `↘ ✕ ◀ ↑ 📋 ✓ ⌃` in both `Proportional` and
   `CELL` plus the Korean interface labels, and fails instead of skipping when a loaded or required
   set lacks a face. `⌃` comes from `Noto Sans Symbols`, `✕ ◀ ✓` from `Noto Sans Symbols 2`,
   `↘`/`↑` from either Symbols face (NanumGothic also has them), and `📋` from egui's emoji faces.
-- The required faces live in the pinned `craft-fonts` checkout at
-  `b076417b5880bd4154bd22f00695b1d28c6bea83`. Point `CRAFT_FONTS_DIR` at that checkout: the older `fixtures/craft-fonts` snapshot has no Korean or
+- The required faces live in the pinned `nodalia-fonts` checkout at
+  `d4f57e6b31d7c7526b539f7aaaa07312c9908bb8`. Point `NODALIA_FONTS_DIR` at that checkout: the older `fixtures/nodalia-fonts` snapshot has no Korean or
   symbol rows, and a loaded set without the required faces fails the extended checks by design.
-- `theme::fallback_covers_its_script` is strict whenever a system or craft-fonts face provides the
+- `theme::fallback_covers_its_script` is strict whenever a system or nodalia-fonts face provides the
   script, now including Arabic and Georgian; its skip prints the script name and sample.
 - The production positive-rectangle fix in `formula_bar.rs`, the `Role::DisclosureTriangle`
   queries, the linear per-line editor-height assertions and the explicit accessible names for the
@@ -216,7 +216,7 @@ four reviewed production files. Original roles, input sequences and behavior ass
 Full CI05 is historical pre-repair evidence and CI06 remains a failed run.
 
 Actual native screenshots/hidden/minimize/restore, screen-reader output, application E21b IME and
-platform/performance acceptance remain open. Full CI07 uses the canonical lock, required craft-fonts
+platform/performance acceptance remain open. Full CI07 uses the canonical lock, required nodalia-fonts
 input, command-scoped exact-source mirrors and the private Vulkan loader; it is not host-loader or
 clean public-fetch qualification. Exact job/log hashes, review union, complete final source inventory
 and documentation-only delta are preserved in local task evidence under

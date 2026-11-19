@@ -29,4 +29,4 @@ jobs:
     uses: getnodalia/foundation/.github/workflows/freebsd.yml@ec62c63fd3206e4ed729fccf18a57170f8fa5dd6 # foundation main
     with:
       fonts-repository: getnodalia/foundation
-      fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+      fonts-ref: d4f57e6b31d7c7526b539f7aaaa07312c9908bb8

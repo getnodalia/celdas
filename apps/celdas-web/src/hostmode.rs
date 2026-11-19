@@ -1,11 +1,11 @@
 //! Pure host-mode rules, shared by the bridge ([`crate::host`]) and testable without a browser
 //! (like [`crate::prefs`]): the name the bridge fills in when a host's open request has none.
-//! Which pages host the app is `craft-web-host`'s.
+//! Which pages host the app is `nodalia-web-host`'s.
 
 /// The file name used when an open request carries no usable one.
 pub const DEFAULT_OPEN_NAME: &str = "Book.xlsx";
 
-/// The name `craft-web-host` gives an open request that carries no usable one (it cleans a host's
+/// The name `nodalia-web-host` gives an open request that carries no usable one (it cleans a host's
 /// name and falls back to this).
 const NAMELESS: &str = "document";
 

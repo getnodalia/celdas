@@ -5,9 +5,9 @@
 //! bundled faces and the operating system at runtime: the UI uses the platform UI font, cells use
 //! the best available match for the workbook font (Calibri/Carlito/Aptos/Arial…), and egui's
 //! bundled Ubuntu/Hack/egui-icons and monochrome emoji faces are the last resort. A build with
-//! `CRAFT_FONTS_DIR` also embeds the permitted OFL craft-fonts faces (barred Adobe/Source/Noto CJK
+//! `NODALIA_FONTS_DIR` also embeds the permitted OFL nodalia-fonts faces (barred Adobe/Source/Noto CJK
 //! families never enter it, and a web build keeps only its explicit allowlist). Native builds opt
-//! into craft-fonts' OFL LXGW Chinese face, so a host without a Han system face still draws Chinese
+//! into nodalia-fonts' OFL LXGW Chinese face, so a host without a Han system face still draws Chinese
 //! interface text; no font file is stored in this repo.
 //!
 //! Chrome colours belong in [`Tokens`], each with a light and a dark value; colours
@@ -34,12 +34,12 @@ use font_fallback::{
 use font_fallback::{covers_arabic, fontconfig_arabic, parse_fc_match};
 use font_setup::pick;
 pub use font_setup::{
-    CELL, CELL_BOLD, CELL_BOLD_ITALIC, CELL_ITALIC, CraftFont, HanOrder, MATH, MATH_BOLD, MATH_ITALIC, MONO, SERIF, UI, UI_BOLD, available_text,
-    cell_family, cell_text_width, chinese_font_loaded, craft_font_scripts, craft_fonts_cover, craft_fonts_loaded, craft_fonts_required,
-    font_definitions, font_definitions_for_language, font_definitions_with, pinned_font_definitions, symbol_fallback, ui_bold, ui_font,
+    CELL, CELL_BOLD, CELL_BOLD_ITALIC, CELL_ITALIC, HanOrder, MATH, MATH_BOLD, MATH_ITALIC, MONO, NodaliaFont, SERIF, UI, UI_BOLD, available_text,
+    cell_family, cell_text_width, chinese_font_loaded, font_definitions, font_definitions_for_language, font_definitions_with, nodalia_font_scripts,
+    nodalia_fonts_cover, nodalia_fonts_loaded, nodalia_fonts_required, pinned_font_definitions, symbol_fallback, ui_bold, ui_font,
 };
 #[cfg(test)]
-use font_setup::{candidates, craft_font_faces, font_definitions_impl, try_load};
+use font_setup::{candidates, font_definitions_impl, nodalia_font_faces, try_load};
 #[cfg(test)]
 pub(crate) use font_setup::{drop_unparseable_fonts, font_parses};
 

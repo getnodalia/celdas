@@ -417,7 +417,7 @@ mod tests {
         }
     }
 
-    /// Ukrainian Chart uses the shared craft-i18n term, which is not the Diagram word.
+    /// Ukrainian Chart uses the shared nodalia-i18n term, which is not the Diagram word.
     #[test]
     fn ukrainian_chart_uses_the_shared_term() {
         assert_eq!(Language::Uk.translated("Chart"), Some("Діаграма"));
