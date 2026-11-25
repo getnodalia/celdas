@@ -239,7 +239,8 @@ fn scroll_arrows(ui: &mut Ui, t: &Tokens, tab: &str, scroll: egui::scroll_area::
         ui.painter().rect_stroke(r, 4.0, Stroke::new(1.0, t.ribbon_border), StrokeKind::Inside);
         icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(14.0, 14.0)), if left { Icon::Left } else { Icon::Right }, t.text);
         let name = if left { "Scroll ribbon left" } else { "Scroll ribbon right" };
-        resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, name));
+        let accessible_name = crate::i18n::current(ui.ctx()).tr(name);
+        resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, accessible_name));
         if resp.on_hover_text(crate::i18n::current(ui.ctx()).tr(name)).clicked() {
             target = Some(if left { overflow.offset - step } else { overflow.offset + step });
         }

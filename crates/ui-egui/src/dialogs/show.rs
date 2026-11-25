@@ -101,7 +101,10 @@ pub(crate) fn build_params(d: &Dialog) -> Json {
         "defineName" => {
             if let Some(m) = v.as_object_mut() {
                 for key in ["scope", "oldScope"] {
-                    if m.get(key).and_then(Json::as_str) == Some("Workbook") {
+                    if m.get(key)
+                        .and_then(Json::as_str)
+                        .is_some_and(|scope| scope == "Workbook" || crate::i18n::Language::ALL.iter().any(|l| l.tr("Workbook") == scope))
+                    {
                         m.remove(key);
                     }
                 }
@@ -351,7 +354,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
                         for (label, answer) in
                             [("Don't Save", crate::SaveAnswer::DontSave), ("Cancel", crate::SaveAnswer::Cancel), ("Save", crate::SaveAnswer::Save)]
                         {
-                            if ui.button(label).clicked() && app.answer_save_changes(answer, quitting, ui.ctx()) {
+                            if ui.button(crate::i18n::ui_tr(ui, label)).clicked() && app.answer_save_changes(answer, quitting, ui.ctx()) {
                                 open = false;
                             }
                         }
@@ -365,7 +368,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
                             open = false;
                         }
                         for (n, t) in celdas_engine::sample::SAMPLES {
-                            if ui.button(*t).clicked() {
+                            if ui.button(crate::i18n::ui_tr(ui, t)).clicked() {
                                 app.run_or_alert("file.new", json!({"sample": n}));
                                 open = false;
                             }
@@ -698,7 +701,7 @@ pub(super) fn form_fields(app: &SheetApp, ui: &mut egui::Ui, d: &mut Dialog) {
                 Field::Note(t) => {
                     // A note can carry user data (a URL, a file or sheet name); `tr` reads a `|` as a
                     // context separator, so such a note is shown as it is.
-                    let text = if t.contains('|') { t.as_str() } else { lang.tr(&t) };
+                    let text = if t.contains('|') { t.clone() } else { lang.tr_message(&t).unwrap_or_else(|| lang.tr(&t).to_owned()) };
                     ui.label(egui::RichText::new(text).small());
                 }
             }

@@ -17,7 +17,7 @@ pub(super) fn zoom(ui: &mut egui::Ui, d: &mut Dialog, confirm: &mut bool, open: 
     let cur = d.values.get("preset").and_then(Json::as_str).unwrap_or("custom").to_string();
     ui.label(egui::RichText::new(lang.tr("Magnification")).strong());
     for (val, text) in ZOOM_PRESETS {
-        if ui.radio(cur == val, text).clicked() {
+        if ui.radio(cur == val, lang.tr(text)).clicked() {
             d.set_value("preset", json!(val));
         }
     }

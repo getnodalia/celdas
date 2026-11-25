@@ -31,7 +31,7 @@ pub fn show(app: &mut SheetApp, ui: &mut Ui) {
                 "formatChart" => "Format Chart Area",
                 _ => "",
             };
-            ui.label(egui::RichText::new(title).font(theme::ui_bold(15.0)));
+            ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, title)).font(theme::ui_bold(15.0)));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if crate::widgets::icon_button(ui, crate::icons::Icon::Close, t.text_dim, "Close", vec2(22.0, 22.0)).clicked() {
                     if pane == "comments" {
@@ -92,7 +92,7 @@ fn comments(app: &mut SheetApp, ui: &mut Ui) {
                         if ui.small_button(crate::i18n::ui_tr(ui, "Delete")).clicked() {
                             app.run_or_alert("review.deleteComment", json!({"cell": cell}));
                         }
-                        if ui.small_button(if c.resolved { "Reopen" } else { "Resolve" }).clicked() {
+                        if ui.small_button(crate::i18n::ui_tr(ui, if c.resolved { "Reopen" } else { "Resolve" })).clicked() {
                             app.run_or_alert("review.resolveComment", json!({"cell": cell, "resolved": !c.resolved}));
                         }
                         let send = ui.small_button(crate::i18n::ui_tr(ui, "Send")).clicked();
@@ -207,7 +207,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
                 ("Radar", "radar", ""),
             ] {
                 let cur = chart.kind == celdas_engine::cmd::insert::chart_kind(k, s);
-                if ui.selectable_label(cur, l).clicked() {
+                if ui.selectable_label(cur, crate::i18n::ui_tr(ui, l)).clicked() {
                     app.run_or_alert("chart.set", json!({"chart": id, "type": k, "subtype": s}));
                 }
             }
@@ -231,7 +231,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
         ui.horizontal(|ui| {
             for (l, v) in [("None", "none"), ("Bottom", "bottom"), ("Top", "top"), ("Left", "left"), ("Right", "right")] {
                 let cur = format!("{:?}", chart.legend).eq_ignore_ascii_case(v);
-                if ui.selectable_label(cur, l).clicked() {
+                if ui.selectable_label(cur, crate::i18n::ui_tr(ui, l)).clicked() {
                     app.run_or_alert("chart.set", json!({"chart": id, "legend": v}));
                 }
             }
@@ -264,7 +264,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
     ui.collapsing(crate::i18n::ui_tr(ui, "Data Table"), |ui| {
         let supported = chart.supports_data_table();
         let mut on = chart.data_table.is_some();
-        if ui.add_enabled(supported, egui::Checkbox::new(&mut on, "Show Data Table")).changed() {
+        if ui.add_enabled(supported, egui::Checkbox::new(&mut on, crate::i18n::ui_tr(ui, "Show Data Table"))).changed() {
             app.run_or_alert("chart.set", json!({"chart": id, "dataTable": on}));
         }
         if !supported {
@@ -277,7 +277,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
                 ("Vertical Borders", "dataTableVerticalBorder", table.vertical_border),
                 ("Outline", "dataTableOutline", table.outline),
             ] {
-                if ui.checkbox(&mut value, label).changed() {
+                if ui.checkbox(&mut value, crate::i18n::ui_tr(ui, label)).changed() {
                     app.run_or_alert("chart.set", json!({"chart": id, key: value}));
                 }
             }
@@ -286,7 +286,11 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
     ui.collapsing(crate::i18n::ui_tr(ui, "Series"), |ui| {
         let data = app.session.active().map(|d| celdas_chart::resolve(&d.wb, d.wb.active_sheet(), &chart));
         for (i, s) in chart.series.iter().enumerate() {
-            let name = data.as_ref().and_then(|d| d.series.get(i)).map(|x| x.name.clone()).unwrap_or_else(|| format!("Series {}", i + 1));
+            let name = data
+                .as_ref()
+                .and_then(|d| d.series.get(i))
+                .map(|x| x.name.clone())
+                .unwrap_or_else(|| crate::i18n::ui_fill(ui, "Series {n}", &[("n", &(i + 1).to_string())]));
             let col =
                 data.as_ref().and_then(|d| d.series.get(i)).map(|x| Color32::from_rgb(x.color[0], x.color[1], x.color[2])).unwrap_or(Color32::GRAY);
             ui.horizontal(|ui| {
@@ -295,7 +299,7 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
                 ui.label(&name);
                 ui.label(egui::RichText::new(&s.values).small().color(crate::theme::Tokens::get(ui.ctx()).text_dim));
                 ui.menu_button(crate::i18n::ui_tr(ui, "Fill…"), |ui| {
-                    if let Some(c) = crate::widgets::color_palette_fixed(ui, &theme.colors, "Automatic") {
+                    if let Some(c) = crate::widgets::color_palette_fixed(ui, &theme.colors, crate::i18n::ui_tr(ui, "Automatic")) {
                         app.run_or_alert(
                             "chart.formatSelection",
                             json!({"chart": id, "series": i, "color": if c == "none" { Json::Null } else { json!(c) }}),
@@ -309,7 +313,11 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
     ui.collapsing(crate::i18n::ui_tr(ui, "Colors & Layout"), |ui| {
         ui.horizontal_wrapped(|ui| {
             for p in ["colorful", "monochrome", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6"] {
-                if ui.button(p).clicked() {
+                let label = match p.strip_prefix("accent") {
+                    Some(n) => crate::i18n::ui_fill(ui, "Accent {n}", &[("n", n)]),
+                    None => crate::i18n::ui_tr(ui, if p == "colorful" { "Colorful" } else { "Monochrome" }).to_owned(),
+                };
+                if ui.button(label).clicked() {
                     app.run_or_alert("chart.changeColors", json!({"chart": id, "palette": p}));
                 }
             }
@@ -330,8 +338,8 @@ fn format_chart(app: &mut SheetApp, ui: &mut Ui) {
         // A file can make a chart larger than the 4,000 points a field otherwise reaches. The
         // range keeps such a size, so the field shows it instead of clamping it to 4,000.
         let range = |v: f32| 40.0..=v.max(4000.0);
-        let a = ui.add(egui::DragValue::new(&mut w).prefix("Width ").range(range(current.0)));
-        let b = ui.add(egui::DragValue::new(&mut h).prefix("Height ").range(range(current.1)));
+        let a = ui.add(egui::DragValue::new(&mut w).prefix(format!("{} ", crate::i18n::ui_tr(ui, "Width"))).range(range(current.0)));
+        let b = ui.add(egui::DragValue::new(&mut h).prefix(format!("{} ", crate::i18n::ui_tr(ui, "Height"))).range(range(current.1)));
         if a.drag_stopped() || a.lost_focus() || b.drag_stopped() || b.lost_focus() {
             ui.data_mut(|d| d.remove::<(f32, f32)>(draft));
             if !ui.input(|i| i.key_pressed(egui::Key::Escape)) {
