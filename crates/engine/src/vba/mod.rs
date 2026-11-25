@@ -170,7 +170,11 @@ fn replace_project(s: &mut Session, bytes: Vec<u8>) -> Result<()> {
 }
 
 fn save(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "module").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| EngineError::Other("vba.save: missing `module`".into()))?.to_string();
+    let name = str_param(p, "module")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| EngineError::Other("vba.save: missing `module`".into()))?
+        .to_string();
     let code = p.get("code").and_then(Json::as_str).ok_or_else(|| EngineError::Other("vba.save: missing `code`".into()))?;
     let kind = match str_param(p, "kind") {
         None | Some("standard") => celdas_vba::ModuleKind::Standard,
@@ -192,7 +196,9 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
         }
         None => {
             let header = if kind == celdas_vba::ModuleKind::Class {
-                format!("Attribute VB_Name = \"{name}\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = False\r\nAttribute VB_Exposed = False\r\n")
+                format!(
+                    "Attribute VB_Name = \"{name}\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = False\r\nAttribute VB_Exposed = False\r\n"
+                )
             } else {
                 format!("Attribute VB_Name = \"{name}\"\r\n")
             };
@@ -209,13 +215,20 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
 }
 
 fn remove(s: &mut Session, p: &Json) -> Result<Json> {
-    let name = str_param(p, "module").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| EngineError::Other("vba.remove: missing `module`".into()))?.to_string();
+    let name = str_param(p, "module")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| EngineError::Other("vba.remove: missing `module`".into()))?
+        .to_string();
     let Some(bytes) = s.doc()?.wb.vba_project.clone() else {
         return Err(EngineError::Other("The workbook has no VBA project.".into()));
     };
     let project = Project::from_bin(&bytes).map_err(|e| EngineError::Other(format!("The VBA project can't be read: {e}")))?;
     let mut modules = modules_of(&project);
-    let i = modules.iter().position(|m| m.name.eq_ignore_ascii_case(&name)).ok_or_else(|| EngineError::Other(format!("The VBA project has no module '{name}'.")))?;
+    let i = modules
+        .iter()
+        .position(|m| m.name.eq_ignore_ascii_case(&name))
+        .ok_or_else(|| EngineError::Other(format!("The VBA project has no module '{name}'.")))?;
     if modules.get(i).is_some_and(|m| is_document(&m.source)) {
         return Err(EngineError::Other(format!("'{name}' is the code behind ThisWorkbook or a sheet and can't be removed; empty its code instead.")));
     }

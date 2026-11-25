@@ -669,7 +669,18 @@ pub(crate) fn paint_headers(
                     }
                 }
                 let color = if row_sel(rr) { t.header_sel_text } else { t.header_text };
-                pr.text(cr.center(), Align2::CENTER_CENTER, (rr as u64 + 1).to_string(), font.clone(), color);
+                // The number shrinks with a short row (a small zoom) and goes when it would not
+                // be legible, instead of overlapping its neighbours.
+                let size = font.size.min(cr.height() * 0.85);
+                if size >= 5.0 {
+                    pr.with_clip_rect(cr.intersect(pr.clip_rect())).text(
+                        cr.center(),
+                        Align2::CENTER_CENTER,
+                        (rr as u64 + 1).to_string(),
+                        egui::FontId::new(size, font.family.clone()),
+                        color,
+                    );
+                }
             }
         }
     }

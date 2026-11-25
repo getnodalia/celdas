@@ -261,6 +261,7 @@ pub fn build_chart(s: &Session, p: &Json) -> Result<(usize, Chart)> {
         }
     });
     let chart = Chart {
+        legend_hidden: Vec::new(),
         id,
         kind,
         anchor: Anchor {

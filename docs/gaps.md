@@ -1,6 +1,6 @@
 # Gaps
 
-> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-11-19 · **Change:** minor (§21: VBA macros run; earlier: §5: Arabic PDF output preserves cell direction, joined glyphs and RTL sheet geometry; earlier: §17: equations; earlier: §13: Solver Sensitivity report; earlier: §4: chart resizing is no longer a gap; earlier: §13: Analysis ToolPak has all 19 tools; earlier: §4: chart data tables implemented with XLSX round-trip and print/PDF; earlier: §13: Solver Options; earlier: §13: Solver Load/Save Model and Reset All) · **Target:** Microsoft Excel (Microsoft 365)
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-11-19 · **Change:** minor (§21: the VBA editor writes modules back into the project; earlier: §21: VBA macros run; earlier: §5: Arabic PDF output preserves cell direction, joined glyphs and RTL sheet geometry; earlier: §17: equations; earlier: §13: Solver Sensitivity report; earlier: §4: chart resizing is no longer a gap; earlier: §13: Analysis ToolPak has all 19 tools; earlier: §4: chart data tables implemented with XLSX round-trip and print/PDF; earlier: §13: Solver Options; earlier: §13: Solver Load/Save Model and Reset All) · **Target:** Microsoft Excel (Microsoft 365)
 
 Every known shortfall against Excel, one entry each, ranked by user impact (what blocks someone
 using Celdas for real work first). This is the work list: pick from the top, check the open
@@ -172,7 +172,7 @@ No alpha blockers: every core workflow passes the [alpha gate](roadmap.md#alpha-
   [hardware-parity.md](hardware-parity.md)
 
 ### 21. Automation and add-ins (F)
-- VBA projects run (`vba.run`; [macros.md](macros.md#vba-macros)) for the common Excel object model: ranges, sheets, shapes, charts, `WorksheetFunction`, text files. Still missing: UserForms, ActiveX/form-control events, workbook and sheet event procedures, the VBA editor, class-module `Property` procedures over host objects, pivot tables and most Application dialogs; no Office
+- VBA projects run (`vba.run`; [macros.md](macros.md#vba-macros)) for the common Excel object model: ranges, sheets, shapes, charts, `WorksheetFunction`, text files. Still missing: UserForms, ActiveX/form-control events, workbook and sheet event procedures, creating a VBA project in a workbook that has none, class-module `Property` procedures over host objects, pivot tables and most Application dialogs; no Office
   Scripts compatibility; no plugin or custom function API. **Estimate:** 20–30 h.
 
 ### 22. AI features (F)

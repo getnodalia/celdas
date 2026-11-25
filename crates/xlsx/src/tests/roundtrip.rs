@@ -359,6 +359,7 @@ fn sample() -> Workbook {
         data: png.into(),
         mime: "image/png".into(),
         alt: "Logo \"x\"".into(),
+        crop: [0.0; 4],
     });
     s.shapes.push(Shape {
         math: Default::default(),
@@ -406,9 +407,11 @@ fn sample() -> Workbook {
             align: Some(ShapeTextAlign::Right),
             anchor: Some(ShapeTextAnchor::Bottom),
             rtl: true,
+            ..Default::default()
         },
     });
     let base_chart = Chart {
+        legend_hidden: Vec::new(),
         id: 20,
         kind: ChartKind::ColumnClustered,
         anchor: Anchor { cell: at("J5"), dx: 0.0, dy: 0.0, width: 480.0, height: 288.0, ..Default::default() },

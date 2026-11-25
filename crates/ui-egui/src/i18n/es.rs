@@ -1569,7 +1569,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "The project has no modules." => "El proyecto no tiene módulos.",
         "Module added." => "Módulo añadido.",
         "Module removed." => "Módulo quitado.",
-        "Saved the code of {n} module(s). The rest of the project was kept as it was." => "Código de {n} módulo(s) guardado. El resto del proyecto se conservó tal cual.",
+        "Saved the code of {n} module(s). The rest of the project was kept as it was." => {
+            "Código de {n} módulo(s) guardado. El resto del proyecto se conservó tal cual."
+        }
         _ => return None,
     })
 }

@@ -168,6 +168,7 @@ impl ExcelHost<'_> {
                 let id = self.edit_sheet(book, sheet, |sh, id| {
                     let anchor = anchor_for(sh, left, top, width, height);
                     sh.charts.push(Chart {
+                        legend_hidden: Vec::new(),
                         id,
                         kind,
                         anchor,

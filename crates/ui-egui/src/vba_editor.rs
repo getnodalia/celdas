@@ -62,12 +62,10 @@ pub fn has_unsaved_changes(d: &Dialog) -> bool {
 
 /// Opens the editor: `{module}` selects a module, `{procedure}` ("Module.Name") its module.
 pub fn open(app: &mut SheetApp, params: &Json) -> Option<Dialog> {
-    let Some(doc) = app.session.active() else { return None };
+    let doc = app.session.active()?;
     if doc.wb.vba_project.is_none() {
-        app.message = Some((
-            "Visual Basic".into(),
-            "This workbook has no VBA project. Open an .xlsm (or .xltm) workbook to see and edit its macros.".into(),
-        ));
+        app.message =
+            Some(("Visual Basic".into(), "This workbook has no VBA project. Open an .xlsm (or .xltm) workbook to see and edit its macros.".into()));
         return None;
     }
     let module = params["module"]
@@ -336,8 +334,8 @@ fn questions(app: &mut SheetApp, ctx: &egui::Context, d: &mut Dialog, open: &mut
                 }
             });
         });
-        match answer {
-            Some(yes) => {
+        if let Some(yes) = answer {
+            {
                 d.values.remove("askRemove");
                 if yes {
                     match app.run("vba.remove", json!({"module": name})) {
@@ -353,7 +351,6 @@ fn questions(app: &mut SheetApp, ctx: &egui::Context, d: &mut Dialog, open: &mut
                     }
                 }
             }
-            None => {}
         }
         return;
     }
@@ -391,6 +388,14 @@ fn questions(app: &mut SheetApp, ctx: &egui::Context, d: &mut Dialog, open: &mut
             }
             None => {}
         }
+    }
+}
+
+/// Escape or the window's close button: unsaved code asks first, and while a question is up the
+/// key answers that question instead.
+pub fn escape(d: &mut Dialog, open: &mut bool) {
+    if d.values.get("askClose").is_none() && d.values.get("askRemove").is_none() {
+        request_close(d, open);
     }
 }
 

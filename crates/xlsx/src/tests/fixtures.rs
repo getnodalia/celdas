@@ -536,6 +536,7 @@ fn chartex_parts_as_excel_expects_them() {
     let mut wb = celdas_model::Workbook::new();
     let mut sheet = celdas_model::Sheet::new("Data");
     sheet.charts.push(Chart {
+        legend_hidden: Vec::new(),
         id: 1,
         kind: ChartKind::Waterfall,
         anchor: Default::default(),
@@ -601,6 +602,7 @@ fn doughnut_writes_every_series_as_a_ring_with_hole_and_angle() {
     let mut wb = celdas_model::Workbook::new();
     let mut sheet = celdas_model::Sheet::new("Data");
     sheet.charts.push(Chart {
+        legend_hidden: Vec::new(),
         id: 1,
         kind: ChartKind::Doughnut,
         anchor: Default::default(),

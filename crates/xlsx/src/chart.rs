@@ -264,7 +264,19 @@ pub fn read_chart(root: &El) -> Option<Chart> {
     let hole_size = doughnut.and_then(|g| g.child_val("holeSize")).and_then(|v| v.trim().parse::<u8>().ok()).unwrap_or(75).clamp(10, 90);
     let first_slice_angle =
         plot.child("pieChart").or(doughnut).and_then(|g| g.child_val("firstSliceAng")).and_then(|v| v.trim().parse::<u16>().ok()).unwrap_or(0) % 360;
+    // Entries the file hides (Excel's "delete" of a legend entry, e.g. a trendline's).
+    let legend_hidden: Vec<usize> = chart
+        .child("legend")
+        .map(|l| {
+            l.kids("legendEntry")
+                .filter(|e| e.child_val("delete").is_some_and(|v| v == "1" || v == "true"))
+                .filter_map(|e| e.child_val("idx").and_then(|v| v.trim().parse::<usize>().ok()))
+                .take(1000)
+                .collect()
+        })
+        .unwrap_or_default();
     Some(Chart {
+        legend_hidden,
         id: 0,
         kind,
         anchor: Default::default(),
@@ -902,7 +914,9 @@ pub fn write_chart(wb: &Workbook, si: usize, ch: &Chart, book_name: &str) -> Str
         LegendPos::Right => Some("r"),
     };
     if let Some(p) = pos {
-        let _ = write!(s, "<c:legend><c:legendPos val=\"{p}\"/><c:overlay val=\"0\"/></c:legend>");
+        let hidden: String =
+            ch.legend_hidden.iter().map(|i| format!("<c:legendEntry><c:idx val=\"{i}\"/><c:delete val=\"1\"/></c:legendEntry>")).collect();
+        let _ = write!(s, "<c:legend><c:legendPos val=\"{p}\"/>{hidden}<c:overlay val=\"0\"/></c:legend>");
     }
     s.push_str("<c:plotVisOnly val=\"1\"/><c:dispBlanksAs val=\"gap\"/></c:chart></c:chartSpace>");
     s

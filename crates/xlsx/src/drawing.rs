@@ -81,16 +81,17 @@ fn read_anchor(a: &El, sheet: &Sheet) -> Option<Anchor> {
     }
 }
 
-/// Colour of a DrawingML colour choice inside `e` (e.g. a `solidFill`).
+/// Colour of a DrawingML colour choice inside `e` (e.g. a `solidFill`), with its transforms:
+/// `lumMod`/`lumOff` (Excel's "lighter 40%", "darker 25%"), `tint` and `shade`. A theme colour
+/// keeps its slot with the transform as a tint; an RGB colour has it applied.
 pub fn dml_color(e: &El) -> Option<Color> {
-    if let Some(c) = e.child("srgbClr").and_then(|c| c.attr("val")) {
-        return Color::from_hex(c);
-    }
-    if let Some(c) = e.child("sysClr").and_then(|c| c.attr("lastClr")) {
-        return Color::from_hex(c);
-    }
-    if let Some(c) = e.child("schemeClr").and_then(|c| c.attr("val")) {
-        let i = match c {
+    let (node, base) = if let Some(c) = e.child("srgbClr") {
+        (c, Color::from_hex(c.attr("val")?)?)
+    } else if let Some(c) = e.child("sysClr") {
+        (c, Color::from_hex(c.attr("lastClr")?)?)
+    } else {
+        let c = e.child("schemeClr")?;
+        let i = match c.attr("val")? {
             "bg1" | "lt1" => 0,
             "tx1" | "dk1" => 1,
             "bg2" | "lt2" => 2,
@@ -105,9 +106,39 @@ pub fn dml_color(e: &El) -> Option<Color> {
             "folHlink" => 11,
             _ => return None,
         };
-        return Some(Color::Theme(i, 0));
+        (c, Color::Theme(i, 0))
+    };
+    let tint = color_tint(node);
+    if tint == 0.0 {
+        return Some(base);
     }
-    None
+    Some(match base {
+        Color::Theme(i, _) => Color::Theme(i, (tint * 1000.0).round().clamp(-1000.0, 1000.0) as i16),
+        Color::Rgb(v) => {
+            let [r, g, b] = celdas_model::style::apply_tint([(v >> 16) as u8, (v >> 8) as u8, v as u8], tint);
+            Color::rgb(r, g, b)
+        }
+        other => other,
+    })
+}
+
+/// The transforms of a colour node as one tint in ECMA-376's sense (-1 darkest .. 1 lightest):
+/// `lumMod` m and `lumOff` o give L·m + o, which is a tint when m + o = 1 (lighter) or o = 0
+/// (darker); `shade` and `tint` give how much of the colour is kept.
+fn color_tint(node: &El) -> f64 {
+    let val = |name: &str| node.child(name).and_then(|c| c.attr_f64("val")).filter(|v| v.is_finite()).map(|v| v / 100_000.0);
+    let (m, o) = (val("lumMod"), val("lumOff"));
+    if m.is_some() || o.is_some() {
+        let (m, o) = (m.unwrap_or(1.0), o.unwrap_or(0.0));
+        return if o > 0.0 { o.clamp(0.0, 1.0) } else { (m - 1.0).clamp(-1.0, 0.0) };
+    }
+    if let Some(s) = val("shade") {
+        return -(1.0 - s).clamp(0.0, 1.0);
+    }
+    if let Some(t) = val("tint") {
+        return (1.0 - t).clamp(0.0, 1.0);
+    }
+    0.0
 }
 
 fn mime_for(name: &str) -> &'static str {
@@ -168,7 +199,14 @@ pub fn read_drawing(cx: &mut Ctx<'_>, part: &str, sheet: &mut Sheet) -> Result<(
                     };
                     let alt = obj.path(&["nvPicPr", "cNvPr"]).and_then(|c| c.attr("descr")).unwrap_or("").to_string();
                     let id = cx.next_object_id();
-                    sheet.images.push(Image { id, anchor, data: data.into(), mime: mime_for(&target).to_string(), alt });
+                    let side = |k: &str| {
+                        obj.path(&["blipFill", "srcRect"])
+                            .and_then(|r| r.attr_f64(k))
+                            .filter(|v| v.is_finite())
+                            .map_or(0.0, |v| (v / 100_000.0).clamp(0.0, 1.0) as f32)
+                    };
+                    let crop = [side("l"), side("t"), side("r"), side("b")];
+                    sheet.images.push(Image { id, anchor, data: data.into(), mime: mime_for(&target).to_string(), alt, crop });
                 }
                 "graphicFrame" => {
                     let Some(gd) = obj.path(&["graphic", "graphicData"]) else { continue };
@@ -280,14 +318,96 @@ fn read_shape(obj: &El, anchor: Anchor) -> Option<Shape> {
             macro_name: String::new(),
         });
     }
-    let fill = sp.child("solidFill").and_then(dml_color).unwrap_or_default();
-    let line = ln.and_then(|l| l.child("solidFill")).and_then(dml_color).unwrap_or_default();
+    // What the shape says itself wins; what it leaves out comes from its style (`xdr:style`: the
+    // theme's fill, line and font for the shape), as Excel resolves it.
+    let style = obj.child("style");
+    let style_ref = |n: &str| style.and_then(|s| s.child(n));
+    let style_idx = |n: &str| style_ref(n).and_then(|r| r.attr("idx")).and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+    let fill = if sp.child("noFill").is_some() {
+        Color::Auto
+    } else if let Some(c) = sp.child("solidFill").and_then(dml_color) {
+        c
+    } else if let Some(c) = sp.child("gradFill").and_then(|g| g.child("gsLst")).and_then(|l| l.kids("gs").next()).and_then(dml_color) {
+        c
+    } else if style_idx("fillRef") > 0 {
+        style_ref("fillRef").and_then(dml_color).unwrap_or_default()
+    } else {
+        Color::Auto
+    };
+    let ln_fill = ln.and_then(|l| l.child("solidFill")).and_then(dml_color);
+    let ln_none = ln.is_some_and(|l| l.child("noFill").is_some());
+    let ln_idx = style_idx("lnRef");
+    let line = match ln_fill {
+        Some(c) => c,
+        None if !ln_none && ln_idx > 0 => style_ref("lnRef").and_then(dml_color).unwrap_or_default(),
+        None => Color::Auto,
+    };
     let text = obj.child("txBody").map(body_text).unwrap_or_default();
     let mut format = read_text_format(obj.child("txBody"));
-    format.no_line = ln.is_some_and(|l| l.child("noFill").is_some());
+    // No outline of its own and none from the style: Excel draws none.
+    format.no_line = ln_none || (ln_fill.is_none() && ln_idx == 0 && ln.is_none_or(|l| l.child("gradFill").is_none()));
+    // Outline width: the shape's own, else the one its style names (the theme's 0.5, 1 and 1.5 pt).
+    format.line_width = ln
+        .and_then(|l| l.attr_f64("w"))
+        .filter(|w| w.is_finite())
+        .map(|w| (w / 12700.0).clamp(0.0, 100.0) as f32)
+        // 0.75 pt (9525 EMU) is the line Celdas draws by default: the model leaves it unset.
+        .filter(|w| (w - 0.75).abs() > 0.001)
+        .or(match ln_idx {
+            1 => Some(0.5),
+            2 => Some(1.0),
+            3 => Some(1.5),
+            _ => None,
+        });
+    if format.text_color.is_none() {
+        format.text_color = style_ref("fontRef").and_then(dml_color);
+    }
+    format.bevel = sp
+        .child("sp3d")
+        .and_then(|s| s.child("bevelT"))
+        .map(|b| b.attr_f64("w").filter(|w| w.is_finite()).unwrap_or(76200.0))
+        .map(|w| (w / 12700.0).clamp(0.0, 100.0) as f32);
+    if let Some(bp) = obj.path(&["txBody", "bodyPr"]) {
+        let ins = |k: &str, d: f32| bp.attr_f64(k).filter(|v| v.is_finite()).map_or(d, |v| (v / 12700.0).clamp(0.0, 1000.0) as f32);
+        if ["lIns", "tIns", "rIns", "bIns"].iter().any(|k| bp.attr(k).is_some()) {
+            format.insets = Some([ins("lIns", 7.2), ins("tIns", 3.6), ins("rIns", 7.2), ins("bIns", 3.6)]);
+        }
+    }
+    format.runs = obj.child("txBody").map(read_runs).unwrap_or_default();
     let name = obj.path(&["nvSpPr", "cNvPr"]).and_then(|c| c.attr("name")).unwrap_or("").to_string();
     let macro_name = macro_target(obj.attr("macro").unwrap_or(""));
     Some(Shape { id: 0, kind, anchor, fill, line, text, format, math: Default::default(), name, macro_name })
+}
+
+/// The formatting of each run of a text body, when the runs differ (see `ShapeFormat::runs`).
+fn read_runs(tb: &El) -> Vec<celdas_model::TextRun> {
+    use celdas_model::TextRun;
+    let mut runs: Vec<TextRun> = Vec::new();
+    for (i, p) in tb.kids("p").enumerate() {
+        if i > 0 {
+            // The newline between paragraphs belongs to the run before it.
+            match runs.last_mut() {
+                Some(last) => last.chars += 1,
+                None => runs.push(TextRun { chars: 1, ..Default::default() }),
+            }
+        }
+        for r in p.kids("r") {
+            let Some(t) = r.child("t") else { continue };
+            let rpr = r.child("rPr");
+            runs.push(TextRun {
+                chars: t.text.chars().count(),
+                bold: rpr.is_some_and(|r| r.flag("b", false)),
+                italic: rpr.is_some_and(|r| r.flag("i", false)),
+                underline: rpr.and_then(|r| r.attr("u")).is_some_and(|u| u != "none"),
+                strike: rpr.and_then(|r| r.attr("strike")).is_some_and(|u| u != "noStrike"),
+                size: rpr.and_then(|r| r.attr_f64("sz")).filter(|v| v.is_finite()).map(|v| (v / 100.0).clamp(1.0, 4000.0) as f32),
+                color: rpr.and_then(|r| r.child("solidFill")).and_then(dml_color),
+            });
+        }
+    }
+    // One formatting throughout is what the shape's own format says.
+    let same = |a: &TextRun, b: &TextRun| TextRun { chars: 0, ..a.clone() } == TextRun { chars: 0, ..b.clone() };
+    if runs.first().is_none_or(|f| runs.iter().all(|r| same(r, f))) { Vec::new() } else { runs }
 }
 
 /// A shape's text formatting: vertical anchor (`a:bodyPr anchor`), the first paragraph's
@@ -496,9 +616,15 @@ pub fn write_drawing(sheet: &Sheet, theme: &Theme, objs: &[Obj<'_>]) -> String {
                 s.push_str(&open);
                 let _ = write!(
                     s,
-                    "<xdr:pic><xdr:nvPicPr><xdr:cNvPr id=\"{id}\" name=\"Picture {}\" descr=\"{}\"/><xdr:cNvPicPr><a:picLocks noChangeAspect=\"1\"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed=\"{rid}\"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr>{}<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>",
+                    "<xdr:pic><xdr:nvPicPr><xdr:cNvPr id=\"{id}\" name=\"Picture {}\" descr=\"{}\"/><xdr:cNvPicPr><a:picLocks noChangeAspect=\"1\"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed=\"{rid}\"/>{}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr>{}<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>",
                     id - 1,
                     esc_attr(&img.alt),
+                    if img.crop.iter().any(|v| *v > 0.0) {
+                        let e = |v: f32| (v.clamp(0.0, 1.0) * 100_000.0).round() as u32;
+                        format!("<a:srcRect l=\"{}\" t=\"{}\" r=\"{}\" b=\"{}\"/>", e(img.crop[0]), e(img.crop[1]), e(img.crop[2]), e(img.crop[3]))
+                    } else {
+                        String::new()
+                    },
                     xfrm(&img.anchor, "a:xfrm")
                 );
             }
@@ -567,13 +693,17 @@ pub fn write_drawing(sheet: &Sheet, theme: &Theme, objs: &[Obj<'_>]) -> String {
                 let line_c = srgb(&sh.line, theme);
                 if sh.format.no_line {
                     s.push_str("<a:ln><a:noFill/></a:ln>");
-                } else if line_c.is_some() || sh.kind == ShapeKind::Arrow {
-                    s.push_str("<a:ln w=\"9525\">");
+                } else {
+                    // The outline Celdas draws when none is set (dark grey), written out: a shape
+                    // with no `a:ln` has no outline in Excel.
+                    let emu = sh.format.line_width.filter(|w| w.is_finite()).map_or(9525, |w| (w.clamp(0.0, 100.0) * 12700.0).round() as u32);
+                    let _ = write!(s, "<a:ln w=\"{emu}\">");
                     match line_c {
                         Some(c) => {
                             let _ = write!(s, "<a:solidFill>{c}</a:solidFill>");
                         }
-                        None => s.push_str("<a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill>"),
+                        None if sh.kind == ShapeKind::Arrow => s.push_str("<a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill>"),
+                        None => s.push_str("<a:solidFill><a:srgbClr val=\"505050\"/></a:solidFill>"),
                     }
                     if sh.kind == ShapeKind::Arrow {
                         s.push_str("<a:tailEnd type=\"triangle\"/>");

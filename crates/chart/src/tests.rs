@@ -39,6 +39,7 @@ const ALL_KINDS: [ChartKind; 26] = [
 
 fn chart(kind: ChartKind) -> Chart {
     Chart {
+        legend_hidden: Vec::new(),
         id: 1,
         kind,
         anchor: Anchor::default(),

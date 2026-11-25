@@ -407,17 +407,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
         }
     }
     if ctx.input(|i| i.key_pressed(Key::Escape)) || !win_open {
-        // In Solver Options, Escape (or closing the window) cancels the options only.
-        if in_solver_options(&d) {
-            cancel_solver_options(&mut d);
-        } else if d.name == "vbaEditor" {
-            // Unsaved code asks first; Escape while a question is up answers that question.
-            if d.values.get("askClose").is_none() && d.values.get("askRemove").is_none() {
-                crate::vba_editor::request_close(&mut d, &mut open);
-            }
-        } else {
-            open = false;
-        }
+        escape_dialog(&mut d, &mut open);
     }
     if confirm && d.name == "insertPicture" && d.picture_target != app.view_key() {
         app.message = Some((d.title.clone(), "Return to the original worksheet to insert this picture, or cancel and choose another cell.".into()));
@@ -778,4 +768,16 @@ pub(crate) fn dialog_header(ui: &mut egui::Ui, title: &str, close: &str, open: &
         });
     });
     ui.add_space(6.0);
+}
+
+/// Escape or the window's close button. In Solver Options it cancels the options only; the VBA
+/// editor asks about unsaved code first; anything else closes.
+fn escape_dialog(d: &mut Dialog, open: &mut bool) {
+    if in_solver_options(d) {
+        cancel_solver_options(d);
+    } else if d.name == "vbaEditor" {
+        crate::vba_editor::escape(d, open);
+    } else {
+        *open = false;
+    }
 }

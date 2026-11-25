@@ -467,7 +467,11 @@ fn modules_are_added_and_removed_but_not_the_ones_behind_the_sheets() {
     let mut s = Session::new();
     s.new_workbook();
     let bin = write_bin(&[
-        SourceModule { name: "Module1".into(), kind: ModuleKind::Standard, source: "Attribute VB_Name = \"Module1\"\r\nSub A()\r\nEnd Sub\r\n".into() },
+        SourceModule {
+            name: "Module1".into(),
+            kind: ModuleKind::Standard,
+            source: "Attribute VB_Name = \"Module1\"\r\nSub A()\r\nEnd Sub\r\n".into(),
+        },
         SourceModule {
             name: "Sheet1".into(),
             kind: ModuleKind::Class,

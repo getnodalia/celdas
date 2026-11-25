@@ -149,8 +149,15 @@ fn is_declaration(line: &[u8]) -> bool {
 
 fn patch_project_text(text: &[u8], removed: &[Vec<u8>], added: &[(Vec<u8>, ModuleKind)]) -> Vec<u8> {
     let mut lines: Vec<Vec<u8>> = text.split(|b| *b == b'\n').map(|l| l.strip_suffix(b"\r").unwrap_or(l).to_vec()).collect();
-    lines.retain(|l| !removed.iter().any(|n| declares_module(l, n)) && !removed.iter().any(|n| l.strip_prefix(n.as_slice()).is_some_and(|r| r.starts_with(b"="))));
-    let at = lines.iter().rposition(|l| is_declaration(l)).map(|i| i + 1).or_else(|| lines.iter().position(|l| l.starts_with(b"ID=")).map(|i| i + 1)).unwrap_or(0);
+    lines.retain(|l| {
+        !removed.iter().any(|n| declares_module(l, n)) && !removed.iter().any(|n| l.strip_prefix(n.as_slice()).is_some_and(|r| r.starts_with(b"=")))
+    });
+    let at = lines
+        .iter()
+        .rposition(|l| is_declaration(l))
+        .map(|i| i + 1)
+        .or_else(|| lines.iter().position(|l| l.starts_with(b"ID=")).map(|i| i + 1))
+        .unwrap_or(0);
     let new: Vec<Vec<u8>> = added
         .iter()
         .map(|(n, k)| {
@@ -203,7 +210,8 @@ pub fn rewrite_bin(bin: &[u8], modules: &[SourceModule]) -> Result<Vec<u8>, Stri
     let key = |n: &str| n.to_lowercase();
     let mut seen: Vec<String> = Vec::new();
     for m in modules {
-        if m.name.is_empty() || !m.name.chars().all(|c| c.is_alphanumeric() || c == '_') || m.name.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+        if m.name.is_empty() || !m.name.chars().all(|c| c.is_alphanumeric() || c == '_') || m.name.chars().next().is_some_and(|c| c.is_ascii_digit())
+        {
             return Err(format!("{:?} is not a valid module name: use letters, digits and underscores, starting with a letter", m.name));
         }
         if seen.contains(&key(&m.name)) {
@@ -245,13 +253,12 @@ pub fn rewrite_bin(bin: &[u8], modules: &[SourceModule]) -> Result<Vec<u8>, Stri
     let mut nodes: HashMap<usize, NodeId> = HashMap::new();
     nodes.insert(0, Writer::ROOT);
     let replaced: Vec<String> = old.iter().map(|g| format!("VBA/{}", g.stream).to_lowercase()).collect();
-    let removed_names: Vec<Vec<u8>> = old
+    let removed_names: Vec<Vec<u8>> =
+        old.iter().zip(&kept).filter(|(_, k)| k.is_none()).map(|(g, _)| encode_text(code_page, &g.name).unwrap_or_default()).collect();
+    let added_names: Vec<(Vec<u8>, ModuleKind)> = added
         .iter()
-        .zip(&kept)
-        .filter(|(_, k)| k.is_none())
-        .map(|(g, _)| encode_text(code_page, &g.name).unwrap_or_default())
-        .collect();
-    let added_names: Vec<(Vec<u8>, ModuleKind)> = added.iter().map(|m| Ok((encode_text(code_page, &m.name).map_err(|c| format!("{c:?} is not in the project's code page"))?, m.kind))).collect::<Result<_, String>>()?;
+        .map(|m| Ok((encode_text(code_page, &m.name).map_err(|c| format!("{c:?} is not in the project's code page"))?, m.kind)))
+        .collect::<Result<_, String>>()?;
     for id in cf.walk() {
         let (Some(e), Some(path)) = (cf.entry(id), cf.path(id)) else { continue };
         let lower = path.to_lowercase();
@@ -275,11 +282,15 @@ pub fn rewrite_bin(bin: &[u8], modules: &[SourceModule]) -> Result<Vec<u8>, Stri
                     let mut names: Vec<(Vec<u8>, String)> = Vec::new();
                     for (g, k) in old.iter().zip(&kept) {
                         if k.is_some() {
-                            names.push((encode_text(code_page, &g.name).map_err(|c| format!("{c:?} is not in the project's code page"))?, g.name.clone()));
+                            names.push((
+                                encode_text(code_page, &g.name).map_err(|c| format!("{c:?} is not in the project's code page"))?,
+                                g.name.clone(),
+                            ));
                         }
                     }
                     for m in &added {
-                        names.push((encode_text(code_page, &m.name).map_err(|c| format!("{c:?} is not in the project's code page"))?, m.name.clone()));
+                        names
+                            .push((encode_text(code_page, &m.name).map_err(|c| format!("{c:?} is not in the project's code page"))?, m.name.clone()));
                     }
                     project_wm(&names)
                 } else {
@@ -321,7 +332,11 @@ mod tests {
 
     /// A project as Excel keeps one: modules, the `PROJECT` text, a form's storage and a stale cache.
     fn project_with_extras() -> Vec<u8> {
-        let base = write_bin(&[module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"), module("Sheet1", ModuleKind::Class, "Option Explicit\r\n")]).unwrap();
+        let base = write_bin(&[
+            module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"),
+            module("Sheet1", ModuleKind::Class, "Option Explicit\r\n"),
+        ])
+        .unwrap();
         let cf = CompoundFile::open(&base).unwrap();
         let mut w = Writer::new(Version::V3);
         for id in cf.walk() {
@@ -344,7 +359,11 @@ mod tests {
     #[test]
     fn an_edited_module_reads_back_with_its_new_source() {
         let bin = project_with_extras();
-        let edited = rewrite_bin(&bin, &[module("Module1", ModuleKind::Standard, "Sub B()\nEnd Sub"), module("Sheet1", ModuleKind::Class, "Option Explicit\r\n")]).unwrap();
+        let edited = rewrite_bin(
+            &bin,
+            &[module("Module1", ModuleKind::Standard, "Sub B()\nEnd Sub"), module("Sheet1", ModuleKind::Class, "Option Explicit\r\n")],
+        )
+        .unwrap();
         let p = Project::from_bin(&edited).unwrap();
         assert_eq!(p.modules.len(), 2);
         assert_eq!(p.modules[0].source, "Sub B()\r\nEnd Sub\r\n");
@@ -355,7 +374,8 @@ mod tests {
     #[test]
     fn everything_else_in_the_file_is_kept_and_the_caches_go() {
         let bin = project_with_extras();
-        let edited = rewrite_bin(&bin, &[module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"), module("Sheet1", ModuleKind::Class, "")]).unwrap();
+        let edited =
+            rewrite_bin(&bin, &[module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"), module("Sheet1", ModuleKind::Class, "")]).unwrap();
         assert_eq!(text_of(&edited, "UserForm1/\u{3}VBFrame"), b"form");
         let cf = CompoundFile::open(&edited).unwrap();
         assert!(!cf.has_stream("VBA/__SRP_0"));
@@ -368,14 +388,22 @@ mod tests {
         let bin = project_with_extras();
         let added = rewrite_bin(
             &bin,
-            &[module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"), module("Sheet1", ModuleKind::Class, ""), module("Calc", ModuleKind::Standard, "Function F()\r\n F = 1\r\nEnd Function\r\n")],
+            &[
+                module("Module1", ModuleKind::Standard, "Sub A()\r\nEnd Sub\r\n"),
+                module("Sheet1", ModuleKind::Class, ""),
+                module("Calc", ModuleKind::Standard, "Function F()\r\n F = 1\r\nEnd Function\r\n"),
+            ],
         )
         .unwrap();
         let p = Project::from_bin(&added).unwrap();
         assert_eq!(p.modules.iter().map(|m| m.name.as_str()).collect::<Vec<_>>(), ["Module1", "Sheet1", "Calc"]);
         assert!(p.procedures().iter().any(|x| x.name == "F" && x.is_function));
         assert!(String::from_utf8(text_of(&added, "PROJECT")).unwrap().contains("Module=Calc"));
-        let removed = rewrite_bin(&added, &[module("Sheet1", ModuleKind::Class, ""), module("Calc", ModuleKind::Standard, "Function F()\r\n F = 1\r\nEnd Function\r\n")]).unwrap();
+        let removed = rewrite_bin(
+            &added,
+            &[module("Sheet1", ModuleKind::Class, ""), module("Calc", ModuleKind::Standard, "Function F()\r\n F = 1\r\nEnd Function\r\n")],
+        )
+        .unwrap();
         let p = Project::from_bin(&removed).unwrap();
         assert_eq!(p.modules.iter().map(|m| m.name.as_str()).collect::<Vec<_>>(), ["Sheet1", "Calc"]);
         let project_text = String::from_utf8(text_of(&removed, "PROJECT")).unwrap();
@@ -407,7 +435,8 @@ mod tests {
         let Ok(path) = std::env::var("CELDAS_TURBO_BIN") else { return };
         let bin = std::fs::read(path).unwrap();
         let before = Project::from_bin(&bin).unwrap();
-        let mut modules: Vec<SourceModule> = before.modules.iter().map(|m| SourceModule { name: m.name.clone(), kind: m.kind, source: m.source.clone() }).collect();
+        let mut modules: Vec<SourceModule> =
+            before.modules.iter().map(|m| SourceModule { name: m.name.clone(), kind: m.kind, source: m.source.clone() }).collect();
         let first = modules.iter_mut().find(|m| m.kind == ModuleKind::Standard).unwrap();
         first.source.push_str("' edited by Celdas\r\n");
         let out = rewrite_bin(&bin, &modules).unwrap();
