@@ -21,6 +21,27 @@ pub fn parse_module(name: &str, src: &str) -> PResult<Module> {
     Ok(module)
 }
 
+/// Statements typed on their own (the Immediate window), numbered from line 1.
+pub(crate) fn parse_snippet(src: &str) -> PResult<Vec<Stmt>> {
+    let mut p = Parser::new(lex(src)?);
+    let out = p.block()?;
+    if p.peek().is_some() {
+        return p.err("unexpected text");
+    }
+    Ok(out)
+}
+
+/// One expression typed on its own (a watch).
+pub(crate) fn parse_expression(src: &str) -> PResult<Expr> {
+    let mut p = Parser::new(lex(src)?);
+    let e = p.expr()?;
+    p.skip_eols();
+    if p.peek().is_some() {
+        return p.err("unexpected text after the expression");
+    }
+    Ok(e)
+}
+
 struct Parser {
     toks: Vec<Token>,
     /// Each identifier as it was spelled, for the names a person sees (`toks` holds them lower case).
@@ -591,7 +612,7 @@ impl Parser {
             }
             "stop" => {
                 self.advance();
-                StmtKind::End
+                StmtKind::Stop
             }
             "randomize" | "doevents" if self.at_end_after_word() => {
                 self.advance();
