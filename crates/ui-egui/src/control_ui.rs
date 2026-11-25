@@ -272,7 +272,7 @@ pub fn open_assign(app: &SheetApp, params: &Json) -> Option<Dialog> {
             v["macro"] = json!(macros(app).first().map(|m| m.0.clone()).unwrap_or_default());
         }
     }
-    Some(Dialog::custom("assignAction", &format!("Assign Action: {}", c.display_name()), v))
+    Some(Dialog::custom("assignAction", &app.ui.language.tr_fill("Assign Action: {name}", &[("name", &c.display_name())]), v))
 }
 
 /// The `control.assign` params the dialog describes, or why it can't yet.
@@ -558,7 +558,7 @@ pub fn format_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
         });
         for (key, label) in [("locked", "Locked (when the sheet is protected)"), ("print", "Print object")] {
             let mut on = d.values.get(key).and_then(Json::as_bool).unwrap_or(true);
-            ui.checkbox(&mut on, label);
+            ui.checkbox(&mut on, crate::i18n::ui_tr(ui, label));
             d.values.insert(key.into(), json!(on));
         }
     }

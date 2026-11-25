@@ -45,7 +45,7 @@ pub(super) fn name_manager(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog
                 }
                 ui.label(n.get("value").map(|v| v.to_string()).unwrap_or_default().chars().take(30).collect::<String>());
                 ui.label(field(n, "refersTo"));
-                ui.label(field(n, "scope"));
+                ui.label(crate::i18n::ui_tr(ui, &field(n, "scope")));
                 ui.end_row();
             }
         });

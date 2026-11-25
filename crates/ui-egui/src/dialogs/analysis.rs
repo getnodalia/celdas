@@ -251,7 +251,7 @@ pub(super) fn analysis_toolpak(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Di
         let mut chosen = false;
         egui::ScrollArea::vertical().max_height(260.0).show(ui, |ui| {
             for (id, label) in TOOLS {
-                let r = ui.selectable_label(pick == *id, *label);
+                let r = ui.selectable_label(pick == *id, crate::i18n::ui_tr(ui, label));
                 if r.clicked() {
                     d.values.insert("pick".into(), json!(id));
                 }
@@ -282,7 +282,7 @@ pub(super) fn analysis_toolpak(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Di
     let to = d.values.get("outputTo").and_then(Json::as_str).unwrap_or("newSheet").to_string();
     for (key, choice, text_label) in [("output", "range", "Output Range:"), ("newSheet", "newSheet", "New Worksheet Ply:")] {
         ui.horizontal(|ui| {
-            let r = ui.radio(to == choice, text_label);
+            let r = ui.radio(to == choice, crate::i18n::ui_tr(ui, text_label));
             if r.clicked() {
                 d.values.insert("outputTo".into(), json!(choice));
                 // Another output option ends picking into Output Range, so a later selection on
@@ -465,7 +465,7 @@ pub(super) fn solver(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog, conf
     ui.horizontal(|ui| {
         ui.label(crate::i18n::ui_tr(ui, "To:"));
         for (g, label) in [("max", "Max"), ("min", "Min"), ("value", "Value Of:")] {
-            if ui.radio(goal == g, label).clicked() {
+            if ui.radio(goal == g, crate::i18n::ui_tr(ui, label)).clicked() {
                 d.values.insert("goal".into(), json!(g));
             }
         }
@@ -552,11 +552,14 @@ pub(super) fn solver(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog, conf
             .accessible_name(lang.tr("Select a Solving Method:"));
     });
     ui.label(
-        egui::RichText::new(match method.as_str() {
-            "simplex" => "Simplex LP: for linear models; integer and binary constraints by branch and bound.",
-            "evolutionary" => "Evolutionary: a genetic search for models that aren't smooth; every variable cell needs bounds.",
-            _ => "GRG Nonlinear: a local optimum of a smooth model, from the current values.",
-        })
+        egui::RichText::new(crate::i18n::ui_tr(
+            ui,
+            match method.as_str() {
+                "simplex" => "Simplex LP: for linear models; integer and binary constraints by branch and bound.",
+                "evolutionary" => "Evolutionary: a genetic search for models that aren't smooth; every variable cell needs bounds.",
+                _ => "GRG Nonlinear: a local optimum of a smooth model, from the current values.",
+            },
+        ))
         .small(),
     );
     ui.add_space(4.0);
@@ -674,10 +677,10 @@ pub(super) fn solver_results(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dial
     let restore = d.values.get("restore").and_then(Json::as_bool).unwrap_or(false);
     if changed {
         ui.add_space(4.0);
-        if ui.radio(!restore, "Keep Solver Solution").clicked() {
+        if ui.radio(!restore, crate::i18n::ui_tr(ui, "Keep Solver Solution")).clicked() {
             d.values.insert("restore".into(), json!(false));
         }
-        if ui.radio(restore, "Restore Original Values").clicked() {
+        if ui.radio(restore, crate::i18n::ui_tr(ui, "Restore Original Values")).clicked() {
             d.values.insert("restore".into(), json!(true));
         }
     }

@@ -24,13 +24,27 @@ pub(super) fn command_search(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dial
 
     let mac = ui.ctx().os() == egui::os::OperatingSystem::Mac;
     let q = d.search.to_ascii_lowercase();
+    let lang = app.ui.language;
     let cmds: Vec<(String, String, String, Option<String>)> = app
         .session
         .commands()
         .into_iter()
         .filter(|c| c.enabled)
-        .filter(|c| q.is_empty() || c.label.to_ascii_lowercase().contains(&q) || c.id.to_ascii_lowercase().contains(&q))
-        .map(|c| (c.id.to_string(), c.label.to_string(), c.menu.join(" › "), c.shortcut_for_platform(mac)))
+        // A command is found by its English label, its id or its label in the interface language.
+        .filter(|c| {
+            q.is_empty()
+                || c.label.to_ascii_lowercase().contains(&q)
+                || c.id.to_ascii_lowercase().contains(&q)
+                || lang.tr(c.label).to_lowercase().contains(&q)
+        })
+        .map(|c| {
+            (
+                c.id.to_string(),
+                lang.tr(c.label).to_string(),
+                c.menu.iter().map(|m| lang.tr(m)).collect::<Vec<_>>().join(" › "),
+                c.shortcut_for_platform(mac),
+            )
+        })
         .take(40)
         .collect();
 

@@ -233,7 +233,25 @@ impl Language {
         let translated = self.tr(&message);
         let fallback = message.rsplit_once('|').map_or(message.as_str(), |(_, label)| label);
 
-        if translated == fallback { message } else { translated.to_owned() }
+        if translated == fallback { self.tr_message(&message).unwrap_or(message) } else { translated.to_owned() }
+    }
+
+    /// A message that carries data (a name, a count, an error), in this language: the English was
+    /// built with `format!`, so it is read back against [`MESSAGE_TEMPLATES`] and the catalog's
+    /// translation of the matching template is filled in again. `None` when no template matches
+    /// or the catalog has no translation for it. A `{label}` or `{summary}` value is text of the interface,
+    /// so it is translated too; every other value is shown as it is.
+    pub(crate) fn tr_message(self, message: &str) -> Option<String> {
+        if self == Self::En {
+            return None;
+        }
+        MESSAGE_TEMPLATES.iter().find_map(|template| {
+            let values = unfill(template, message)?;
+            let shown = self.translated(template)?;
+            let values: Vec<(&str, &str)> =
+                values.into_iter().map(|(name, value)| (name, if name == "label" || name == "summary" { self.tr(value) } else { value })).collect();
+            Some(fill(shown, &values))
+        })
     }
 
     /// A worksheet function's description in this language, looked up by the English text of the
@@ -256,6 +274,28 @@ impl Language {
         }
     }
 }
+
+/// The English of the messages Celdas builds around data, with the data as `{name}` pieces.
+/// [`Language::tr_message`] reads a shown message back against these, so `format!` stays where it
+/// is and every language still translates the sentence. A template here needs a row in a catalog
+/// to be translated, and must produce the message exactly when filled.
+pub(crate) const MESSAGE_TEMPLATES: &[&str] = &[
+    "All done. We made {n} replacements.",
+    "Current value must be a whole number from 0 to {max}.",
+    "Current value must be between {min} and {max}.",
+    "Do you want to delete macro “{name}”?",
+    "Do you want to delete script “{name}”?",
+    "Run macro '{name}'? It came with a workbook you opened.",
+    "{what}. Overwrite them, or move the data out of the way?",
+    "Ranges that stay editable when the sheet is protected:\n{summary}",
+    "'{file}' is protected.",
+    "The model was saved to {range}.",
+    "This workbook asks to open the address below. Links can lead to harmful sites or start other programs: open it only if you trust the workbook.\n\n{url}",
+    "The parameters aren't valid JSON: {error}",
+    "The picture on the clipboard can't be pasted: {error}",
+    "The question was about “{book}”, which is no longer the active workbook, so nothing was done.",
+    "{label} must be a whole number from 0 to {max}.",
+];
 
 /// Fills in the `{name}` placeholders of a translated template in one pass, so a value that itself
 /// holds `{…}` (a macro or sheet name) is shown as it is and never filled again. A placeholder

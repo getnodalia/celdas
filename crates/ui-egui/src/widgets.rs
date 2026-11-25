@@ -142,7 +142,8 @@ pub fn big_split_button(ui: &mut Ui, icon: Icon, label: &str, tip: &str) -> (Res
     let name = label.replace('\n', " ");
     let enabled = ui.is_enabled();
     main.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, &name));
-    arrow.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, format!("{name} options")));
+    let accessible_name = crate::i18n::ui_fill(ui, "{name} options", &[("name", &name)]);
+    arrow.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, accessible_name.clone()));
     let tip = tip_text(ui, tip);
     (main.on_hover_text(tip.clone()), arrow.on_hover_text(tip))
 }
@@ -277,7 +278,8 @@ pub fn small_split_button(ui: &mut Ui, icon: Icon, label: &str, tip: &str) -> (R
     let name = label.replace('\n', " ");
     let enabled = ui.is_enabled();
     m.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, &name));
-    a.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, format!("{name} options")));
+    let accessible_name = crate::i18n::ui_fill(ui, "{name} options", &[("name", &name)]);
+    a.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, accessible_name.clone()));
     if m.hovered() || a.hovered() {
         ui.painter().rect_filled(rect, 4.0, t.hover);
         for (part, r) in [(&m, main), (&a, arrow)] {

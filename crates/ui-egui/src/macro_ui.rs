@@ -233,8 +233,9 @@ pub fn question_box(app: &mut SheetApp, ctx: &egui::Context) {
     let mut answer: Option<Option<Json>> = None;
     egui::Modal::new(egui::Id::unique("celdas.macro_question")).show(ctx, |ui| {
         ui.set_width(400.0);
-        ui.label(egui::RichText::new(&q.title).strong());
-        ui.add(egui::Label::new(&q.text).wrap());
+        let lang = crate::i18n::current(ui.ctx());
+        ui.label(egui::RichText::new(lang.tr(&q.title)).strong());
+        ui.add(egui::Label::new(lang.tr_error(&q.text)).wrap());
         ui.add_space(8.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.button(crate::i18n::ui_tr(ui, "Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
@@ -243,7 +244,7 @@ pub fn question_box(app: &mut SheetApp, ctx: &egui::Context) {
             // Right to left: list the choices reversed, so the first one ends up next to Cancel
             // and Enter picks it.
             for (k, (label, extra)) in q.choices.iter().enumerate().rev() {
-                if ui.add(egui::Button::new(label.as_str()).min_size(vec2(72.0, 0.0))).clicked()
+                if ui.add(egui::Button::new(lang.tr(label)).min_size(vec2(72.0, 0.0))).clicked()
                     || (k == 0 && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                 {
                     answer = Some(Some(extra.clone()));

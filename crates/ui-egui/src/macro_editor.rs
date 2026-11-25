@@ -26,6 +26,7 @@ use egui::{Color32, Id, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use serde_json::{Map, Value as Json, json};
 
 use crate::dialogs::Dialog;
+use crate::i18n::Language;
 use crate::icons::{self, Icon};
 use crate::theme::{self, Cat, Tokens};
 use crate::widgets::small_button;
@@ -286,19 +287,29 @@ fn short(v: &Json) -> String {
 
 /// The label of command `id` (`Set Cell`), or the id when it isn't a command.
 pub fn command_label(id: &str) -> String {
-    celdas_engine::find_command(id).map(|c| c.label.to_string()).unwrap_or_else(|| id.to_string())
+    command_label_in(Language::En, id)
+}
+
+/// [`command_label`] in `lang`.
+pub fn command_label_in(lang: Language, id: &str) -> String {
+    celdas_engine::find_command(id).map(|c| lang.tr(c.label).to_string()).unwrap_or_else(|| id.to_string())
 }
 
 /// A step in one line: "Set D2 to =B2*C2", "Repeat for each row of Input.data".
 pub fn summary(st: &Step) -> String {
+    summary_in(Language::En, st)
+}
+
+/// [`summary`] in `lang`.
+pub fn summary_in(lang: Language, st: &Step) -> String {
     match &st.kind {
         StepKind::Command { id, params } => {
             let p = |k: &str| params.get(k).map(short);
             match (id.as_str(), p("cell"), p("input"), p("range")) {
-                ("cell.set", Some(c), Some(i), _) => format!("Set {c} to {i}"),
-                ("selection.set", _, _, Some(r)) => format!("Select {r}"),
+                ("cell.set", Some(c), Some(i), _) => lang.tr_fill("Set {cell} to {value}", &[("cell", &c), ("value", &i)]),
+                ("selection.set", _, _, Some(r)) => lang.tr_fill("Select {range}", &[("range", &r)]),
                 _ => {
-                    let label = command_label(id);
+                    let label = command_label_in(lang, id);
                     let args: Vec<String> =
                         params.as_object().map(|o| o.iter().take(3).map(|(k, v)| format!("{k}: {}", short(v))).collect()).unwrap_or_default();
                     if args.is_empty() { label } else { format!("{label} · {}", args.join(", ")) }
@@ -306,7 +317,8 @@ pub fn summary(st: &Step) -> String {
             }
         }
         StepKind::Repeat { over, of, .. } => {
-            format!("Repeat for each {} of {}", if *of == RepeatOf::Rows { "row" } else { "column" }, if over.is_empty() { "…" } else { over })
+            let template = if *of == RepeatOf::Rows { "Repeat for each row of {range}" } else { "Repeat for each column of {range}" };
+            lang.tr_fill(template, &[("range", if over.is_empty() { "…" } else { over })])
         }
         StepKind::If { cell, op, value, .. } => {
             let op = match op {
@@ -316,17 +328,17 @@ pub fn summary(st: &Step) -> String {
                 CompareOp::Ge => "≥",
                 CompareOp::Lt => "<",
                 CompareOp::Le => "≤",
-                CompareOp::Empty => return format!("If {cell} is empty"),
-                CompareOp::NotEmpty => return format!("If {cell} isn't empty"),
-                CompareOp::Contains => "contains",
+                CompareOp::Empty => return lang.tr_fill("If {cell} is empty", &[("cell", cell)]),
+                CompareOp::NotEmpty => return lang.tr_fill("If {cell} isn't empty", &[("cell", cell)]),
+                CompareOp::Contains => lang.tr("contains"),
             };
-            format!("If {cell} {op} {}", short(value))
+            lang.tr_fill("If {cell} {op} {value}", &[("cell", cell), ("op", op), ("value", &short(value))])
         }
         StepKind::Stop { message, .. } => {
             if message.is_empty() {
-                "Stop".into()
+                lang.tr("Stop").to_owned()
             } else {
-                format!("Stop: {message}")
+                lang.tr_fill("Stop: {message}", &[("message", message)])
             }
         }
     }
@@ -357,21 +369,26 @@ pub fn category(st: &Step) -> (Icon, Cat) {
 /// Problems the editor can see without running: an unknown command, one a macro may not run,
 /// one that needs a permission the macro doesn't list, a Repeat or If with nothing to work on.
 pub fn static_error(m: &Macro, st: &Step) -> Option<String> {
+    static_error_in(Language::En, m, st)
+}
+
+/// [`static_error`] in `lang`.
+pub fn static_error_in(lang: Language, m: &Macro, st: &Step) -> Option<String> {
     match &st.kind {
         StepKind::Command { id, params } => {
             if celdas_engine::find_command(id).is_none() {
-                return Some(format!("There is no command “{id}”."));
+                return Some(lang.tr_fill("There is no command “{id}”.", &[("id", id)]));
             }
             match macro_policy(id, params, celdas_engine::Trust::Local) {
-                Policy::Deny(why) => Some(format!("{id} can't run in a macro: {why}.")),
+                Policy::Deny(why) => Some(lang.tr_fill("{id} can't run in a macro: {why}.", &[("id", id), ("why", &why)])),
                 Policy::NeedsPermission(what) if !m.permissions.iter().any(|p| p == id) => {
-                    Some(format!("{id} {what}: the macro must list it in its permissions."))
+                    Some(lang.tr_fill("{id} {what}: the macro must list it in its permissions.", &[("id", id), ("what", &what)]))
                 }
                 _ => None,
             }
         }
-        StepKind::Repeat { over, .. } if over.trim().is_empty() => Some("Choose the range to repeat over.".into()),
-        StepKind::If { cell, .. } if cell.trim().is_empty() => Some("Choose the cell to test.".into()),
+        StepKind::Repeat { over, .. } if over.trim().is_empty() => Some(lang.tr("Choose the range to repeat over.").into()),
+        StepKind::If { cell, .. } if cell.trim().is_empty() => Some(lang.tr("Choose the cell to test.").into()),
         _ => None,
     }
 }
@@ -576,7 +593,13 @@ fn at_home(app: &mut SheetApp, ed: &Editor, title: &str) -> bool {
         return true;
     }
     let book = home_title(app, ed);
-    app.message = Some((title.into(), format!("The macro “{}” is in “{book}”. Switch back to it to save, check or run the macro.", ed.draft.name)));
+    app.message = Some((
+        title.into(),
+        app.ui.language.tr_fill(
+            "The macro “{name}” is in “{book}”. Switch back to it to save, check or run the macro.",
+            &[("name", &ed.draft.name), ("book", &book)],
+        ),
+    ));
     false
 }
 
@@ -740,7 +763,7 @@ pub fn check(app: &mut SheetApp, ed: &mut Editor) {
             {
                 ed.errors.insert(step.to_string(), e.get("message").and_then(Json::as_str).unwrap_or("").to_string());
             }
-            ed.outcome = Some(check_text(&v));
+            ed.outcome = Some(check_text(app.ui.language, &v));
             ed.check = Some(v);
         }
         Err(e) => {
@@ -750,23 +773,27 @@ pub fn check(app: &mut SheetApp, ed: &mut Editor) {
     }
 }
 
-fn check_text(v: &Json) -> String {
+fn check_text(lang: Language, v: &Json) -> String {
     if let Some(errors) = v["errors"].as_array().filter(|e| !e.is_empty()) {
         return errors.iter().filter_map(Json::as_str).collect::<Vec<_>>().join(" ");
     }
     if let Some(asks) = v["needsApproval"].as_array() {
-        return format!("Needs approval before it can run: it {}.", asks.iter().filter_map(Json::as_str).collect::<Vec<_>>().join(", "));
+        return lang.tr_fill(
+            "Needs approval before it can run: it {asks}.",
+            &[("asks", &asks.iter().filter_map(Json::as_str).collect::<Vec<_>>().join(", "))],
+        );
     }
     let cells: u64 = v["footprint"]["sheets"].as_array().into_iter().flatten().filter_map(|s| s["changed"].as_u64()).sum();
     let conflicts = v["conflicts"].as_u64().unwrap_or(0);
-    let mut text = format!("Check passed: writes {cells} cell{}", if cells == 1 { "" } else { "s" });
+    let mut text =
+        lang.tr_fill(if cells == 1 { "Check passed: writes {n} cell" } else { "Check passed: writes {n} cells" }, &[("n", &cells.to_string())]);
     if conflicts > 0 {
-        text.push_str(&format!(", {conflicts} of them hold data (red)"));
+        text.push_str(&lang.tr_fill(", {n} of them hold data (red)", &[("n", &conflicts.to_string())]));
     } else {
-        text.push_str(", over no data");
+        text.push_str(lang.tr(", over no data"));
     }
     if v["footprint"]["partial"].is_object() {
-        text.push_str(". Later steps can't be previewed.");
+        text.push_str(lang.tr(". Later steps can't be previewed."));
     }
     text
 }
@@ -780,7 +807,10 @@ pub fn run(app: &mut SheetApp, ed: &mut Editor) {
     ed.errors.clear();
     let name = ed.draft.name.clone();
     match macro_ui::call(app, "Run Macro", "macro.run", json!({"name": name, "inputs": run_inputs(ed)})) {
-        Some(v) => ed.outcome = Some(format!("Ran {} step{}.", v["ran"].as_u64().unwrap_or(0), if v["ran"] == 1 { "" } else { "s" })),
+        Some(v) => {
+            let template = if v["ran"] == 1 { "Ran {n} step." } else { "Ran {n} steps." };
+            ed.outcome = Some(app.ui.language.tr_fill(template, &[("n", &v["ran"].as_u64().unwrap_or(0).to_string())]));
+        }
         None => {
             if let Some((_, text)) = app.message.as_ref()
                 && let Some((path, msg)) = error_step(text)
@@ -824,7 +854,7 @@ pub fn debug_action(app: &mut SheetApp, ed: &mut Editor, action: &str) {
         let name = ed.draft.name.clone();
         let p = with(json!({"name": name, "inputs": run_inputs(ed), "action": "start"}), bp_params(ed));
         let Some(v) = macro_ui::call(app, "Debug Macro", "macro.debug", p) else { return };
-        apply_debug(ed, &v);
+        apply_debug(app.ui.language, ed, &v);
         if action == "step" || v["state"] != "paused" {
             return;
         }
@@ -837,19 +867,19 @@ pub fn debug_action(app: &mut SheetApp, ed: &mut Editor, action: &str) {
         other => json!({"action": other}),
     };
     if let Some(v) = macro_ui::call(app, "Debug Macro", "macro.debug", with(p, bp_params(ed))) {
-        apply_debug(ed, &v);
+        apply_debug(app.ui.language, ed, &v);
     }
 }
 
 /// Stop: ends the debugged run, keeping its changes as one undo step or undoing them.
 pub fn stop(app: &mut SheetApp, ed: &mut Editor, keep: bool) {
     if let Some(v) = macro_ui::call(app, "Debug Macro", "macro.debug", json!({"action": "stop", "keep": keep})) {
-        apply_debug(ed, &v);
+        apply_debug(app.ui.language, ed, &v);
     }
 }
 
 /// Takes in a `macro.debug` result: paused (select the current step), or ended (say how).
-pub fn apply_debug(ed: &mut Editor, v: &Json) {
+pub fn apply_debug(lang: Language, ed: &mut Editor, v: &Json) {
     match v["state"].as_str() {
         Some("paused") => {
             if let Some(step) = v["current"]["step"].as_str() {
@@ -863,19 +893,29 @@ pub fn apply_debug(ed: &mut Editor, v: &Json) {
             ed.debug = None;
             let executed = v["executed"].as_u64().unwrap_or(0);
             ed.outcome = Some(match state {
-                "finished" => format!("Finished: {executed} step{} ran, one undo step.", if executed == 1 { "" } else { "s" }),
+                "finished" => {
+                    let template = if executed == 1 { "Finished: {n} step ran, one undo step." } else { "Finished: {n} steps ran, one undo step." };
+                    lang.tr_fill(template, &[("n", &executed.to_string())])
+                }
                 "failed" => {
                     if let Some(step) = v["error"]["step"].as_str() {
                         let msg = v["error"]["message"].as_str().unwrap_or("").to_string();
                         ed.errors.insert(step.to_string(), msg);
                         ed.selected = Some(step.to_string());
                     }
-                    v["message"].as_str().unwrap_or("The macro failed; nothing was changed.").to_string()
+                    v["message"].as_str().map_or_else(|| lang.tr("The macro failed; nothing was changed.").to_string(), |m| lang.tr(m).to_string())
                 }
-                _ if v["kept"] == true => format!("Stopped after {executed} step{}; the changes were kept.", if executed == 1 { "" } else { "s" }),
+                _ if v["kept"] == true => {
+                    let template = if executed == 1 {
+                        "Stopped after {n} step; the changes were kept."
+                    } else {
+                        "Stopped after {n} steps; the changes were kept."
+                    };
+                    lang.tr_fill(template, &[("n", &executed.to_string())])
+                }
                 _ => match v["stopped"].as_str() {
-                    Some(msg) => format!("Stopped: {msg}"),
-                    None => "Stopped; the changes were undone.".into(),
+                    Some(msg) => lang.tr_fill("Stopped: {message}", &[("message", msg)]),
+                    None => lang.tr("Stopped; the changes were undone.").to_owned(),
                 },
             });
         }
@@ -893,7 +933,7 @@ pub fn window(app: &mut SheetApp, ctx: &egui::Context, d: &mut Dialog, open: &mu
     };
     // A prompt's button re-ran a debugger action (making room for the output, approving).
     if let Some(v) = app.macros.debug_result.take() {
-        apply_debug(&mut ed, &v);
+        apply_debug(Language::En, &mut ed, &v);
     }
     if ed.start_check {
         ed.start_check = false;
@@ -1300,16 +1340,17 @@ fn status_line(app: &SheetApp, ui: &mut Ui, ed: &Editor, t: &Tokens) {
         let cur = &st["current"];
         let step = cur["step"].as_str().unwrap_or("");
         let what = match cur["kind"].as_str() {
-            Some("command") => command_label(cur["command"].as_str().unwrap_or("")),
+            Some("command") => command_label_in(app.ui.language, cur["command"].as_str().unwrap_or("")),
             Some(k) => k.to_string(),
             None => String::new(),
         };
-        let mut head = format!("Paused before step {step} · {what}");
+        let lang = app.ui.language;
+        let mut head = lang.tr_fill("Paused before step {step} · {what}", &[("step", step), ("what", &what)]);
         if let (Some(at), Some(of)) = (cur["iteration"]["at"].as_u64(), cur["iteration"]["of"].as_u64()) {
-            head.push_str(&format!(" · pass {at} of {of}"));
+            head.push_str(&lang.tr_fill(" · pass {at} of {of}", &[("at", &at.to_string()), ("of", &of.to_string())]));
         }
         if st["atBreakpoint"] == true {
-            head.push_str(" · at a breakpoint");
+            head.push_str(lang.tr(" · at a breakpoint"));
         }
         ui.label(egui::RichText::new(head).strong().color(t.text));
         let resolved = cur.get("params").or(cur.get("over")).or(cur.get("cell")).map(|p| p.to_string());
@@ -1424,7 +1465,8 @@ fn step_list(app: &mut SheetApp, ui: &mut Ui, ed: &mut Editor, debugging: bool) 
                 let c = pos2(gutter.right() + 1.0, gutter.center().y);
                 p.add(egui::Shape::convex_polygon(vec![c + vec2(-6.0, -5.0), c + vec2(1.0, 0.0), c + vec2(-6.0, 5.0)], t.accent, Stroke::NONE));
             }
-            g.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, st.breakpoint, format!("Breakpoint {}", row.key)));
+            let accessible_name = crate::i18n::ui_fill(ui, "Breakpoint {n}", &[("n", &row.key)]);
+            g.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, st.breakpoint, accessible_name.clone()));
             if g.on_hover_text(crate::i18n::ui_tr(ui, "Breakpoint: the debugger stops before this step")).clicked()
                 && let Some(s) = step_mut(&mut ed.draft.steps, &row.key)
             {
@@ -1434,14 +1476,15 @@ fn step_list(app: &mut SheetApp, ui: &mut Ui, ed: &mut Editor, debugging: bool) 
             p.text(pos2(rect.left() + 48.0, rect.center().y), egui::Align2::RIGHT_CENTER, &row.key, theme::ui_font(11.5), t.text_dim);
             let (icon, cat) = category(&st);
             icons::paint(p, Rect::from_center_size(pos2(rect.left() + 62.0 + indent, rect.center().y), vec2(16.0, 16.0)), icon, t.cat(cat));
-            let text = summary(&st);
+            let text = summary_in(crate::i18n::current(ui.ctx()), &st);
             let text_color = if st.enabled { t.text } else { t.text_disabled };
             let text_left = rect.left() + 76.0 + indent;
             let text_clip = Rect::from_min_max(pos2(text_left, rect.top()), pos2(rect.right() - 46.0, rect.bottom()));
             p.with_clip_rect(text_clip).text(pos2(text_left, rect.center().y), egui::Align2::LEFT_CENTER, &text, theme::ui_font(12.5), text_color);
-            resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, format!("Step {}: {text}", row.key)));
+            let accessible_name = crate::i18n::ui_fill(ui, "Step {n}: {text}", &[("n", &row.key), ("text", &text)]);
+            resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, accessible_name.clone()));
             // Error marker.
-            let error = ed.errors.get(&row.key).cloned().or_else(|| static_error(&ed.draft, &st));
+            let error = ed.errors.get(&row.key).cloned().or_else(|| static_error_in(crate::i18n::current(ui.ctx()), &ed.draft, &st));
             if let Some(err) = error {
                 let c = pos2(rect.right() - 36.0, rect.center().y);
                 p.circle_filled(c, 7.0, t.danger);
@@ -1598,7 +1641,7 @@ fn picker(ui: &mut Ui, ed: &mut Editor) {
     let Some(pk) = ed.picker.as_mut() else { return };
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(if pk.replace.is_some() { "Change the command" } else { "Add a step" }).strong());
+        ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, if pk.replace.is_some() { "Change the command" } else { "Add a step" })).strong());
         if ui.small_button(crate::i18n::ui_tr(ui, "Cancel")).clicked() {
             pk.search = "\u{1}".into();
         }
@@ -1661,7 +1704,7 @@ fn picker(ui: &mut Ui, ed: &mut Editor) {
 fn inspector(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, ed: &mut Editor, debugging: bool) {
     ui.horizontal_wrapped(|ui| {
         for (tab, label) in [(Tab::Step, "Details"), (Tab::Inputs, "Inputs"), (Tab::Output, "Output")] {
-            if ui.selectable_label(ed.tab == tab, label).clicked() {
+            if ui.selectable_label(ed.tab == tab, crate::i18n::ui_tr(ui, label)).clicked() {
                 ed.tab = tab;
             }
         }
@@ -1837,10 +1880,10 @@ fn step_tab(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, ed: &mut Editor) {
         let (r, _) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::hover());
         icons::paint(ui.painter(), r, icon, t.cat(cat));
         let title = match &st.kind {
-            StepKind::Command { id, .. } => command_label(id),
-            StepKind::Repeat { .. } => "Repeat".into(),
-            StepKind::If { .. } => "If".into(),
-            StepKind::Stop { .. } => "Stop".into(),
+            StepKind::Command { id, .. } => command_label_in(crate::i18n::current(ui.ctx()), id),
+            StepKind::Repeat { .. } => crate::i18n::ui_tr(ui, "Repeat").into(),
+            StepKind::If { .. } => crate::i18n::ui_tr(ui, "If").into(),
+            StepKind::Stop { .. } => crate::i18n::ui_tr(ui, "Stop").into(),
         };
         ui.label(egui::RichText::new(crate::i18n::ui_fill(ui, "Step {path} · {title}", &[("path", &path), ("title", &title)])).strong());
         if let StepKind::Command { id, .. } = &st.kind {
@@ -1863,7 +1906,7 @@ fn step_tab(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, ed: &mut Editor) {
             ed.dirty = true;
         }
     });
-    if let Some(e) = ed.errors.get(&path).cloned().or_else(|| static_error(&ed.draft, &st)) {
+    if let Some(e) = ed.errors.get(&path).cloned().or_else(|| static_error_in(crate::i18n::current(ui.ctx()), &ed.draft, &st)) {
         ui.label(egui::RichText::new(e).color(t.danger));
     }
     ui.add_space(4.0);
@@ -2155,7 +2198,11 @@ fn inputs_tab(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, ed: &mut Editor) 
         let headers = if k == 0 { example_headers(app, &ed.example, i.header) } else { vec![] };
         egui::Grid::new("me_types").num_columns(2).show(ui, |ui| {
             for c in 0..ncols {
-                let label = headers.get(c).filter(|h| !h.is_empty()).cloned().unwrap_or_else(|| format!("Column {}", c + 1));
+                let label = headers
+                    .get(c)
+                    .filter(|h| !h.is_empty())
+                    .cloned()
+                    .unwrap_or_else(|| crate::i18n::ui_fill(ui, "Column {n}", &[("n", &(c + 1).to_string())]));
                 ui.label(label);
                 let mut ty = i.col_types.get(c).copied().unwrap_or(ColType::Any);
                 let before_ty = ty;

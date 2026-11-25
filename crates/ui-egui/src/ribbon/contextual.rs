@@ -48,7 +48,7 @@ pub(super) fn table_design(app: &mut SheetApp, ui: &mut Ui) {
             ("Banded Rows", "table.bandedRows", banded),
         ] {
             let mut on = v;
-            if ui.checkbox(&mut on, label).changed() {
+            if ui.checkbox(&mut on, crate::i18n::ui_tr(ui, label)).changed() {
                 act(app, cmd, json!({"table": tname, "on": on}));
             }
         }
@@ -60,7 +60,7 @@ pub(super) fn table_design(app: &mut SheetApp, ui: &mut Ui) {
             ("Banded Columns", "table.bandedColumns", banded_c),
         ] {
             let mut on = v;
-            if ui.checkbox(&mut on, label).changed() {
+            if ui.checkbox(&mut on, crate::i18n::ui_tr(ui, label)).changed() {
                 act(app, cmd, json!({"table": tname, "on": on}));
             }
         }
@@ -164,7 +164,7 @@ pub(super) fn chart_design(app: &mut SheetApp, ui: &mut Ui) {
             ("Funnel", "funnel", ""),
             ("Treemap", "treemap", ""),
         ] {
-            if ui.button(label).clicked() {
+            if ui.button(crate::i18n::ui_tr(ui, label)).clicked() {
                 act(app, "chart.set", json!({"chart": id, "type": k, "subtype": s}));
             }
         }
