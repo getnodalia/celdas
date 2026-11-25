@@ -15,7 +15,7 @@ mod shapes;
 
 use std::hash::{Hash, Hasher};
 
-use celdas_vba::{Project, Vm};
+use celdas_vba::{Project, SourceModule, Vm};
 use serde_json::{Value as Json, json};
 
 use crate::cmd::{CommandSpec, bool_param, cmd, has_doc, str_param};
@@ -39,9 +39,27 @@ pub fn specs() -> Vec<CommandSpec> {
             "Show VBA Source",
             [],
             None,
-            "{module?: name} → {modules: [{name, source}]}",
+            "{module?: name} → {modules: [{name, kind, source (the whole text), header (its leading Attribute lines), code (the rest: what an editor shows), document (the code behind ThisWorkbook or a sheet)}]}",
             has_doc,
             source
+        ),
+        cmd!(
+            "vba.save",
+            "Save VBA Module",
+            [],
+            None,
+            "{module: \"Module1\", code: \"Sub Hello()…\", kind?: standard|class (for a module the project doesn't have yet, default standard)} replaces the code of a module of the workbook's VBA project, or adds the module, and keeps the rest of the project as it is (its `Attribute` lines stay) → {module, created, procedures: [name], errors: [message]}. The code is saved even when Celdas can't read it (errors say why). One undo step; the workbook then asks again before running a macro",
+            has_doc,
+            save
+        ),
+        cmd!(
+            "vba.remove",
+            "Remove VBA Module",
+            [],
+            None,
+            "{module: \"Module1\"} removes a module from the VBA project. The code behind ThisWorkbook and the sheets can't be removed (its code can be emptied with vba.save)",
+            has_doc,
+            remove
         ),
         cmd!(
             "vba.run",
@@ -83,7 +101,7 @@ fn list(s: &mut Session, _: &Json) -> Result<Json> {
     let modules: Vec<Json> = project
         .modules
         .iter()
-        .map(|m| json!({"name": m.name, "kind": if m.kind == celdas_vba::ModuleKind::Standard { "standard" } else { "class" }, "lines": m.source.lines().count()}))
+        .map(|m| json!({"name": m.name, "kind": kind_name(m.kind), "document": is_document(&m.source), "lines": m.source.lines().count()}))
         .collect();
     let procedures: Vec<Json> = project
         .procedures()
@@ -101,12 +119,123 @@ fn source(s: &mut Session, p: &Json) -> Result<Json> {
         .modules
         .iter()
         .filter(|m| only.is_none_or(|n| m.name.eq_ignore_ascii_case(n)))
-        .map(|m| json!({"name": m.name, "source": m.source}))
+        .map(|m| {
+            let (header, code) = split_attributes(&m.source);
+            json!({"name": m.name, "kind": kind_name(m.kind), "source": m.source, "header": header, "code": code, "document": is_document(&m.source)})
+        })
         .collect();
     if modules.is_empty() && only.is_some() {
         return Err(EngineError::Other(format!("The VBA project has no module '{}'.", only.unwrap_or_default())));
     }
     Ok(json!({"modules": modules}))
+}
+
+fn kind_name(k: celdas_vba::ModuleKind) -> &'static str {
+    if k == celdas_vba::ModuleKind::Standard { "standard" } else { "class" }
+}
+
+/// A module's leading `Attribute` lines (how the file names and declares it) and the rest, the code
+/// a person edits.
+fn split_attributes(source: &str) -> (&str, &str) {
+    let mut end = 0;
+    for line in source.split_inclusive('\n') {
+        if line.trim_start().to_ascii_lowercase().starts_with("attribute ") {
+            end += line.len();
+        } else {
+            break;
+        }
+    }
+    source.split_at(end)
+}
+
+/// Whether the module is the code behind ThisWorkbook or a sheet (or a form): the file declares it
+/// with a base class, and the project can't lose it.
+fn is_document(source: &str) -> bool {
+    split_attributes(source).0.to_ascii_lowercase().contains("vb_base")
+}
+
+fn project_error(e: String) -> EngineError {
+    EngineError::Other(format!("The VBA project can't be written: {e}"))
+}
+
+fn modules_of(project: &Project) -> Vec<SourceModule> {
+    project.modules.iter().map(|m| SourceModule { name: m.name.clone(), kind: m.kind, source: m.source.clone() }).collect()
+}
+
+fn replace_project(s: &mut Session, bytes: Vec<u8>) -> Result<()> {
+    crate::cmd::edit(s, |cx| {
+        cx.wb.vba_project = Some(std::sync::Arc::new(bytes));
+        Ok(())
+    })
+}
+
+fn save(s: &mut Session, p: &Json) -> Result<Json> {
+    let name = str_param(p, "module")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| EngineError::Other("vba.save: missing `module`".into()))?
+        .to_string();
+    let code = p.get("code").and_then(Json::as_str).ok_or_else(|| EngineError::Other("vba.save: missing `code`".into()))?;
+    let kind = match str_param(p, "kind") {
+        None | Some("standard") => celdas_vba::ModuleKind::Standard,
+        Some("class") => celdas_vba::ModuleKind::Class,
+        Some(other) => return Err(EngineError::Other(format!("vba.save: `kind` must be standard or class, not {other:?}"))),
+    };
+    let Some(bytes) = s.doc()?.wb.vba_project.clone() else {
+        return Err(EngineError::Other("The workbook has no VBA project; open an .xlsm to edit its macros.".into()));
+    };
+    let project = Project::from_bin(&bytes).map_err(|e| EngineError::Other(format!("The VBA project can't be read: {e}")))?;
+    let mut modules = modules_of(&project);
+    let created = match modules.iter().position(|m| m.name.eq_ignore_ascii_case(&name)) {
+        Some(i) => {
+            if let Some(m) = modules.get_mut(i) {
+                let header = split_attributes(&m.source).0.to_string();
+                m.source = format!("{header}{code}");
+            }
+            false
+        }
+        None => {
+            let header = if kind == celdas_vba::ModuleKind::Class {
+                format!(
+                    "Attribute VB_Name = \"{name}\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = False\r\nAttribute VB_Exposed = False\r\n"
+                )
+            } else {
+                format!("Attribute VB_Name = \"{name}\"\r\n")
+            };
+            modules.push(SourceModule { name: name.clone(), kind, source: format!("{header}{code}") });
+            true
+        }
+    };
+    let out = celdas_vba::rewrite_bin(&bytes, &modules).map_err(project_error)?;
+    replace_project(s, out)?;
+    let saved = Project::from_sources(vec![SourceModule { name: name.clone(), kind, source: code.to_string() }]);
+    let procedures: Vec<String> = saved.procedures().into_iter().map(|p| p.name).collect();
+    let errors: Vec<String> = saved.syntax_errors().into_iter().map(|(_, e)| e.to_string()).collect();
+    Ok(json!({"module": name, "created": created, "procedures": procedures, "errors": errors}))
+}
+
+fn remove(s: &mut Session, p: &Json) -> Result<Json> {
+    let name = str_param(p, "module")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| EngineError::Other("vba.remove: missing `module`".into()))?
+        .to_string();
+    let Some(bytes) = s.doc()?.wb.vba_project.clone() else {
+        return Err(EngineError::Other("The workbook has no VBA project.".into()));
+    };
+    let project = Project::from_bin(&bytes).map_err(|e| EngineError::Other(format!("The VBA project can't be read: {e}")))?;
+    let mut modules = modules_of(&project);
+    let i = modules
+        .iter()
+        .position(|m| m.name.eq_ignore_ascii_case(&name))
+        .ok_or_else(|| EngineError::Other(format!("The VBA project has no module '{name}'.")))?;
+    if modules.get(i).is_some_and(|m| is_document(&m.source)) {
+        return Err(EngineError::Other(format!("'{name}' is the code behind ThisWorkbook or a sheet and can't be removed; empty its code instead.")));
+    }
+    modules.remove(i);
+    let out = celdas_vba::rewrite_bin(&bytes, &modules).map_err(project_error)?;
+    replace_project(s, out)?;
+    Ok(json!({"module": name}))
 }
 
 /// `Name` from `Name`, `Module.Name`, or a shape's macro text (`'Book.xlsm'!Name`, `[0]!Name`).

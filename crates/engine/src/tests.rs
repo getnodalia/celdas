@@ -4174,6 +4174,7 @@ fn add_image(s: &mut Session, cell: &str, mode: celdas_model::AnchorMode) -> u32
         data: tiny_png().into(),
         mime: "image/png".into(),
         alt: String::new(),
+        crop: [0.0; 4],
     });
     id
 }

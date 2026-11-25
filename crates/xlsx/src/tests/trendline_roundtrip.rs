@@ -35,6 +35,7 @@ fn all_trendlines() -> Vec<Trendline> {
 
 fn chart(id: u32, kind: ChartKind, trendlines: Vec<Trendline>) -> Chart {
     Chart {
+        legend_hidden: Vec::new(),
         id,
         kind,
         anchor: Anchor { cell: CellRef::new(id * 16, 3), width: 480.0, height: 300.0, ..Anchor::default() },
@@ -190,4 +191,18 @@ fn a_huge_forecast_in_a_file_is_read_clamped() {
     assert_eq!((big.forward, big.backward), (Trendline::MAX_FORECAST, Trendline::MAX_FORECAST));
     let small = read("2.5", "-3");
     assert_eq!((small.forward, small.backward), (2.5, 0.0), "ordinary values are kept");
+}
+
+#[test]
+fn hidden_legend_entries_round_trip() {
+    let mut wb = workbook();
+    let mut s = (*wb.sheets[0]).clone();
+    // Entry 0 is the series, 1.. its trendlines: hide the 2nd and 3rd trendline.
+    s.charts[0].legend_hidden = vec![2, 3];
+    wb.sheets[0] = Arc::new(s);
+    let bytes = write_xlsx(&wb).unwrap();
+    assert!(chart_parts(&bytes)[0].contains("<c:legendEntry><c:idx val=\"2\"/><c:delete val=\"1\"/></c:legendEntry>"));
+    let (back, _) = read_xlsx(&bytes).unwrap();
+    assert_eq!(back.sheets[0].charts[0].legend_hidden, vec![2, 3]);
+    assert!(back.sheets[0].charts[1].legend_hidden.is_empty());
 }

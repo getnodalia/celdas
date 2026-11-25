@@ -8,7 +8,7 @@ use crate::lexer::SyntaxError;
 use crate::parser::parse_module;
 
 /// Most bytes a decompressed stream may have (a hostile file must not exhaust memory).
-const MAX_STREAM: usize = 64 << 20;
+pub(crate) const MAX_STREAM: usize = 64 << 20;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModuleKind {
@@ -120,11 +120,11 @@ impl Project {
 
 // ---- reading vbaProject.bin ----
 
-fn u16_at(b: &[u8], i: usize) -> Option<u16> {
+pub(crate) fn u16_at(b: &[u8], i: usize) -> Option<u16> {
     Some(u16::from_le_bytes([*b.get(i)?, *b.get(i + 1)?]))
 }
 
-fn u32_at(b: &[u8], i: usize) -> Option<u32> {
+pub(crate) fn u32_at(b: &[u8], i: usize) -> Option<u32> {
     Some(u32::from_le_bytes([*b.get(i)?, *b.get(i + 1)?, *b.get(i + 2)?, *b.get(i + 3)?]))
 }
 
@@ -212,11 +212,11 @@ struct DirModule {
     kind: ModuleKind,
 }
 
-fn decode_text(code_page: u16, bytes: &[u8]) -> String {
+pub(crate) fn decode_text(code_page: u16, bytes: &[u8]) -> String {
     bytes.iter().map(|b| nodalia_codepage::code_page_byte(code_page, *b)).collect()
 }
 
-fn utf16(bytes: &[u8]) -> String {
+pub(crate) fn utf16(bytes: &[u8]) -> String {
     let units: Vec<u16> = bytes.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
     String::from_utf16_lossy(&units)
 }
@@ -273,7 +273,7 @@ fn parse_dir(dir: &[u8]) -> Vec<(DirModule, u16)> {
     mods
 }
 
-fn read_modules(bin: &[u8]) -> Result<Vec<SourceModule>, String> {
+pub(crate) fn read_modules(bin: &[u8]) -> Result<Vec<SourceModule>, String> {
     let cf = CompoundFile::open(bin).map_err(|e| format!("the VBA project is not readable: {e}"))?;
     let dir_raw = cf.read_path_capped("VBA/dir", MAX_STREAM as u64).map_err(|e| format!("the VBA project has no directory: {e}"))?;
     let dir = decompress(&dir_raw).ok_or("the VBA project's directory is damaged")?;

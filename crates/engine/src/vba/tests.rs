@@ -432,6 +432,88 @@ fn a_workbook_from_a_file_asks_before_its_macros_run() {
     let _ = std::fs::remove_dir_all(std::path::Path::new(&path).parent().unwrap());
 }
 
+#[test]
+fn an_edited_module_runs_with_its_new_code_and_one_undo_step_brings_the_old_back() {
+    let mut s = session("Sub Hola()\nRange(\"A1\").Value = 1\nEnd Sub\n");
+    let before = s.doc().unwrap().undo.len();
+    let r = s.execute("vba.save", json!({"module": "module1", "code": "Sub Hola()\r\n    Range(\"A1\").Value = 2\r\nEnd Sub\r\n"})).unwrap();
+    assert_eq!(r["created"], false);
+    assert_eq!(r["procedures"][0], "Hola");
+    assert_eq!(r["errors"].as_array().unwrap().len(), 0);
+    assert_eq!(s.doc().unwrap().undo.len(), before + 1);
+    run(&mut s, "Hola");
+    assert_eq!(text(&s, 0, "A1"), "2");
+    let src = s.execute("vba.source", json!({"module": "Module1"})).unwrap();
+    assert!(src["modules"][0]["code"].as_str().unwrap().contains("Value = 2"));
+    s.execute("edit.undo", json!({})).unwrap();
+    s.execute("edit.undo", json!({})).unwrap();
+    run(&mut s, "Hola");
+    assert_eq!(text(&s, 0, "A1"), "1");
+}
+
+#[test]
+fn code_celdas_cannot_read_is_still_saved_and_reported() {
+    let mut s = session("Sub Hola()\nEnd Sub\n");
+    let r = s.execute("vba.save", json!({"module": "Module1", "code": "Sub Broken(\n"})).unwrap();
+    assert!(!r["errors"].as_array().unwrap().is_empty(), "{r}");
+    let src = s.execute("vba.source", json!({})).unwrap();
+    assert!(src["modules"][0]["code"].as_str().unwrap().contains("Sub Broken("));
+    let l = s.execute("vba.list", json!({})).unwrap();
+    assert!(!l["errors"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn modules_are_added_and_removed_but_not_the_ones_behind_the_sheets() {
+    let mut s = Session::new();
+    s.new_workbook();
+    let bin = write_bin(&[
+        SourceModule {
+            name: "Module1".into(),
+            kind: ModuleKind::Standard,
+            source: "Attribute VB_Name = \"Module1\"\r\nSub A()\r\nEnd Sub\r\n".into(),
+        },
+        SourceModule {
+            name: "Sheet1".into(),
+            kind: ModuleKind::Class,
+            source: "Attribute VB_Name = \"Sheet1\"\r\nAttribute VB_Base = \"0{00020820-0000-0000-C000-000000000046}\"\r\n".into(),
+        },
+    ])
+    .unwrap();
+    Arc::make_mut(&mut s.doc_mut().unwrap().wb).vba_project = Some(Arc::new(bin));
+    let r = s.execute("vba.save", json!({"module": "Calc", "code": "Function Doble(x)\r\n    Doble = x * 2\r\nEnd Function\r\n"})).unwrap();
+    assert_eq!(r["created"], true);
+    let l = s.execute("vba.list", json!({})).unwrap();
+    assert_eq!(l["modules"].as_array().unwrap().len(), 3);
+    assert_eq!(l["modules"][1]["document"], true);
+    s.execute("vba.save", json!({"module": "Sheet1", "code": "Option Explicit\r\n"})).unwrap();
+    let src = s.execute("vba.source", json!({"module": "Sheet1"})).unwrap();
+    assert!(src["modules"][0]["header"].as_str().unwrap().contains("VB_Base"), "its Attribute lines stay");
+    assert!(s.execute("vba.remove", json!({"module": "Sheet1"})).unwrap_err().to_string().contains("can't be removed"));
+    s.execute("vba.remove", json!({"module": "calc"})).unwrap();
+    assert_eq!(s.execute("vba.list", json!({})).unwrap()["modules"].as_array().unwrap().len(), 2);
+    assert!(s.execute("vba.remove", json!({"module": "calc"})).is_err());
+    assert!(s.execute("vba.save", json!({"module": "1 bad", "code": ""})).is_err());
+    assert!(s.execute("vba.save", json!({"module": "Module1"})).is_err());
+    let mut blank = Session::new();
+    blank.new_workbook();
+    assert!(blank.execute("vba.save", json!({"module": "M", "code": ""})).unwrap_err().to_string().contains("no VBA project"));
+}
+
+#[test]
+fn an_edit_is_saved_with_the_file_and_the_reopened_workbook_asks_again() {
+    let mut s = session("Sub Hola()\nRange(\"A1\").Value = 1\nEnd Sub\n");
+    s.execute("vba.save", json!({"module": "Module1", "code": "Sub Hola()\r\n    Range(\"A1\").Value = 7\r\nEnd Sub\r\n"})).unwrap();
+    s.execute("file.saveAs", json!({"path": temp_dir("edit").join("libro.xlsm").to_string_lossy()})).unwrap();
+    let path = s.doc().unwrap().path.clone().unwrap();
+    let mut t = Session::new();
+    t.execute("file.open", json!({"path": path})).unwrap();
+    assert!(t.execute("vba.source", json!({})).unwrap()["modules"][0]["code"].as_str().unwrap().contains("Value = 7"));
+    assert!(matches!(t.execute("vba.run", json!({"procedure": "Hola"})).unwrap_err(), EngineError::Approve(_)));
+    t.execute("vba.run", json!({"procedure": "Hola", "approve": true})).unwrap();
+    assert_eq!(text(&t, 0, "A1"), "7");
+    let _ = std::fs::remove_dir_all(std::path::Path::new(&path).parent().unwrap());
+}
+
 /// The coursework workbook this was written for: its macros must reproduce what Excel left in it.
 #[test]
 fn a_real_workbook_reproduces_its_excel_results() {

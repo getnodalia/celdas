@@ -621,6 +621,10 @@ pub struct Chart {
     /// The chart's name as VBA's `Shapes("…")` knows it. Empty for a chart nobody named.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
+    /// Legend entries the file hides (`c:legend/c:legendEntry` with `c:delete`), by position: the
+    /// series first, then their trendlines.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub legend_hidden: Vec<usize>,
 }
 
 impl Chart {
@@ -657,6 +661,10 @@ pub struct Image {
     pub data: std::sync::Arc<Vec<u8>>,
     pub mime: String,
     pub alt: String,
+    /// The part of the picture left out (`a:srcRect`), as fractions of its width and height:
+    /// left, top, right, bottom.
+    #[serde(default)]
+    pub crop: [f32; 4],
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -1051,6 +1059,34 @@ pub struct ShapeFormat {
     pub anchor: Option<ShapeTextAnchor>,
     /// Paragraphs run right to left (`a:pPr rtl`).
     pub rtl: bool,
+    /// Outline width in points (`a:ln w`, or the width the shape style's `lnRef` names); `None`
+    /// is one point.
+    pub line_width: Option<f32>,
+    /// Space between the shape's edge and its text, in points: left, top, right, bottom
+    /// (`a:bodyPr lIns tIns rIns bIns`); `None` is Excel's 7.2, 3.6, 7.2, 3.6.
+    pub insets: Option<[f32; 4]>,
+    /// Bevel depth in points (`a:sp3d/a:bevelT w`): the shape is lit from the top left.
+    pub bevel: Option<f32>,
+    /// The text's runs where they differ in formatting, in order, covering `Shape::text` (the
+    /// paragraphs are joined by a newline that belongs to the run before it). Empty: the whole
+    /// text takes the formatting above.
+    pub runs: Vec<TextRun>,
+}
+
+/// A stretch of a shape's text with its own formatting (`a:r/a:rPr`).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TextRun {
+    /// Length in characters.
+    pub chars: usize,
+    pub bold: bool,
+    pub italic: bool,
+    pub underline: bool,
+    pub strike: bool,
+    /// Size in points; `None` is the shape's.
+    pub size: Option<f32>,
+    /// Fill colour; `None` is the shape's.
+    pub color: Option<Color>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -1151,6 +1187,7 @@ mod tests {
     #[test]
     fn chart_without_hole_size_keeps_the_legacy_hole() {
         let chart = Chart {
+            legend_hidden: Vec::new(),
             id: 1,
             kind: ChartKind::Doughnut,
             anchor: Anchor::default(),

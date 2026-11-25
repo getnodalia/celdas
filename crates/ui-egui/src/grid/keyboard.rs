@@ -138,9 +138,7 @@ pub(super) fn keyboard(app: &mut SheetApp, ctx: &egui::Context, resp: &egui::Res
                         app.session.format_painter = None;
                     }
                     Key::Space if !cmd && !shift && is_checkbox(sh, app) => app.run_or_alert("cell.toggleCheckbox", json!({})),
-                    Key::F8 if m.alt => {
-                        app.open_dialog("macros", json!({}));
-                    }
+                    Key::F8 | Key::F11 if m.alt => app.open_dialog(macro_dialog(key), json!({})),
                     Key::F9 => app.run_or_alert("formulas.calculateNow", json!({})),
                     Key::F4 if !cmd => {}
                     // Ctrl+Shift+letter (⌘⇧letter) runs the macro with that shortcut, unless Celdas uses it.
@@ -186,4 +184,9 @@ fn form_control_event(app: &mut SheetApp, sh: &Sheet, ev: &egui::Event) -> bool 
         }
         _ => false,
     }
+}
+
+/// Alt+F8 opens the Macros dialog and Alt+F11 the VBA editor.
+fn macro_dialog(key: egui::Key) -> &'static str {
+    if key == egui::Key::F11 { "vbaEditor" } else { "macros" }
 }

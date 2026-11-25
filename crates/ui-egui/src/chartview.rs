@@ -209,9 +209,36 @@ fn paint_shape_text(p: &Painter, wb: &Workbook, sp: &celdas_engine::model::Shape
     // Default 14 px (as before); a set size is in points.
     let size = f.font_size.map_or(14.0, |pt| pt * 96.0 / 72.0).clamp(1.0, 2000.0) * z;
     let family = theme::cell_family(f.font.as_deref().unwrap_or(""), f.bold, f.italic);
-    let inset = 4.0;
-    let width = (r.width() - 2.0 * inset).max(1.0);
-    let mut job = egui::text::LayoutJob::simple(sp.text.clone(), FontId::new(size, family), color, width);
+    // Space between the edge and the text: the shape's own, else Excel's 7.2 pt and 3.6 pt.
+    let [il, it, ir, ib] = f.insets.unwrap_or([7.2, 3.6, 7.2, 3.6]).map(|pt| pt * 96.0 / 72.0 * z);
+    let width = (r.width() - il - ir).max(1.0);
+    let base = FontId::new(size, family);
+    let mut job = egui::text::LayoutJob::simple(sp.text.clone(), base.clone(), color, width);
+    // Runs that differ in formatting (an italic, underlined first word, a larger last one).
+    if !f.runs.is_empty() && f.runs.iter().map(|r| r.chars).sum::<usize>() == sp.text.chars().count() {
+        job.text.clear();
+        job.sections.clear();
+        let mut chars = sp.text.chars();
+        for run in &f.runs {
+            let piece: String = chars.by_ref().take(run.chars).collect();
+            let start = job.text.len();
+            job.text.push_str(&piece);
+            let rsize = run.size.map_or(size, |pt| pt * 96.0 / 72.0 * z).clamp(1.0, 2000.0);
+            let rc = run.color.and_then(|c| c.resolve(&wb.theme)).map(theme::color32).unwrap_or(color);
+            job.sections.push(egui::text::LayoutSection {
+                leading_space: 0.0,
+                byte_range: egui::text::ByteIndex(start)..egui::text::ByteIndex(job.text.len()),
+                format: egui::TextFormat {
+                    font_id: FontId::new(rsize, theme::cell_family(f.font.as_deref().unwrap_or(""), run.bold, run.italic)),
+                    color: rc,
+                    underline: if run.underline { egui::Stroke::new(1.0, rc) } else { egui::Stroke::NONE },
+                    strikethrough: if run.strike { egui::Stroke::new(1.0, rc) } else { egui::Stroke::NONE },
+                    ..Default::default()
+                },
+            });
+        }
+        job.wrap.max_width = width;
+    }
     job.halign = match align {
         ShapeTextAlign::Left => egui::Align::LEFT,
         ShapeTextAlign::Center => egui::Align::Center,
@@ -219,14 +246,14 @@ fn paint_shape_text(p: &Painter, wb: &Workbook, sp: &celdas_engine::model::Shape
     };
     let g = p.layout_job(job);
     let x = match align {
-        ShapeTextAlign::Left => r.left() + inset,
-        ShapeTextAlign::Center => r.center().x,
-        ShapeTextAlign::Right => r.right() - inset,
+        ShapeTextAlign::Left => r.left() + il,
+        ShapeTextAlign::Center => r.center().x + (il - ir) / 2.0,
+        ShapeTextAlign::Right => r.right() - ir,
     };
     let y = match anchor {
-        ShapeTextAnchor::Top => r.top() + inset,
-        ShapeTextAnchor::Middle => r.center().y - g.size().y / 2.0,
-        ShapeTextAnchor::Bottom => r.bottom() - inset - g.size().y,
+        ShapeTextAnchor::Top => r.top() + it,
+        ShapeTextAnchor::Middle => r.center().y + (it - ib) / 2.0 - g.size().y / 2.0,
+        ShapeTextAnchor::Bottom => r.bottom() - ib - g.size().y,
     };
     let pos = pos2(x, y);
     let clip = p.with_clip_rect(r.intersect(p.clip_rect()));
@@ -246,6 +273,26 @@ fn paint_shape_text(p: &Painter, wb: &Workbook, sp: &celdas_engine::model::Shape
         }
     }
     clip.galley(pos, g, color);
+}
+
+/// A bevelled shape's lit edge (`a:sp3d/a:bevelT`): the top and left edges lighter, the bottom and
+/// right ones darker, fading inwards over `depth` (capped so a small shape keeps its colour).
+fn paint_bevel(p: &Painter, r: Rect, depth: f32) {
+    let depth = depth.min(r.width().min(r.height()) * 0.18);
+    let steps = (depth / 1.5).ceil().clamp(1.0, 24.0) as usize;
+    if depth < 1.0 || r.width() < 4.0 || r.height() < 4.0 {
+        return;
+    }
+    let clip = p.with_clip_rect(r.intersect(p.clip_rect()));
+    for i in 0..steps {
+        let inset = depth * i as f32 / steps as f32;
+        let fade = 1.0 - i as f32 / steps as f32;
+        let light = Stroke::new(depth / steps as f32 + 0.5, Color32::from_white_alpha((70.0 * fade) as u8));
+        let dark = Stroke::new(depth / steps as f32 + 0.5, Color32::from_black_alpha((55.0 * fade) as u8));
+        let (l, t, rr, b) = (r.left() + inset, r.top() + inset, r.right() - inset, r.bottom() - inset);
+        clip.add(PathShape::line(vec![pos2(l, b), pos2(l, t), pos2(rr, t)], PathStroke::new(light.width, light.color)));
+        clip.add(PathShape::line(vec![pos2(rr, t), pos2(rr, b), pos2(l, b)], PathStroke::new(dark.width, dark.color)));
+    }
 }
 
 /// Resolves and renders `ch` (chart `ci` of sheet `si`), at zoom `z`.
@@ -327,16 +374,27 @@ pub(crate) fn paint_objects(app: &SheetApp, p: &Painter, geo: &Geo, wb: &Arc<Wor
         let fill = sp.fill.resolve(&wb.theme).map(theme::color32).unwrap_or(Color32::TRANSPARENT);
         let line =
             if sp.format.no_line { Color32::TRANSPARENT } else { sp.line.resolve(&wb.theme).map(theme::color32).unwrap_or(Color32::DARK_GRAY) };
+        // The outline's width in points (Excel's hairline is 0.75 pt), at this zoom.
+        let lw = (sp.format.line_width.unwrap_or(0.75) * 96.0 / 72.0 * geo.z).max(0.75);
+        let bevel = sp.format.bevel.map(|pt| pt * 96.0 / 72.0 * geo.z);
         match sp.kind {
             // WordArt is only its text (no fill or outline of its own).
             ShapeKind::WordArt => {}
             ShapeKind::Rectangle | ShapeKind::TextBox => {
                 p.rect_filled(r, 0.0, fill);
-                p.rect_stroke(r, 0.0, Stroke::new(1.0, line), StrokeKind::Inside);
+                if let Some(b) = bevel.filter(|_| fill != Color32::TRANSPARENT) {
+                    paint_bevel(p, r, b);
+                }
+                p.rect_stroke(r, 0.0, Stroke::new(lw, line), StrokeKind::Inside);
             }
             ShapeKind::RoundedRectangle => {
-                p.rect_filled(r, 10.0 * geo.z, fill);
-                p.rect_stroke(r, 10.0 * geo.z, Stroke::new(1.0, line), StrokeKind::Inside);
+                // `roundRect`'s default corner is a sixth of the shorter side.
+                let radius = r.width().min(r.height()) / 6.0;
+                p.rect_filled(r, radius, fill);
+                if let Some(b) = bevel.filter(|_| fill != Color32::TRANSPARENT) {
+                    paint_bevel(p, r.shrink(radius * 0.29), b);
+                }
+                p.rect_stroke(r, radius, Stroke::new(lw, line), StrokeKind::Inside);
             }
             ShapeKind::Ellipse => {
                 let pts: Vec<Pos2> = (0..64)
@@ -345,10 +403,10 @@ pub(crate) fn paint_objects(app: &SheetApp, p: &Painter, geo: &Geo, wb: &Arc<Wor
                         pos2(r.center().x + r.width() / 2.0 * a.cos(), r.center().y + r.height() / 2.0 * a.sin())
                     })
                     .collect();
-                p.add(PathShape::convex_polygon(pts, fill, Stroke::new(1.0, line)));
+                p.add(PathShape::convex_polygon(pts, fill, Stroke::new(lw, line)));
             }
             ShapeKind::Triangle => {
-                p.add(PathShape::convex_polygon(vec![pos2(r.center().x, r.top()), r.right_bottom(), r.left_bottom()], fill, Stroke::new(1.0, line)));
+                p.add(PathShape::convex_polygon(vec![pos2(r.center().x, r.top()), r.right_bottom(), r.left_bottom()], fill, Stroke::new(lw, line)));
             }
             ShapeKind::Ink => {
                 let pt = celdas_engine::cmd::draw::ink_width(sp);
@@ -394,7 +452,9 @@ pub(crate) fn paint_objects(app: &SheetApp, p: &Painter, geo: &Geo, wb: &Arc<Wor
         }
         let start = p.add(egui::Shape::Noop);
         if let Some(tex) = crate::floating_pictures::texture(p.ctx(), doc, im, r) {
-            p.image(tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+            let [cl, ct, cr, cb] = im.crop.map(|v| v.clamp(0.0, 0.95));
+            let uv = Rect::from_min_max(pos2(cl, ct), pos2((1.0 - cr).max(cl + 0.01), (1.0 - cb).max(ct + 0.01)));
+            p.image(tex.id(), r, uv, Color32::WHITE);
         } else {
             p.rect_filled(r, 0.0, Tokens::get(p.ctx()).sheet_track);
         }

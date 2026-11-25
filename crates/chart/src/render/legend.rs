@@ -78,6 +78,14 @@ pub fn legend_entries(chart: &Chart, data: &ChartData) -> Vec<(String, Rgba, Swa
                     out.push((t.spec.name.clone().unwrap_or_else(|| auto_name(t.spec.kind, &s.name)), t.color, Swatch::Line));
                 }
             }
+            // Entries the file deleted (by position: series, then trendlines).
+            if !chart.legend_hidden.is_empty() {
+                let mut i = 0;
+                out.retain(|_| {
+                    i += 1;
+                    !chart.legend_hidden.contains(&(i - 1))
+                });
+            }
             out
         }
     }

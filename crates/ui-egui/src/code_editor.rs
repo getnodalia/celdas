@@ -15,6 +15,8 @@ use crate::theme::{self, Syntax, Tokens};
 pub enum Lang {
     Python,
     Latex,
+    /// Visual Basic for Applications (a workbook's VBA modules).
+    Vba,
     Plain,
 }
 
@@ -74,6 +76,7 @@ pub fn highlight(text: &str, lang: Lang) -> Vec<(Range<usize>, Token)> {
     match lang {
         Lang::Python => python(text),
         Lang::Latex => latex(text),
+        Lang::Vba => vba(text),
         Lang::Plain => Vec::new(),
     }
 }
@@ -137,6 +140,212 @@ fn python(text: &str) -> Vec<(Range<usize>, Token)> {
             if PY_KEYWORDS.contains(&word) {
                 out.push((start..end_of(j), Token::Keyword));
             } else if PY_BUILTINS.contains(&word) {
+                out.push((start..end_of(j), Token::Builtin));
+            }
+            i = j;
+        } else {
+            i += 1;
+        }
+    }
+    out
+}
+
+const VBA_KEYWORDS: &[&str] = &[
+    "addressof",
+    "alias",
+    "and",
+    "as",
+    "boolean",
+    "byref",
+    "byte",
+    "byval",
+    "call",
+    "case",
+    "const",
+    "currency",
+    "date",
+    "declare",
+    "dim",
+    "do",
+    "double",
+    "each",
+    "else",
+    "elseif",
+    "empty",
+    "end",
+    "enum",
+    "eqv",
+    "erase",
+    "error",
+    "event",
+    "exit",
+    "false",
+    "for",
+    "friend",
+    "function",
+    "get",
+    "global",
+    "gosub",
+    "goto",
+    "if",
+    "imp",
+    "implements",
+    "in",
+    "integer",
+    "is",
+    "let",
+    "lib",
+    "like",
+    "long",
+    "longlong",
+    "loop",
+    "lset",
+    "me",
+    "mod",
+    "new",
+    "next",
+    "not",
+    "nothing",
+    "null",
+    "object",
+    "on",
+    "option",
+    "optional",
+    "or",
+    "paramarray",
+    "preserve",
+    "private",
+    "property",
+    "public",
+    "raiseevent",
+    "redim",
+    "resume",
+    "return",
+    "rset",
+    "select",
+    "set",
+    "single",
+    "static",
+    "step",
+    "stop",
+    "string",
+    "sub",
+    "then",
+    "to",
+    "true",
+    "type",
+    "typeof",
+    "until",
+    "variant",
+    "wend",
+    "while",
+    "with",
+    "withevents",
+    "xor",
+];
+
+const VBA_BUILTINS: &[&str] = &[
+    "abs",
+    "activesheet",
+    "activeworkbook",
+    "application",
+    "array",
+    "asc",
+    "cdbl",
+    "cells",
+    "chr",
+    "cint",
+    "clng",
+    "columns",
+    "cstr",
+    "debug",
+    "dir",
+    "doevents",
+    "format",
+    "inputbox",
+    "instr",
+    "int",
+    "isempty",
+    "isnumeric",
+    "lbound",
+    "lcase",
+    "left",
+    "len",
+    "mid",
+    "msgbox",
+    "range",
+    "right",
+    "rows",
+    "sheets",
+    "sqr",
+    "str",
+    "thisworkbook",
+    "trim",
+    "ubound",
+    "ucase",
+    "val",
+    "workbooks",
+    "worksheetfunction",
+    "worksheets",
+];
+
+/// VBA: `'` and `Rem` comments to the end of the line, strings with `""` for a quote, numbers and
+/// keywords (case does not matter).
+fn vba(text: &str) -> Vec<(Range<usize>, Token)> {
+    let chars: Vec<(usize, char)> = text.char_indices().collect();
+    let end_of = |i: usize| chars.get(i).map(|(b, _)| *b).unwrap_or(text.len());
+    let to_line_end = |mut j: usize| {
+        while chars.get(j).is_some_and(|(_, c)| *c != '\n' && *c != '\r') {
+            j += 1;
+        }
+        j
+    };
+    let mut out = Vec::new();
+    let mut i = 0;
+    while let Some(&(start, c)) = chars.get(i) {
+        if c == '\'' {
+            let j = to_line_end(i);
+            out.push((start..end_of(j), Token::Comment));
+            i = j;
+        } else if c == '"' {
+            let mut j = i + 1;
+            loop {
+                match chars.get(j) {
+                    None | Some((_, '\n')) | Some((_, '\r')) => break,
+                    Some((_, '"')) if chars.get(j + 1).is_some_and(|(_, d)| *d == '"') => j += 2,
+                    Some((_, '"')) => {
+                        j += 1;
+                        break;
+                    }
+                    Some(_) => j += 1,
+                }
+            }
+            out.push((start..end_of(j), Token::String));
+            i = j;
+        } else if c.is_ascii_digit() || (c == '.' && chars.get(i + 1).is_some_and(|(_, d)| d.is_ascii_digit())) {
+            let mut j = i + 1;
+            while chars.get(j).is_some_and(|(_, d)| d.is_ascii_alphanumeric() || *d == '.') {
+                j += 1;
+            }
+            out.push((start..end_of(j), Token::Number));
+            i = j;
+        } else if c.is_alphabetic() || c == '_' {
+            let mut j = i + 1;
+            while chars.get(j).is_some_and(|(_, d)| d.is_alphanumeric() || *d == '_') {
+                j += 1;
+            }
+            let word = text.get(start..end_of(j)).unwrap_or("").to_lowercase();
+            // `Rem` starts a comment only as a statement of its own.
+            let statement_start = text.get(..start).is_some_and(|before| before.rsplit(['\n', ':']).next().is_some_and(|l| l.trim().is_empty()));
+            if word == "rem" && statement_start {
+                let k = to_line_end(j);
+                out.push((start..end_of(k), Token::Comment));
+                i = k;
+                continue;
+            }
+            if VBA_KEYWORDS.contains(&word.as_str()) {
+                out.push((start..end_of(j), Token::Keyword));
+            } else if VBA_BUILTINS.contains(&word.as_str()) {
                 out.push((start..end_of(j), Token::Builtin));
             }
             i = j;
@@ -293,11 +502,32 @@ pub fn newline(text: &mut String, sel: (usize, usize), lang: Lang) -> Edit {
     if lang == Lang::Python && line_before.trim_end().ends_with(':') {
         indent.push_str(INDENT);
     }
+    if lang == Lang::Vba && opens_vba_block(&line_before) {
+        indent.push_str(INDENT);
+    }
     let insert = format!("\n{indent}");
     let (ba, bb) = (byte_of(text, a), byte_of(text, b));
     text.replace_range(ba..bb, &insert);
     let caret = a + insert.chars().count();
     Edit { anchor: caret, caret }
+}
+
+/// Whether a VBA line opens a block its next line sits inside: `Sub`, `Function`, `If … Then` with
+/// nothing after the `Then`, `For`, `Do`, `While`, `Select Case`, `With`, `Else`, `Case`.
+fn opens_vba_block(line: &str) -> bool {
+    let code = line.split('\'').next().unwrap_or("").trim();
+    let lower = code.to_lowercase();
+    let mut words = lower.split_whitespace();
+    let first = words.next().unwrap_or("");
+    let skip = if matches!(first, "public" | "private" | "friend" | "static") { words.next().unwrap_or("") } else { first };
+    match skip {
+        "sub" | "function" | "property" | "for" | "do" | "while" | "with" | "else" | "type" | "enum" => true,
+        "case" => true,
+        "select" => true,
+        "if" => lower.ends_with(" then"),
+        "elseif" => lower.ends_with(" then"),
+        _ => false,
+    }
 }
 
 /// Typed text (or a paste) replacing the selection.

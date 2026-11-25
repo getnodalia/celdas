@@ -18,9 +18,11 @@ mod native;
 mod ops;
 mod parser;
 pub mod project;
+mod rewrite;
 pub mod value;
 
 pub use host::{CallArg, Host, NoHost, arg};
 pub use interp::{DEFAULT_MAX_STEPS, ErrorSite, Vm};
 pub use project::{ModuleKind, ProcInfo, Project, SourceModule};
+pub use rewrite::rewrite_bin;
 pub use value::{HostObject, Obj, VArray, Value, VbError};

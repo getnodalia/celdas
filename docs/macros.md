@@ -406,8 +406,16 @@ axes), text files (`Open … For Input/Output/Append`, `Print #`, `Line Input #`
 `MkDir`, `Kill`; a file is written whole when it is closed) and the `xl*` constants. A cell loop
 is turned into a few range writes, so a macro that fills thousands of cells one by one stays fast.
 
-Not covered: UserForms, ActiveX and form-control events, workbook and worksheet event procedures,
-the VBA editor, PivotTables and most dialogs. A procedure that uses one fails with an error
+**Editing.** Automate › Macros › Edit on a VBA procedure (or Visual Basic) opens the VBA editor: a
+module list, a code editor with VBA highlighting, New Module, Delete, Save and Run. Save rewrites
+the project's `vbaProject.bin` (`vba.save`: the MS-OVBA streams of the edited modules are
+recompressed and the compiled caches are dropped so Excel recompiles from source; every other
+stream of the file stays byte for byte), as one undo step, and the next run asks for approval again
+because the code changed. `vba.remove` deletes a standard or class module. A workbook that has no
+VBA project cannot get one from scratch yet.
+
+Not covered: UserForms (and so a form designer), ActiveX and form-control events, workbook and
+worksheet event procedures, PivotTables and most dialogs. A procedure that uses one fails with an error
 naming it, and changes nothing.
 
 In the window, **Macros** lists the public `Sub`s without arguments beside Celdas macros and
