@@ -782,7 +782,7 @@ impl Scanner {
     }
 
     fn finish(&mut self) {
-        let open: Vec<Frame> = self.stack.drain(..).collect();
+        let open: Vec<Frame> = std::mem::take(&mut self.stack);
         for f in open {
             let kind = self.scan.procs.last().map(|p| p.kind);
             self.error(
