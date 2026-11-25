@@ -188,6 +188,20 @@ pub enum Icon {
     RunTo,
     /// Stop: a square.
     StopSquare,
+    /// Step Over: an arrow that jumps across a line.
+    StepOver,
+    /// Step Out: an arrow leaving a line upwards.
+    StepOut,
+    /// The VBA editor: angle brackets.
+    Code,
+    /// The Immediate window: a prompt.
+    Terminal,
+    /// A warning triangle.
+    Warn,
+    /// Replace: two lines with an arrow between.
+    Replace,
+    /// A list of rows (an outline).
+    Outline,
 }
 
 struct G<'a> {
@@ -925,6 +939,49 @@ fn paint_drawn(p: &Painter, r: Rect, side: f32, icon: Icon, c: Color32, pal: &Pa
             g.line(&[(13.0, 3.0), (13.0, 9.0)], c, 1.1);
         }
         Icon::StopSquare => g.rect(3.0, 3.0, 10.0, 10.0, Some(pal.recording), None),
+        Icon::StepOver | Icon::StepOut | Icon::Code | Icon::Terminal | Icon::Warn | Icon::Replace | Icon::Outline => paint_editor(&g, icon, c),
+    }
+}
+
+/// The icons of the Visual Basic editor.
+fn paint_editor(g: &G<'_>, icon: Icon, c: Color32) {
+    match icon {
+        Icon::StepOver => {
+            g.line(&[(2.5, 10.0), (2.5, 6.0), (4.5, 3.5), (8.0, 3.5), (10.5, 6.0), (10.5, 10.0)], c, 1.3);
+            g.poly(&[(8.0, 9.0), (13.0, 9.0), (10.5, 12.5)], c);
+            g.line(&[(3.0, 14.0), (13.0, 14.0)], c, 1.3);
+        }
+        Icon::StepOut => {
+            g.line(&[(8.0, 9.0), (8.0, 2.5)], c, 1.3);
+            g.poly(&[(4.8, 4.5), (11.2, 4.5), (8.0, 1.0)], c);
+            g.line(&[(3.0, 13.5), (13.0, 13.5)], c, 1.3);
+        }
+        Icon::Code => {
+            g.line(&[(5.5, 4.0), (1.5, 8.0), (5.5, 12.0)], c, 1.4);
+            g.line(&[(10.5, 4.0), (14.5, 8.0), (10.5, 12.0)], c, 1.4);
+        }
+        Icon::Terminal => {
+            g.rect(1.5, 2.5, 13.0, 11.0, None, Some(c));
+            g.line(&[(4.0, 6.0), (6.5, 8.0), (4.0, 10.0)], c, 1.3);
+            g.line(&[(8.0, 10.5), (11.5, 10.5)], c, 1.3);
+        }
+        Icon::Warn => {
+            g.closed(&[(8.0, 2.0), (14.5, 13.5), (1.5, 13.5)], c, 1.2);
+            g.line(&[(8.0, 6.5), (8.0, 10.0)], c, 1.3);
+            g.circle(8.0, 12.0, 0.7, Some(c), None);
+        }
+        Icon::Replace => {
+            g.line(&[(2.0, 4.5), (9.0, 4.5)], c, 1.3);
+            g.line(&[(2.0, 11.5), (9.0, 11.5)], c, 1.3);
+            g.poly(&[(10.0, 5.5), (14.5, 8.0), (10.0, 10.5)], c);
+        }
+        Icon::Outline => {
+            for y in [3.5, 8.0, 12.5] {
+                g.circle(3.0, y, 0.9, Some(c), None);
+                g.line(&[(6.0, y), (14.0, y)], c, 1.3);
+            }
+        }
+        _ => {}
     }
 }
 
@@ -1102,6 +1159,13 @@ pub fn ndl_name(icon: Icon) -> &'static str {
         Icon::Continue => "fast-forward",
         Icon::RunTo => "run-to-cursor",
         Icon::StopSquare => "stop",
+        Icon::StepOver => "step-over",
+        Icon::StepOut => "step-out",
+        Icon::Code => "code",
+        Icon::Terminal => "terminal",
+        Icon::Warn => "warning",
+        Icon::Replace => "replace",
+        Icon::Outline => "list",
         Icon::FnBook(glyph) => match glyph {
             FnGlyph::Star => "star",
             FnGlyph::Coins => "coins",

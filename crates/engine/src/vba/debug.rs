@@ -227,9 +227,10 @@ fn start(s: &mut Session, p: &Json) -> Result<Json> {
     let breakpoints = p.get("breakpoints").filter(|v| !v.is_null()).map(breakpoints_param).transpose()?.unwrap_or_default();
     let watches = p.get("watches").filter(|v| !v.is_null()).map(watches_param).transpose()?.unwrap_or_default();
     // A procedure that takes arguments can't be started by hand (the Macros dialog doesn't list it).
-    let takes_args = project.procedures().into_iter().any(|x| {
-        (x.name.eq_ignore_ascii_case(&name) || format!("{}.{}", x.module, x.name).eq_ignore_ascii_case(&name)) && x.has_params
-    });
+    let takes_args = project
+        .procedures()
+        .into_iter()
+        .any(|x| (x.name.eq_ignore_ascii_case(&name) || format!("{}.{}", x.module, x.name).eq_ignore_ascii_case(&name)) && x.has_params);
     if takes_args {
         return Err(EngineError::Other(format!("'{name}' takes arguments; call it from a macro without them to debug it.")));
     }
@@ -301,9 +302,11 @@ fn replay(s: &mut Session) -> Result<Json> {
             }
             Ok(out)
         }
-        (Outcome::Finished(Ok(_)), Ok(())) => {
-            end(s, true, json!({"state": "finished", "procedure": procedure, "messages": message_list(&messages), "files": written, "output": output}))
-        }
+        (Outcome::Finished(Ok(_)), Ok(())) => end(
+            s,
+            true,
+            json!({"state": "finished", "procedure": procedure, "messages": message_list(&messages), "files": written, "output": output}),
+        ),
         (Outcome::Finished(Err(e)), _) => {
             let at = site.map(|x| {
                 let line = x.line.saturating_sub(offset_of(&offsets, &x.module));
@@ -355,6 +358,13 @@ fn header_lines(project: &Project) -> HashMap<String, u32> {
             (m.name.to_lowercase(), u32::try_from(header.matches('\n').count()).unwrap_or(0))
         })
         .collect()
+}
+
+/// The ` (in Module.Proc, line N)` ending of a run's error, with the line as the editor counts
+/// it: without the `Attribute` lines a module's source starts with.
+pub(super) fn site_text(project: &Project, x: &celdas_vba::ErrorSite) -> String {
+    let line = x.line.saturating_sub(offset_of(&header_lines(project), &x.module));
+    format!(" (in {}.{}, line {line})", x.module, x.procedure)
 }
 
 fn offset_of(offsets: &HashMap<String, u32>, module: &str) -> u32 {

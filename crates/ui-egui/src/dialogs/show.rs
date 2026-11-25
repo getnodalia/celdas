@@ -154,7 +154,6 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
         "about" => nodalia_theme::about::measures::WIDTH,
         "insertFunction" | "commandSearch" | "nameManager" | "manageRules" | "journal" | "agents" | "equation" => 520.0,
         "macros" => 480.0,
-        "vbaEditor" => 820.0,
         "recommendedCharts" => 600.0,
         "analysisToolPak" => 420.0,
         "solver" => 460.0,
@@ -232,7 +231,6 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
                     });
                 }
                 "macros" => crate::macro_ui::macros_dialog(app, ui, &mut d, &mut open),
-                "vbaEditor" => crate::vba_editor::body(app, ui, &mut d, &mut open),
                 "recordMacro" => crate::macro_ui::record_dialog(app, ui, &mut d, &mut open),
                 "statistics" | "accessibility" | "errorChecking" | "evaluateFormula" | "comments" => {
                     let r = if d.name == "comments" {
@@ -773,13 +771,11 @@ pub(crate) fn dialog_header(ui: &mut egui::Ui, title: &str, close: &str, open: &
     ui.add_space(6.0);
 }
 
-/// Escape or the window's close button. In Solver Options it cancels the options only; the VBA
-/// editor asks about unsaved code first; anything else closes.
+/// Escape or the window's close button. In Solver Options it cancels the options only; anything
+/// else closes.
 fn escape_dialog(d: &mut Dialog, open: &mut bool) {
     if in_solver_options(d) {
         cancel_solver_options(d);
-    } else if d.name == "vbaEditor" {
-        crate::vba_editor::escape(d, open);
     } else {
         *open = false;
     }

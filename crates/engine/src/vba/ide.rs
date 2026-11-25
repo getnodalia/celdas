@@ -140,7 +140,9 @@ pub fn analyze(s: &mut Session, p: &Json) -> Result<Json> {
         })
         .collect();
     let types: Vec<Json> = a.scan.types.iter().map(|t| json!({"name": t.name, "enum": t.is_enum, "line": t.line})).collect();
-    Ok(json!({"diagnostics": diagnostics, "procedures": procedures, "variables": variables, "types": types, "optionExplicit": a.scan.option_explicit}))
+    Ok(
+        json!({"diagnostics": diagnostics, "procedures": procedures, "variables": variables, "types": types, "optionExplicit": a.scan.option_explicit}),
+    )
 }
 
 /// `vba.complete {code, line, col, explicit?, module?}` → what to offer, and the call being written.
@@ -151,11 +153,8 @@ pub fn complete(s: &mut Session, p: &Json) -> Result<Json> {
     let _ = s;
     let scan = ide::scan(code);
     let c = ide::complete::complete(&scan, catalog(), code, line, col, explicit);
-    let items: Vec<Json> = c
-        .items
-        .iter()
-        .map(|i| json!({"label": i.label, "kind": item_kind(i.kind), "detail": i.detail, "doc": i.doc, "insert": i.insert}))
-        .collect();
+    let items: Vec<Json> =
+        c.items.iter().map(|i| json!({"label": i.label, "kind": item_kind(i.kind), "detail": i.detail, "doc": i.doc, "insert": i.insert})).collect();
     let signature = ide::complete::signature_help(&scan, catalog(), code, line, col)
         .map(|g| json!({"label": g.label, "params": g.params, "active": g.active, "doc": g.doc}));
     Ok(json!({"from": c.from, "items": items, "signature": signature}))
@@ -219,7 +218,11 @@ mod tests {
         let consts = include_str!("consts.rs");
         let body = consts.split("#[cfg(test)]").next().unwrap_or("");
         for token in body.split('"').skip(1).step_by(2).filter(|t| t.starts_with("xl")) {
-            assert!(text.lines().any(|l| l.strip_prefix("const ").and_then(|r| r.split_whitespace().next()).is_some_and(|n| n.eq_ignore_ascii_case(token))), "{token} is missing from excel.catalog");
+            assert!(
+                text.lines()
+                    .any(|l| l.strip_prefix("const ").and_then(|r| r.split_whitespace().next()).is_some_and(|n| n.eq_ignore_ascii_case(token))),
+                "{token} is missing from excel.catalog"
+            );
         }
     }
 

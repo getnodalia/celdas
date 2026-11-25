@@ -50,6 +50,10 @@ dark.
 <td width="50%" valign="top"><img src="docs/images/celdas-preferences.png" alt="File, Options: display theme, window controls and language, editing, saving and calculation settings" width="100%"><p align="center"><sub><b>Preferences</b>, from the main menu: theme, window controls, language and calculation.</sub></p></td>
 <td width="50%" valign="top"><img src="docs/images/celdas-shortcuts-dark.png" alt="The Keyboard Shortcuts dialog over the sales dashboard in dark mode" width="100%"><p align="center"><sub><b>Keyboard shortcuts</b>, listed for every command.</sub></p></td>
 </tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/celdas-macros-editor.png" alt="The Visual Basic editor in the light theme: project explorer with an outline, highlighted code with line numbers and a toolbar with run and debug buttons" width="100%"><p align="center"><sub><b>Visual Basic editor.</b> Suggestions, inline errors, Find and Replace, Format Module and an Immediate window.</sub></p></td>
+<td width="50%" valign="top"><img src="docs/images/celdas-macros-debug-dark.png" alt="A macro paused at a breakpoint in the dark theme, with its local variables in the bottom panel" width="100%"><p align="center"><sub><b>Debugger.</b> Breakpoints, step into, over and out, locals, watches and the call stack.</sub></p></td>
+</tr>
 </table>
 
 ## Download

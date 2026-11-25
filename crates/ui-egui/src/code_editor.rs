@@ -474,6 +474,40 @@ pub fn underline(job: &mut egui::text::LayoutJob, mark: Range<usize>, color: egu
     job.sections = out;
 }
 
+/// Paints the byte range `mark` of `job` with a background colour (a search hit, the other uses
+/// of the name under the caret), splitting the sections it crosses like [`underline`]. A range
+/// past the end of the text is clamped and its ends are moved out to char boundaries.
+pub fn background(job: &mut egui::text::LayoutJob, mark: Range<usize>, color: egui::Color32) {
+    let text = job.text.as_str();
+    let floor = |i: usize| (0..=i.min(text.len())).rev().find(|&b| text.is_char_boundary(b)).unwrap_or(0);
+    let ceil = |i: usize| (i.min(text.len())..=text.len()).find(|&b| text.is_char_boundary(b)).unwrap_or(text.len());
+    let start = floor(mark.start);
+    let mark = start..ceil(mark.end).max(start);
+    if mark.is_empty() {
+        return;
+    }
+    let mut out = Vec::with_capacity(job.sections.len() + 2);
+    for sec in job.sections.drain(..) {
+        let r = sec.byte_range.start.0..sec.byte_range.end.0;
+        let (a, b) = (mark.start.clamp(r.start, r.end), mark.end.clamp(r.start, r.end));
+        for (piece, marked) in [(r.start..a, false), (a..b, true), (b..r.end, false)] {
+            if piece.is_empty() {
+                continue;
+            }
+            let mut s = sec.clone();
+            s.byte_range = egui::text::ByteIndex(piece.start)..egui::text::ByteIndex(piece.end);
+            if marked {
+                s.format.background = color;
+            }
+            if s.byte_range.start.0 != r.start {
+                s.leading_space = 0.0;
+            }
+            out.push(s);
+        }
+    }
+    job.sections = out;
+}
+
 fn byte_of(text: &str, char_index: usize) -> usize {
     text.char_indices().nth(char_index).map(|(b, _)| b).unwrap_or(text.len())
 }
@@ -838,6 +872,45 @@ pub struct FieldOptions<'a> {
     pub name: &'a str,
     /// A byte range underlined in the error colour (see [`underline`]).
     pub mark: Option<Range<usize>>,
+    /// More marks: squiggles under mistakes, backgrounds behind search hits.
+    pub marks: Vec<Mark>,
+    /// The margin left of the text: line numbers, breakpoints, the line being debugged.
+    pub gutter: Option<Gutter>,
+    /// Whole lines (1-based) painted behind their text: the caret's line, the paused line.
+    pub line_fills: Vec<(u32, egui::Color32)>,
+    /// Rows the field is at least as tall as, so a click below the text still lands in it.
+    pub min_rows: usize,
+}
+
+/// How a [`Mark`] is drawn.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MarkKind {
+    /// A coloured underline, the text in the same colour.
+    Underline,
+    /// A background colour behind the text.
+    Background,
+}
+
+/// A byte range of the text with a colour (see [`FieldOptions::marks`]).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Mark {
+    pub range: Range<usize>,
+    pub color: egui::Color32,
+    pub kind: MarkKind,
+}
+
+/// The margin of a [`code_field`]. Lines are numbered from 1.
+#[derive(Clone, Debug, Default)]
+pub struct Gutter {
+    pub width: f32,
+    /// Lines with a breakpoint.
+    pub breakpoints: Vec<u32>,
+    /// The line a paused program is about to run (an arrow).
+    pub arrow: Option<u32>,
+    /// Lines with something to say: a dot in the colour (error, warning).
+    pub flags: Vec<(u32, egui::Color32)>,
+    pub background: egui::Color32,
+    pub separator: egui::Color32,
 }
 
 impl FieldOptions<'_> {
@@ -854,6 +927,10 @@ impl FieldOptions<'_> {
             // strings unless the caller gives one.
             name: "Code Editor",
             mark: None,
+            marks: Vec::new(),
+            gutter: None,
+            line_fills: Vec::new(),
+            min_rows: 1,
         }
     }
 }
@@ -869,6 +946,10 @@ pub struct FieldOutput {
     pub caret: Option<egui::Rect>,
     /// The caret and the other end of the selection (char indices).
     pub selection: (usize, usize),
+    /// The line (1-based) whose margin was clicked.
+    pub gutter_click: Option<u32>,
+    /// The character (index) under the pointer once it has been still over the text, and where.
+    pub hover: Option<(usize, egui::Pos2)>,
 }
 
 /// The code editor's text field without a frame: monospace text with syntax colours, Enter that
@@ -918,35 +999,82 @@ pub fn code_field(ui: &mut Ui, id: egui::Id, text: &mut String, options: &FieldO
     let danger = t.danger;
     let mut layouter = |ui: &Ui, buf: &dyn egui::TextBuffer, wrap_width: f32| {
         let mut job = layout_job(buf.as_str(), lang, &self::font(), plain, &syntax, wrap_width);
+        // Backgrounds first: a squiggle drawn over a hit stays visible.
+        for m in options.marks.iter().filter(|m| m.kind == MarkKind::Background) {
+            background(&mut job, m.range.clone(), m.color);
+        }
+        for m in options.marks.iter().filter(|m| m.kind == MarkKind::Underline) {
+            underline(&mut job, m.range.clone(), m.color);
+        }
         if let Some(m) = options.mark.clone() {
             underline(&mut job, m, danger);
         }
         ui.fonts_mut(|f| f.layout_job(job))
     };
     let filter = egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: options.keep_escape };
+    let gutter_width = options.gutter.as_ref().map_or(0.0, |g| g.width);
+    let row_h = ui.ctx().fonts_mut(|f| f.row_height(&font));
+    let mut gutter_click = None;
     let scrolled =
         egui::ScrollArea::vertical().id_salt(id.with("scroll")).max_height(options.max_height.max(1.0)).auto_shrink([false, true]).show(ui, |ui| {
-            let out = TextEdit::multiline(text)
-                .id(id)
-                .font(font.clone())
-                .code_editor()
-                .frame(egui::Frame::NONE)
-                .desired_width(options.width)
-                .desired_rows(1)
-                .interactive(options.interactive)
-                .event_filter(filter)
-                .layouter(&mut layouter)
-                .show(ui);
+            let left = ui.cursor().min.x;
+            let fills = ui.painter().add(egui::Shape::Noop);
+            let out = ui
+                .horizontal_top(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    if gutter_width > 0.0 {
+                        ui.add_space(gutter_width);
+                    }
+                    TextEdit::multiline(text)
+                        .id(id)
+                        .font(font.clone())
+                        .code_editor()
+                        .frame(egui::Frame::NONE)
+                        .desired_width(options.width)
+                        .desired_rows(options.min_rows.max(1))
+                        .interactive(options.interactive)
+                        .event_filter(filter)
+                        .layouter(&mut layouter)
+                        .show(ui)
+                })
+                .inner;
             if let Some(e) = edited {
                 let caret = out.galley.pos_from_cursor(CCursor::new(e.caret)).translate(out.galley_pos.to_vec2());
                 ui.scroll_to_rect(caret, None);
+            }
+            // The first row of each line, with its height: the margin and the fills follow them.
+            let mut tops: Vec<(f32, f32)> = Vec::new();
+            let mut starts_line = true;
+            for row in &out.galley.rows {
+                if starts_line {
+                    tops.push((out.galley_pos.y + row.pos.y, row.row.size.y.max(row_h)));
+                }
+                starts_line = row.ends_with_newline;
+            }
+            let visible = ui.clip_rect();
+            let right = visible.right().max(out.response.rect.right());
+            let fill_shapes: Vec<egui::Shape> = options
+                .line_fills
+                .iter()
+                .filter_map(|(line, color)| {
+                    let (top, h) = *tops.get((*line as usize).checked_sub(1)?)?;
+                    Some(egui::Shape::rect_filled(
+                        egui::Rect::from_min_max(egui::pos2(left + gutter_width, top), egui::pos2(right, top + h)),
+                        0.0,
+                        *color,
+                    ))
+                })
+                .collect();
+            ui.painter().set(fills, egui::Shape::Vec(fill_shapes));
+            if let Some(g) = &options.gutter {
+                gutter_click = paint_gutter(ui, id, g, left, &tops, visible, &t);
             }
             out
         });
     let out = scrolled.inner;
     // The field has no visible label; name it for screen readers and the strict kittest
     // accessibility check.
-    let mut response = out.response.response.accessible_name(crate::i18n::ui_tr(ui, options.name));
+    let mut response = out.response.response.clone().accessible_name(crate::i18n::ui_tr(ui, options.name));
     if edited.is_some() {
         response.mark_changed();
     }
@@ -956,7 +1084,73 @@ pub fn code_field(ui: &mut Ui, id: egui::Id, text: &mut String, options: &FieldO
         .map(|r| out.galley.pos_from_cursor(r.primary).translate(out.galley_pos.to_vec2()))
         .filter(|_| response.has_focus())
         .map(|r| r.intersect(scrolled.inner_rect.expand(1.0)));
-    FieldOutput { response, stop, lines: out.galley.rows.len().max(1), caret, selection }
+    let hover = hovered_char(ui, &out, &response, scrolled.inner_rect);
+    FieldOutput { response, stop, lines: out.galley.rows.len().max(1), caret, selection, gutter_click, hover }
+}
+
+/// The character under the pointer when it rests over text (not beside a short line's end).
+fn hovered_char(ui: &Ui, out: &egui::text_edit::TextEditOutput, response: &Response, visible: egui::Rect) -> Option<(usize, egui::Pos2)> {
+    if !response.hovered() || !ui.input(|i| i.pointer.is_still()) {
+        return None;
+    }
+    let pos = ui.input(|i| i.pointer.hover_pos()).filter(|p| visible.contains(*p))?;
+    let local = pos - out.galley_pos.to_vec2();
+    let row = out.galley.rows.iter().find(|r| local.y >= r.pos.y && local.y < r.pos.y + r.row.size.y)?;
+    if local.x < row.pos.x || local.x > row.pos.x + row.row.size.x {
+        return None;
+    }
+    let cursor = out.galley.cursor_from_pos(egui::vec2(local.x, local.y));
+    Some((cursor.index.into(), pos))
+}
+
+/// Draws the margin (numbers, breakpoints, the paused line's arrow, flags) and reports a click.
+fn paint_gutter(ui: &mut Ui, id: egui::Id, g: &Gutter, left: f32, tops: &[(f32, f32)], visible: egui::Rect, t: &Tokens) -> Option<u32> {
+    let area = egui::Rect::from_min_max(egui::pos2(left, visible.top()), egui::pos2(left + g.width, visible.bottom()));
+    let response = ui.interact(area, id.with("gutter"), egui::Sense::click());
+    let painter = ui.painter().with_clip_rect(area);
+    painter.rect_filled(area, 0.0, g.background);
+    painter.line_segment([area.right_top(), area.right_bottom()], egui::Stroke::new(1.0, g.separator));
+    let hovered_line = response.hover_pos().and_then(|p| tops.iter().position(|(top, h)| p.y >= *top && p.y < top + h)).map(|i| i as u32 + 1);
+    if hovered_line.is_some() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    let small = FontId::new(11.0, FontFamily::Name(theme::MONO.into()));
+    for (i, (top, h)) in tops.iter().enumerate() {
+        let line = i as u32 + 1;
+        if top + h < visible.top() || *top > visible.bottom() {
+            continue;
+        }
+        let mid = top + h / 2.0;
+        painter.text(egui::pos2(area.right() - 16.0, mid), egui::Align2::RIGHT_CENTER, line.to_string(), small.clone(), t.text_dim);
+        if g.breakpoints.contains(&line) {
+            painter.circle_filled(egui::pos2(area.left() + 10.0, mid), 4.5, t.danger);
+        } else if hovered_line == Some(line) {
+            painter.circle_filled(egui::pos2(area.left() + 10.0, mid), 4.5, t.danger.gamma_multiply(0.35));
+        }
+        if g.arrow == Some(line) {
+            let c = egui::pos2(area.left() + 10.0, mid);
+            painter.add(egui::Shape::convex_polygon(
+                vec![
+                    c + egui::vec2(-4.5, -4.5),
+                    c + egui::vec2(1.0, -4.5),
+                    c + egui::vec2(5.5, 0.0),
+                    c + egui::vec2(1.0, 4.5),
+                    c + egui::vec2(-4.5, 4.5),
+                ],
+                t.warning,
+                egui::Stroke::NONE,
+            ));
+        }
+        if let Some((_, color)) = g.flags.iter().find(|(l, _)| *l == line) {
+            painter.circle_filled(egui::pos2(area.right() - 7.0, mid), 2.5, *color);
+        }
+    }
+    if response.clicked() {
+        let p = response.interact_pointer_pos()?;
+        let i = tops.iter().position(|(top, h)| p.y >= *top && p.y < top + h)?;
+        return Some(i as u32 + 1);
+    }
+    None
 }
 
 #[cfg(test)]

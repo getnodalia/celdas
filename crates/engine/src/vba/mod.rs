@@ -82,6 +82,15 @@ pub fn specs() -> Vec<CommandSpec> {
             debug::debug
         ),
         cmd!(
+            "vba.immediate",
+            "Run Immediate VBA",
+            [],
+            None,
+            "{text: \"Range(\\\"A1\\\").Value = 3\" | \"?Sum(2, 3)\", approve?: bool} runs one line the way the Immediate window does while no macro is paused: a statement, or an expression after ? whose value is printed. The project's procedures can be called. One undo step → {output: [lines printed], messages: [{title, text}], files, steps}",
+            has_doc,
+            immediate
+        ),
+        cmd!(
             "vba.create",
             "Create VBA Project",
             [],
@@ -373,12 +382,79 @@ fn run(s: &mut Session, p: &Json) -> Result<Json> {
         match result {
             Ok(_) => host.finish().map_err(|e| EngineError::Other(e.to_string()))?,
             Err(e) => {
-                let at = site.map(|x| format!(" (in {}.{}, line {})", x.module, x.procedure, x.line)).unwrap_or_default();
+                let at = site.map(|x| debug::site_text(&project, &x)).unwrap_or_default();
                 return Err(EngineError::Other(format!("{e}{at}")));
             }
         }
         let messages: Vec<Json> = host.messages.iter().map(|m| json!({"title": m.title, "text": m.text})).collect();
         Ok(json!({"procedure": name, "messages": messages, "files": host.written, "steps": steps, "output": output}))
+    })
+}
+
+/// What `vba.immediate` runs a line in: a module of its own, so the project's names are in reach.
+const IMMEDIATE_MODULE: &str = "ImmediateWindow";
+const IMMEDIATE_PROCEDURE: &str = "RunImmediateLine";
+const IMMEDIATE_MAX: usize = 4000;
+
+fn immediate(s: &mut Session, p: &Json) -> Result<Json> {
+    let text =
+        str_param(p, "text").map(str::trim).filter(|t| !t.is_empty()).ok_or_else(|| EngineError::Other("vba.immediate: missing `text`".into()))?;
+    if text.chars().count() > IMMEDIATE_MAX || text.contains(['\n', '\r']) {
+        return Err(EngineError::Other("vba.immediate: `text` is one line of at most 4000 characters".into()));
+    }
+    let text = text.to_string();
+    let (mut sources, fingerprint) = match project_of(s)? {
+        Some((project, fingerprint)) => (modules_of(&project), Some(fingerprint)),
+        None => (Vec::new(), None),
+    };
+    sources.retain(|m| !m.name.eq_ignore_ascii_case(IMMEDIATE_MODULE));
+    let statement = match text.strip_prefix('?') {
+        Some(expr) => format!("Debug.Print {}", expr.trim()),
+        None => text.clone(),
+    };
+    sources.push(celdas_vba::SourceModule {
+        name: IMMEDIATE_MODULE.into(),
+        kind: celdas_vba::ModuleKind::Standard,
+        source: format!("Public Sub {IMMEDIATE_PROCEDURE}()\r\n{statement}\r\nEnd Sub\r\n"),
+    });
+    let project = Project::from_sources(sources);
+    if let Some((_, e)) = project.syntax_errors().into_iter().find(|(m, _)| m.eq_ignore_ascii_case(IMMEDIATE_MODULE)) {
+        return Err(EngineError::Other(format!("{e}")));
+    }
+    // A workbook opened from a file asks once, as running one of its macros does.
+    let (doc, trust) = {
+        let d = s.doc()?;
+        (d.uid, d.trust)
+    };
+    if let (Some(fingerprint), true) = (fingerprint, trust != Trust::Local) {
+        let key = (doc, format!("vba:{fingerprint:x}"));
+        if !s.macro_approvals.contains(&key) {
+            if bool_param(p, "approve") != Some(true) {
+                return Err(EngineError::Approve(
+                    "Run this line? It can call the macros of this workbook, which can change it and read and write files on this computer.".into(),
+                ));
+            }
+            s.macro_approvals.insert(key);
+        }
+    }
+    let label = format!("Immediate: {text}");
+    s.grouped(&label, |s| {
+        let mut host = ExcelHost::new(s);
+        let (result, steps, site, output) = {
+            let mut vm = Vm::new(&project, &mut host);
+            let r = vm.run(IMMEDIATE_PROCEDURE, Vec::new());
+            (r, vm.steps(), vm.error_site().cloned(), vm.debug.clone())
+        };
+        match result {
+            Ok(_) => host.finish().map_err(|e| EngineError::Other(e.to_string()))?,
+            Err(e) => {
+                let at =
+                    site.filter(|x| !x.module.eq_ignore_ascii_case(IMMEDIATE_MODULE)).map(|x| debug::site_text(&project, &x)).unwrap_or_default();
+                return Err(EngineError::Other(format!("{e}{at}")));
+            }
+        }
+        let messages: Vec<Json> = host.messages.iter().map(|m| json!({"title": m.title, "text": m.text})).collect();
+        Ok(json!({"output": output, "messages": messages, "files": host.written, "steps": steps}))
     })
 }
 

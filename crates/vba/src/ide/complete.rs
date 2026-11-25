@@ -170,7 +170,11 @@ fn plain(name: &str) -> &str {
 
 fn local<'a>(scan: &'a Scan, proc: Option<usize>, name: &str) -> Option<&'a VarDecl> {
     let name = plain(name);
-    scan.vars.iter().filter(|v| v.proc == proc && proc.is_some()).chain(scan.vars.iter().filter(|v| v.proc.is_none())).find(|v| v.name.eq_ignore_ascii_case(name))
+    scan.vars
+        .iter()
+        .filter(|v| v.proc == proc && proc.is_some())
+        .chain(scan.vars.iter().filter(|v| v.proc.is_none()))
+        .find(|v| v.name.eq_ignore_ascii_case(name))
 }
 
 /// The class a first step names.
@@ -295,12 +299,64 @@ fn typed_word(before: &[char]) -> (usize, String) {
     (start, word)
 }
 
-const TYPE_NAMES: &[&str] = &["Boolean", "Byte", "Currency", "Date", "Double", "Integer", "Long", "LongLong", "Object", "Single", "String", "Variant"];
+const TYPE_NAMES: &[&str] =
+    &["Boolean", "Byte", "Currency", "Date", "Double", "Integer", "Long", "LongLong", "Object", "Single", "String", "Variant"];
 
 const KEYWORDS: &[&str] = &[
-    "Call", "Case", "Const", "Dim", "Do", "Each", "Else", "ElseIf", "End", "Erase", "Exit", "For", "Function", "GoTo", "If", "Loop", "Next", "Nothing", "On Error GoTo",
-    "On Error Resume Next", "Option Explicit", "Private", "Public", "ReDim", "Select Case", "Set", "Static", "Step", "Sub", "Then", "To", "Until", "Wend", "While", "With",
-    "True", "False", "Empty", "Null", "Me", "Not", "And", "Or", "Xor", "Mod", "Like", "Is", "New", "As", "ByVal", "ByRef", "Optional", "ParamArray", "Property",
+    "Call",
+    "Case",
+    "Const",
+    "Dim",
+    "Do",
+    "Each",
+    "Else",
+    "ElseIf",
+    "End",
+    "Erase",
+    "Exit",
+    "For",
+    "Function",
+    "GoTo",
+    "If",
+    "Loop",
+    "Next",
+    "Nothing",
+    "On Error GoTo",
+    "On Error Resume Next",
+    "Option Explicit",
+    "Private",
+    "Public",
+    "ReDim",
+    "Select Case",
+    "Set",
+    "Static",
+    "Step",
+    "Sub",
+    "Then",
+    "To",
+    "Until",
+    "Wend",
+    "While",
+    "With",
+    "True",
+    "False",
+    "Empty",
+    "Null",
+    "Me",
+    "Not",
+    "And",
+    "Or",
+    "Xor",
+    "Mod",
+    "Like",
+    "Is",
+    "New",
+    "As",
+    "ByVal",
+    "ByRef",
+    "Optional",
+    "ParamArray",
+    "Property",
 ];
 
 /// (trigger, label, text). `$0` is where the caret ends up.
@@ -376,8 +432,17 @@ fn member_items(scan: &Scan, catalog: &Catalog, cur: &Cursor, dot: usize) -> Vec
 }
 
 fn type_items(scan: &Scan, catalog: &Catalog) -> Vec<Item> {
-    let mut out: Vec<Item> = TYPE_NAMES.iter().map(|t| Item { label: (*t).into(), kind: ItemKind::Type, detail: "type".into(), doc: String::new(), insert: (*t).into() }).collect();
-    out.extend(catalog.classes.iter().map(|c| Item { label: c.name.clone(), kind: ItemKind::Class, detail: "class".into(), doc: c.doc.clone(), insert: c.name.clone() }));
+    let mut out: Vec<Item> = TYPE_NAMES
+        .iter()
+        .map(|t| Item { label: (*t).into(), kind: ItemKind::Type, detail: "type".into(), doc: String::new(), insert: (*t).into() })
+        .collect();
+    out.extend(catalog.classes.iter().map(|c| Item {
+        label: c.name.clone(),
+        kind: ItemKind::Class,
+        detail: "class".into(),
+        doc: c.doc.clone(),
+        insert: c.name.clone(),
+    }));
     out.extend(scan.types.iter().map(|t| Item {
         label: t.name.clone(),
         kind: ItemKind::Type,
@@ -418,7 +483,13 @@ fn name_items(scan: &Scan, catalog: &Catalog, proc: Option<usize>) -> Vec<Item> 
     for c in &catalog.classes {
         out.push(Item { label: c.name.clone(), kind: ItemKind::Class, detail: "class".into(), doc: c.doc.clone(), insert: c.name.clone() });
     }
-    out.extend(KEYWORDS.iter().map(|k| Item { label: (*k).into(), kind: ItemKind::Keyword, detail: String::new(), doc: String::new(), insert: (*k).into() }));
+    out.extend(KEYWORDS.iter().map(|k| Item {
+        label: (*k).into(),
+        kind: ItemKind::Keyword,
+        detail: String::new(),
+        doc: String::new(),
+        insert: (*k).into(),
+    }));
     out.extend(SNIPPETS.iter().map(|(trigger, label, text)| Item {
         label: (*trigger).into(),
         kind: ItemKind::Snippet,
@@ -572,7 +643,13 @@ pub fn hover(scan: &Scan, catalog: &Catalog, src: &str, line: u32, col: usize) -
         return Some((m.signature(), m.doc.clone()));
     }
     if let Some(v) = local(scan, cur.proc, &name) {
-        let kind = if v.param { "parameter" } else if v.constant { "constant" } else { "variable" };
+        let kind = if v.param {
+            "parameter"
+        } else if v.constant {
+            "constant"
+        } else {
+            "variable"
+        };
         return Some((format!("{} As {}", v.name, v.ty.as_deref().unwrap_or("Variant")), kind.to_string()));
     }
     if let Some(p) = scan.procs.iter().find(|p| p.name.eq_ignore_ascii_case(&name)) {

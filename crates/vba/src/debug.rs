@@ -179,7 +179,8 @@ impl<'a> Vm<'a> {
     }
 
     pub(crate) fn variables(f: &Frame) -> Vec<Variable> {
-        let mut out: Vec<Variable> = f.vars.iter().map(|(n, v)| Variable { name: n.to_string(), ty: type_label(&v.ty, &v.value), value: show(&v.value) }).collect();
+        let mut out: Vec<Variable> =
+            f.vars.iter().map(|(n, v)| Variable { name: n.to_string(), ty: type_label(&v.ty, &v.value), value: show(&v.value) }).collect();
         out.sort_by(|a, b| a.name.cmp(&b.name));
         out
     }
@@ -268,7 +269,8 @@ impl<'a> Vm<'a> {
     }
 
     fn global_variables(&self) -> Vec<Variable> {
-        let mut out: Vec<Variable> = self.globals_iter().map(|(n, v)| Variable { name: n.to_string(), ty: type_label(&v.ty, &v.value), value: show(&v.value) }).collect();
+        let mut out: Vec<Variable> =
+            self.globals_iter().map(|(n, v)| Variable { name: n.to_string(), ty: type_label(&v.ty, &v.value), value: show(&v.value) }).collect();
         out.sort_by(|a, b| a.name.cmp(&b.name));
         out
     }
@@ -391,7 +393,12 @@ mod tests {
 
     #[test]
     fn watches_and_immediate_statements_see_the_paused_procedure() {
-        let script = vec![go(Step::Continue, &[10]), Command::Immediate("i = 7".into()), Command::Immediate("?i * 2".into()), Command::Immediate("Debug.Print \"x\"".into())];
+        let script = vec![
+            go(Step::Continue, &[10]),
+            Command::Immediate("i = 7".into()),
+            Command::Immediate("?i * 2".into()),
+            Command::Immediate("Debug.Print \"x\"".into()),
+        ];
         let p = paused(run(script, &["i + 1", "nope("]));
         assert_eq!(p.immediate, ["", "14", "x"]);
         assert_eq!(p.watches[0], ("i + 1".to_string(), Ok("8".to_string())));
@@ -406,13 +413,20 @@ mod tests {
 
     #[test]
     fn stop_pauses_only_under_the_debugger_and_ends_a_normal_run() {
-        let p = Project::from_sources(vec![SourceModule { name: "M".into(), kind: ModuleKind::Standard, source: "Sub A()\n    Debug.Print 1\n    Stop\n    Debug.Print 2\nEnd Sub\n".into() }]);
+        let p = Project::from_sources(vec![SourceModule {
+            name: "M".into(),
+            kind: ModuleKind::Standard,
+            source: "Sub A()\n    Debug.Print 1\n    Stop\n    Debug.Print 2\nEnd Sub\n".into(),
+        }]);
         let mut host = NoHost;
         let mut vm = Vm::new(&p, &mut host);
         let _ = vm.run("A", vec![]);
         assert_eq!(vm.debug, ["1"]);
         let mut vm = Vm::new(&p, &mut host);
-        let Outcome::Paused(first) = vm.run_debug("A", vec![], Plan { script: vec![Command::Go(Step::Continue, BTreeSet::new())], watches: vec![] }) else { panic!() };
+        let Outcome::Paused(first) = vm.run_debug("A", vec![], Plan { script: vec![Command::Go(Step::Continue, BTreeSet::new())], watches: vec![] })
+        else {
+            panic!()
+        };
         assert_eq!((first.reason, first.frames[0].line, first.output.len()), (Reason::Stop, 3, 1));
     }
 }

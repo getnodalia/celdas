@@ -11,6 +11,6 @@ pub mod lines;
 pub mod scan;
 
 pub use analyze::{Analysis, analyze};
-pub use format::format;
 pub use catalog::{Catalog, Class, Global, GlobalKind, Member, MemberKind};
+pub use format::format;
 pub use scan::{Diagnostic, ParamDecl, ProcDecl, Scan, Severity, TypeDecl, VarDecl, scan};

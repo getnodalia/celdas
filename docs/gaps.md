@@ -172,7 +172,7 @@ No alpha blockers: every core workflow passes the [alpha gate](roadmap.md#alpha-
   [hardware-parity.md](hardware-parity.md)
 
 ### 21. Automation and add-ins (F)
-- VBA projects run (`vba.run`; [macros.md](macros.md#vba-macros)) for the common Excel object model: ranges, sheets, shapes, charts, `WorksheetFunction`, text files. Still missing: UserForms, ActiveX/form-control events, workbook and sheet event procedures, creating a VBA project in a workbook that has none, class-module `Property` procedures over host objects, pivot tables and most Application dialogs; no Office
+- VBA projects run (`vba.run`; [macros.md](macros.md#vba-macros)) for the common Excel object model: ranges, sheets, shapes, charts, `WorksheetFunction`, text files. Still missing: UserForms, ActiveX/form-control events, workbook and sheet event procedures, class-module `Property` procedures over host objects, pivot tables and most Application dialogs; no Office
   Scripts compatibility; no plugin or custom function API. **Estimate:** 20–30 h.
 
 ### 22. AI features (F)

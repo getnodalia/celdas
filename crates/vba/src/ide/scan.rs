@@ -33,7 +33,14 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    pub(super) fn new(line: u32, start: usize, end: usize, severity: Severity, template: &'static str, args: Vec<(&'static str, String)>) -> Diagnostic {
+    pub(super) fn new(
+        line: u32,
+        start: usize,
+        end: usize,
+        severity: Severity,
+        template: &'static str,
+        args: Vec<(&'static str, String)>,
+    ) -> Diagnostic {
         let mut message = template.to_string();
         for (k, v) in &args {
             message = message.replace(&format!("{{{k}}}"), v);
@@ -254,7 +261,11 @@ pub(super) fn classify(stmt: &[char]) -> Cls {
         "type" if !next.is_empty() => Cls::Open(Block::Type),
         "enum" if !next.is_empty() => Cls::Open(Block::Enum),
         "if" if i == 0 => {
-            if is_single_line_if(stmt, &ws) { Cls::Other } else { Cls::Open(Block::If) }
+            if is_single_line_if(stmt, &ws) {
+                Cls::Other
+            } else {
+                Cls::Open(Block::If)
+            }
         }
         "elseif" if i == 0 => Cls::ElseIf,
         "else" if i == 0 => Cls::Else,
@@ -348,7 +359,10 @@ fn declared_items(stmt: &[char], constant: bool) -> Vec<(String, Option<String>,
         .unwrap_or(0);
     // After the last leading keyword.
     let mut k = i;
-    while ws.get(k + 1).is_some_and(|w| matches!(w.text.to_lowercase().as_str(), "dim" | "const" | "static" | "withevents" | "public" | "private" | "global")) {
+    while ws
+        .get(k + 1)
+        .is_some_and(|w| matches!(w.text.to_lowercase().as_str(), "dim" | "const" | "static" | "withevents" | "public" | "private" | "global"))
+    {
         k += 1;
     }
     let Some(kw) = ws.get(k) else { return Vec::new() };
@@ -460,7 +474,8 @@ struct Scanner {
 /// Reads `src`.
 pub fn scan(src: &str) -> Scan {
     let lines = logical_lines(src);
-    let mut s = Scanner { scan: Scan { lines: Vec::new(), ..Scan::default() }, stack: Vec::new(), current_proc: None, doc: Vec::new(), type_open: None };
+    let mut s =
+        Scanner { scan: Scan { lines: Vec::new(), ..Scan::default() }, stack: Vec::new(), current_proc: None, doc: Vec::new(), type_open: None };
     for line in &lines {
         s.line(line);
         s.scan.line_proc.push(s.current_proc);
@@ -493,7 +508,9 @@ impl Scanner {
         let Some((_, first)) = stmts.first() else { return };
         // A label starts in column one.
         let mut skip = 0;
-        if line.indent == 0 && stmts.len() > 1 || (line.indent == 0 && code.iter().rposition(|c| !c.is_whitespace()).is_some_and(|p| code.get(p) == Some(&':'))) {
+        if line.indent == 0 && stmts.len() > 1
+            || (line.indent == 0 && code.iter().rposition(|c| !c.is_whitespace()).is_some_and(|p| code.get(p) == Some(&':')))
+        {
             let ws = words(first);
             if ws.len() == 1 && classify(first) == Cls::Other && !matches!(first_lower(first).as_str(), "else" | "loop" | "end") {
                 let name = first_lower(first);
@@ -563,7 +580,13 @@ impl Scanner {
             }
             Cls::Case => {
                 if self.stack.last().map(|f| f.block) != Some(Block::Select) {
-                    self.error(l, start, end, "“{word}” without a matching “{block}”", vec![("word", "Case".into()), ("block", "Select Case".into())]);
+                    self.error(
+                        l,
+                        start,
+                        end,
+                        "“{word}” without a matching “{block}”",
+                        vec![("word", "Case".into()), ("block", "Select Case".into())],
+                    );
                 }
             }
             Cls::Other => self.other(line, l, start, end, stmt, in_proc),
@@ -575,7 +598,13 @@ impl Scanner {
         let open: Vec<(Block, u32, usize, usize)> = self.stack.drain(..).map(|f| (f.block, f.line, f.start, f.end)).collect();
         for (b, bl, bs, be) in open {
             let kind = self.scan.procs.last().map(|p| p.kind);
-            self.error(bl, bs, be, "Block not closed: “{open}” needs “{close}”", vec![("open", b.open_word().into()), ("close", b.close_word(kind).into())]);
+            self.error(
+                bl,
+                bs,
+                be,
+                "Block not closed: “{open}” needs “{close}”",
+                vec![("open", b.open_word().into()), ("close", b.close_word(kind).into())],
+            );
         }
         if let Some(i) = self.current_proc.take()
             && let Some(p) = self.scan.procs.get_mut(i)
@@ -601,7 +630,16 @@ impl Scanner {
             doc,
         });
         for p in &h.params {
-            self.scan.vars.push(VarDecl { name: p.name.clone(), ty: p.ty.clone(), line: l, col: start, proc: Some(index), constant: false, public: false, param: true });
+            self.scan.vars.push(VarDecl {
+                name: p.name.clone(),
+                ty: p.ty.clone(),
+                line: l,
+                col: start,
+                proc: Some(index),
+                constant: false,
+                public: false,
+                param: true,
+            });
         }
         self.current_proc = Some(index);
         self.stack.push(Frame { block: Block::Proc, line: l, start, end });
@@ -632,7 +670,13 @@ impl Scanner {
         let inner: Vec<Frame> = self.stack.drain(at + 1..).collect();
         for f in inner {
             let kind = self.scan.procs.last().map(|p| p.kind);
-            self.error(f.line, f.start, f.end, "Block not closed: “{open}” needs “{close}”", vec![("open", f.block.open_word().into()), ("close", f.block.close_word(kind).into())]);
+            self.error(
+                f.line,
+                f.start,
+                f.end,
+                "Block not closed: “{open}” needs “{close}”",
+                vec![("open", f.block.open_word().into()), ("close", f.block.close_word(kind).into())],
+            );
         }
         self.stack.pop();
         match b {
@@ -665,7 +709,8 @@ impl Scanner {
         let w: Vec<String> = words(stmt).iter().map(|x| x.text.to_lowercase()).collect();
         let i = skip_modifiers(&w);
         let head = w.get(i).map(String::as_str).unwrap_or("");
-        let declares = matches!(head, "dim" | "const" | "withevents") || (i > 0 && !matches!(head, "declare" | "event" | "implements" | "sub" | "function" | "property"));
+        let declares = matches!(head, "dim" | "const" | "withevents")
+            || (i > 0 && !matches!(head, "declare" | "event" | "implements" | "sub" | "function" | "property"));
         if first == "option" && w.get(1).is_some_and(|x| x == "explicit") {
             self.scan.option_explicit = true;
             return;
@@ -691,7 +736,16 @@ impl Scanner {
             let public = !in_proc && !w.iter().take(i).any(|m| m == "private" || m == "dim");
             for (name, ty, col) in declared_items(stmt, constant) {
                 let (dl, dc) = line.position(col);
-                self.scan.vars.push(VarDecl { name, ty, line: dl, col: dc, proc: if in_proc { self.current_proc } else { None }, constant, public, param: false });
+                self.scan.vars.push(VarDecl {
+                    name,
+                    ty,
+                    line: dl,
+                    col: dc,
+                    proc: if in_proc { self.current_proc } else { None },
+                    constant,
+                    public,
+                    param: false,
+                });
             }
             return;
         }
@@ -699,7 +753,12 @@ impl Scanner {
             self.check_exit(l, start, end, &w);
             return;
         }
-        if !in_proc && !matches!(first.as_str(), "attribute" | "event" | "implements" | "option" | "rem" | "defbool" | "defint" | "deflng" | "defstr" | "defdbl" | "defvar") {
+        if !in_proc
+            && !matches!(
+                first.as_str(),
+                "attribute" | "event" | "implements" | "option" | "rem" | "defbool" | "defint" | "deflng" | "defstr" | "defdbl" | "defvar"
+            )
+        {
             self.error(l, start, end, "Statements are not allowed outside a procedure", vec![]);
         }
     }
@@ -726,7 +785,13 @@ impl Scanner {
         let open: Vec<Frame> = self.stack.drain(..).collect();
         for f in open {
             let kind = self.scan.procs.last().map(|p| p.kind);
-            self.error(f.line, f.start, f.end, "Block not closed: “{open}” needs “{close}”", vec![("open", f.block.open_word().into()), ("close", f.block.close_word(kind).into())]);
+            self.error(
+                f.line,
+                f.start,
+                f.end,
+                "Block not closed: “{open}” needs “{close}”",
+                vec![("open", f.block.open_word().into()), ("close", f.block.close_word(kind).into())],
+            );
         }
     }
 }
@@ -797,7 +862,9 @@ mod tests {
 
     #[test]
     fn single_line_if_and_colons_do_not_open_blocks() {
-        assert!(messages("Sub A()\n    If x Then y = 1 Else y = 2\n    If a Then b = 1: c = 2\n    For i = 1 To 2: x = i: Next i\nEnd Sub\n").is_empty());
+        assert!(
+            messages("Sub A()\n    If x Then y = 1 Else y = 2\n    If a Then b = 1: c = 2\n    For i = 1 To 2: x = i: Next i\nEnd Sub\n").is_empty()
+        );
     }
 
     #[test]
