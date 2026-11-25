@@ -5,7 +5,7 @@ use super::{Dialog, Json, Key, SheetApp, json};
 pub(super) fn find(app: &mut SheetApp, ui: &mut egui::Ui, d: &mut Dialog) {
     ui.horizontal(|ui| {
         for tab in ["Find", "Replace"] {
-            if ui.selectable_label(d.tab == tab, tab).clicked() {
+            if ui.selectable_label(d.tab == tab, crate::i18n::ui_tr(ui, tab)).clicked() {
                 d.tab = tab.into();
             }
         }

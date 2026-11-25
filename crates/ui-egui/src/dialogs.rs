@@ -829,7 +829,7 @@ impl Dialog {
                 let selection = app.session.active().and_then(|d| {
                     d.wb.active().map(|s| format!("={}!{}", celdas_engine::formula::quote_sheet(&s.name), abs(&d.selection.current())))
                 });
-                let mut defaults = json!({"scope": "Workbook", "refersTo": selection});
+                let mut defaults = json!({"scope": app.ui.language.tr("Workbook"), "refersTo": selection});
                 for key in ["name", "scope", "comment", "refersTo", "oldName", "oldScope"] {
                     if let Some(v) = params.get(key).filter(|v| v.is_string()) {
                         defaults[key] = v.clone();

@@ -946,7 +946,7 @@ pub fn code_field(ui: &mut Ui, id: egui::Id, text: &mut String, options: &FieldO
     let out = scrolled.inner;
     // The field has no visible label; name it for screen readers and the strict kittest
     // accessibility check.
-    let mut response = out.response.response.accessible_name(options.name);
+    let mut response = out.response.response.accessible_name(crate::i18n::ui_tr(ui, options.name));
     if edited.is_some() {
         response.mark_changed();
     }

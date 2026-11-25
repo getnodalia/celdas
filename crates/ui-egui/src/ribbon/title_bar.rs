@@ -73,7 +73,8 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
             let can_redo = celdas_engine::cmd::can_redo(&app.session).is_ok();
             // Named and marked enabled or not for assistive technology (and the UI tests).
             let undo = icon_button(ui, Icon::Undo, if can_undo { t.text_dim } else { t.text_disabled }, "Undo", vec2(26.0, ch));
-            undo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, can_undo, "Undo"));
+            let accessible_name = crate::i18n::ui_tr(ui, "Undo");
+            undo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, can_undo, accessible_name));
             if undo.clicked() && can_undo {
                 app.run_or_alert("edit.undo", json!({}));
             }
@@ -94,7 +95,8 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
                 }
             });
             let redo = icon_button(ui, Icon::Redo, if can_redo { t.text_dim } else { t.text_disabled }, "Redo", vec2(26.0, ch));
-            redo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, can_redo, "Redo"));
+            let accessible_name = crate::i18n::ui_tr(ui, "Redo");
+            redo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, can_redo, accessible_name));
             if redo.clicked() && can_redo {
                 app.run_or_alert("edit.redo", json!({}));
             }
@@ -107,7 +109,7 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
                     ("Sort A to Z", "data.sortAscending"),
                     ("Calculate Now", "formulas.calculateNow"),
                 ] {
-                    if ui.button(label).clicked() {
+                    if ui.button(crate::i18n::ui_tr(ui, label)).clicked() {
                         app.run_or_alert(id, json!({}));
                     }
                 }
@@ -131,7 +133,7 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
                     for (label, fmt) in
                         [("Save a Copy as Excel Workbook (.xlsx)…", "xlsx"), ("Export as CSV…", "csv"), ("Export as Web Page (.html)…", "html")]
                     {
-                        if ui.button(label).clicked() {
+                        if ui.button(crate::i18n::ui_tr(ui, label)).clicked() {
                             app.open_dialog("saveCopy", json!({"format": fmt}));
                         }
                     }
