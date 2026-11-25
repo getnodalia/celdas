@@ -8,7 +8,7 @@ use super::updates_ui;
 use super::{
     CellRef, HashMap, INTERFACE_SCALE_MAX, INTERFACE_SCALE_MIN, Json, Notice, Perf, RangeRef, Session, SheetApp, UiRequest, UiState, backstage,
     clamp_interface_scale, clean_error, control, desktop_theme, dialogs, editor, floating_pictures, formula_bar, formula_locale, grid, i18n, json,
-    keytips, macro_ui, panes, pivot_pane, printing, ribbon, tabs, text_box, theme, widgets,
+    keytips, macro_ui, panes, pivot_pane, printing, ribbon, tabs, text_box, theme, vba_ide, widgets,
 };
 
 mod clipboard;
@@ -39,6 +39,7 @@ impl SheetApp {
             text_box_editor: None,
             dialog: None,
             backstage: None,
+            ide: None,
             message: None,
             toast: None,
             notice: None,
@@ -227,7 +228,7 @@ impl SheetApp {
             self.backstage = None;
         }
         // Keytips opened the File view (Alt, F): its letters keep working there.
-        if self.backstage.is_none() || self.keytips.prefix().is_some() {
+        if (self.backstage.is_none() && self.ide.is_none()) || self.keytips.prefix().is_some() {
             self.ribbon_keys(&ctx);
         }
         if self.chrome.title_bar {
@@ -236,6 +237,9 @@ impl SheetApp {
         if self.backstage.is_some() {
             // File tab: the Backstage view replaces everything below the title bar.
             backstage::show(self, ui);
+        } else if self.ide.is_some() {
+            // Visual Basic: the editor replaces everything below the title bar too.
+            vba_ide::show(self, ui);
         } else {
             ribbon::show(self, ui);
             widgets::notice_bar(self, ui);
@@ -272,6 +276,7 @@ impl SheetApp {
         crate::window_controls::resize_zones(self, ui);
         macro_ui::forget_closed_editor(self);
         macro_ui::question_box(self, &ctx);
+        vba_ide::flush(self);
         widgets::message_box(self, &ctx);
         widgets::toast(self, &ctx);
         // Last, so its resize cursors win over the widgets under the window edges.

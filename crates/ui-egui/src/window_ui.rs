@@ -8,7 +8,7 @@
 
 use celdas_engine::core::CellRef;
 
-use crate::{Notice, SheetApp, backstage, dialogs, editor, grid, keytips, text_box};
+use crate::{Notice, SheetApp, backstage, dialogs, editor, grid, keytips, text_box, vba_ide};
 
 /// One window's parked interface state (see the module docs).
 #[derive(Default)]
@@ -17,6 +17,7 @@ pub struct WindowUi {
     text_box_editor: Option<text_box::EditState>,
     dialog: Option<dialogs::Dialog>,
     backstage: Option<backstage::Backstage>,
+    ide: Option<Box<vba_ide::Ide>>,
     message: Option<(String, String)>,
     toast: Option<(String, f64)>,
     notice: Option<Notice>,
@@ -61,6 +62,7 @@ impl SheetApp {
             text_box_editor,
             dialog,
             backstage,
+            ide,
             message,
             toast,
             notice,
@@ -78,6 +80,7 @@ impl SheetApp {
         std::mem::swap(&mut self.text_box_editor, text_box_editor);
         std::mem::swap(&mut self.dialog, dialog);
         std::mem::swap(&mut self.backstage, backstage);
+        std::mem::swap(&mut self.ide, ide);
         std::mem::swap(&mut self.message, message);
         std::mem::swap(&mut self.toast, toast);
         std::mem::swap(&mut self.notice, notice);

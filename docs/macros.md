@@ -406,13 +406,37 @@ axes), text files (`Open … For Input/Output/Append`, `Print #`, `Line Input #`
 `MkDir`, `Kill`; a file is written whole when it is closed) and the `xl*` constants. A cell loop
 is turned into a few range writes, so a macro that fills thousands of cells one by one stays fast.
 
-**Editing.** Automate › Macros › Edit on a VBA procedure (or Visual Basic) opens the VBA editor: a
-module list, a code editor with VBA highlighting, New Module, Delete, Save and Run. Save rewrites
-the project's `vbaProject.bin` (`vba.save`: the MS-OVBA streams of the edited modules are
-recompressed and the compiled caches are dropped so Excel recompiles from source; every other
-stream of the file stays byte for byte), as one undo step, and the next run asks for approval again
-because the code changed. `vba.remove` deletes a standard or class module. A workbook that has no
-VBA project cannot get one from scratch yet.
+**Editing.** Visual Basic (Alt+F11, or Automate › Macros › Edit on a VBA procedure) opens the VBA
+editor in place of the ribbon and the sheet, drawn in the Nodalia Design Language: a toolbar with
+Save, Format Module, Find and Replace, Run and the debugger buttons; a project explorer (standard
+modules, classes, the workbook and sheet modules) with an outline of the module's procedures; one
+tab per open module; and a bottom panel with Problems, Immediate, Locals, Watch, Call Stack and
+Output. The code editor has VBA highlighting, line numbers, a breakpoint gutter, current-line and
+paused-line marks, inline errors and warnings while you type, suggestions with documentation and
+a signature hint for the call you are typing, hover cards, Go to Definition (F12), Find and Replace
+(Ctrl+F, Ctrl+H, F3) and Format Module (Ctrl+Shift+F, indents blocks and normalizes keyword case).
+A workbook without a VBA project shows a welcome page that creates one (`vba.create {code?}`) with a
+starter module, or records a macro.
+
+- `vba.save {module, code}` rewrites the project's `vbaProject.bin` (the MS-OVBA streams of the
+  edited modules are recompressed and the compiled caches are dropped so Excel recompiles from
+  source; every other stream of the file stays byte for byte), as one undo step; the next run asks
+  for approval again because the code changed. `vba.remove` deletes a standard or class module.
+- `vba.analyze`, `vba.complete`, `vba.hover`, `vba.occurrences` and `vba.format` are the editor's
+  language services: they tolerate code that does not compile, so the editor can help while you type.
+- `vba.immediate {text}` runs one line in the workbook with the project's names; `? expr` prints a
+  value.
+- `vba.debug {action: start|step|state|immediate|stop, ...}` debugs a procedure: Step Into (F8),
+  Step Over (Shift+F8), Step Out (Ctrl+Shift+F8), Continue (F5), breakpoints (F9) and watches. A
+  paused macro shows its call stack, its locals and the watches, and the Immediate window runs in
+  the paused procedure. The workbook is locked while a macro is paused; Stop keeps or discards what
+  it did (one undo step). Errors of `vba.run` and `vba.immediate` name the line as the editor counts
+  it.
+
+The **Macros** dialog (Alt+F8) lists Celdas macros, Automate scripts and VBA procedures with their
+kind; Run, Step Into (a VBA procedure opens the editor paused before its first statement), Edit,
+New VBA Macro (adds an empty `Sub` to the project, creating the project when the workbook has none),
+Create, Delete and Options.
 
 Not covered: UserForms (and so a form designer), ActiveX and form-control events, workbook and
 worksheet event procedures, PivotTables and most dialogs. A procedure that uses one fails with an error

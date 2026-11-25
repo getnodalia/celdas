@@ -125,6 +125,30 @@ fn surfaces() -> Vec<(String, Setup)> {
     ] {
         v.push((format!("dialog {name}"), Box::new(move |app: &mut SheetApp| app.open_dialog(name, json!({})))));
     }
+    // The Visual Basic editor with a project, paused inside a procedure, and the Macros dialog
+    // listing a VBA procedure.
+    const VBA: &str = "Option Explicit\r\n\r\nSub Fill()\r\n    Dim total As Long\r\n    total = 1\r\n    Range(\"A1\").Value = total\r\nEnd Sub\r\n";
+    v.push((
+        "vba editor".into(),
+        Box::new(|app: &mut SheetApp| {
+            let _ = app.run("vba.create", json!({"code": VBA}));
+            app.open_dialog("vbaEditor", json!({"procedure": "Module1.Fill"}));
+        }),
+    ));
+    v.push((
+        "vba editor paused".into(),
+        Box::new(|app: &mut SheetApp| {
+            let _ = app.run("vba.create", json!({"code": VBA}));
+            app.open_dialog("vbaEditor", json!({"procedure": "Module1.Fill", "debug": true}));
+        }),
+    ));
+    v.push((
+        "macros with VBA".into(),
+        Box::new(|app: &mut SheetApp| {
+            let _ = app.run("vba.create", json!({"code": VBA}));
+            app.open_dialog("macros", json!({}));
+        }),
+    ));
     v
 }
 

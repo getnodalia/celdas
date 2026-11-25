@@ -535,6 +535,8 @@ pub struct Session {
     pub macro_approvals: std::collections::HashSet<(u64, String)>,
     /// The macro being debugged, between debugger actions.
     pub macro_debug: Option<macros::debug::Debugger>,
+    /// A VBA macro being debugged (`vba.debug`), like `macro_debug`.
+    pub vba_debug: Option<vba::debug::Debugger>,
     /// Where the macro recorder started (beside `recorder`, its buffer).
     pub macro_recording: Option<macros::recorder::RecordingStart>,
     /// Draw tab tool: "" (select), "pen" or "eraser"; pen colour and width.
@@ -630,6 +632,9 @@ impl Session {
             if self.macro_debug.as_ref().is_some_and(|m| m.doc == d.uid) {
                 self.macro_debug = None;
             }
+            if self.vba_debug.as_ref().is_some_and(|m| m.doc == d.uid) {
+                self.vba_debug = None;
+            }
             self.windows.retain(|w| w.doc_uid != d.uid);
             if self.active_window.is_some_and(|w| self.window(w).is_none()) {
                 self.activate_recent();
@@ -713,6 +718,9 @@ impl Session {
         if id != "macro.debug" {
             macros::debug::drop_if_ended(self);
         }
+        if id != "vba.debug" {
+            vba::debug::drop_if_ended(self);
+        }
         let query = !spec.journal && !spec.undoable;
         // While a macro is being debugged its undo group is open, and its workbook is locked:
         // between steps only the debugger, queries and commands that look around run there
@@ -721,6 +729,10 @@ impl Session {
         // it. Only the run's own steps go ahead. Other workbooks stay editable.
         let locked = self.active().is_some_and(|d| self.macro_debug.as_ref().is_some_and(|m| m.locks(d.uid) && !m.stepping()));
         if locked && !macros::debug::runs_while_locked(id, query) {
+            return Err(EngineError::Disabled(id.to_string(), macros::debug::BUSY.into()));
+        }
+        let vba_locked = self.active().is_some_and(|d| self.vba_debug.as_ref().is_some_and(|m| m.locks(d.uid) && !m.running()));
+        if vba_locked && !vba::debug::runs_while_locked(id, query) {
             return Err(EngineError::Disabled(id.to_string(), macros::debug::BUSY.into()));
         }
         let before = self.active().map(|d| (d.uid, d.wb.clone(), d.selection.clone()));
@@ -806,6 +818,7 @@ impl Session {
                     // Only the `macro.debug` call itself can lose the run's place: a command nested
                     // in a step that panics is an error of that step, which the run handles.
                     macros::debug::recover(self);
+                    vba::debug::recover(self);
                     self.trim_history();
                     self.group_step = None;
                 }

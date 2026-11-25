@@ -131,7 +131,7 @@ fn the_macros_dialog_lists_scripts_and_the_vba_project_beside_macros() {
     assert!(items.iter().any(|i| i["kind"] == "vba"), "{items:?}");
     assert!(h.query_by_label_contains("also has a VBA project").is_some());
     // A script and a macro may share a name; each has its own row.
-    h.get_by_label("Mark    (script, 1 step)").click();
+    h.get_by_label("Mark, Script · 1 step").click();
     h.run_steps(2);
     assert_eq!(h.state().dialog.as_ref().unwrap().values["kind"], json!("script"));
     h.get_by_label("Run").click();
@@ -140,7 +140,7 @@ fn the_macros_dialog_lists_scripts_and_the_vba_project_beside_macros() {
     // Deleting asks first, then removes the script and leaves the macro.
     h.state_mut().open_dialog("macros", json!({}));
     h.run_steps(2);
-    h.get_by_label("Mark    (script, 1 step)").click();
+    h.get_by_label("Mark, Script · 1 step").click();
     h.run_steps(2);
     h.get_by_label("Delete").click();
     h.run_steps(2);
@@ -148,7 +148,7 @@ fn the_macros_dialog_lists_scripts_and_the_vba_project_beside_macros() {
     // The question's Delete, in front of the dialog's.
     h.get_all_by_label("Delete").last().expect("the question's Delete").click();
     h.run_steps(3);
-    assert!(h.query_by_label("Mark    (script, 1 step)").is_none());
+    assert!(h.query_by_label("Mark, Script · 1 step").is_none());
     assert_eq!(h.state().session.active().unwrap().wb.macros.len(), 1);
 }
 
@@ -171,8 +171,8 @@ fn the_macros_dialog_runs_a_vba_procedure() {
     let mut h = vba_harness();
     h.state_mut().open_dialog("macros", json!({}));
     h.run_steps(2);
-    assert!(h.query_by_label("Module1.Doble    (VBA)").is_none(), "only Subs without arguments are listed");
-    h.get_by_label("Module1.Hola    (VBA)").click();
+    assert!(h.query_by_label("Module1.Doble, VBA").is_none(), "only Subs without arguments are listed");
+    h.get_by_label("Module1.Hola, VBA").click();
     h.run_steps(2);
     h.get_by_label("Run").click();
     h.run_steps(3);
@@ -307,7 +307,7 @@ fn the_macros_dialog_offers_trust_for_scripts_that_came_with_a_file() {
     h.run_steps(4);
     assert!(h.state().session.doc().unwrap().scripts_trusted);
     assert!(h.query_by_label("Trust Scripts").is_none(), "the row goes once the scripts are trusted");
-    h.get_by_label("Mark    (script, 1 step)").click();
+    h.get_by_label("Mark, Script · 1 step").click();
     h.run_steps(2);
     h.get_by_label("Run").click();
     h.run_steps(3);
@@ -389,4 +389,29 @@ fn the_macros_dialog_closes_when_another_workbook_becomes_active() {
     h.run_steps(3);
     assert!(h.state().dialog.is_none(), "the dialog closed instead of acting on the other workbook");
     assert!(h.state().session.active().unwrap().wb.macros[0].shortcut.is_none());
+}
+
+#[test]
+fn step_into_a_vba_procedure_opens_the_editor_paused() {
+    let mut h = vba_harness();
+    h.state_mut().open_dialog("macros", json!({}));
+    h.run_steps(2);
+    h.get_by_label("Module1.Hola, VBA").click();
+    h.run_steps(2);
+    h.get_by_label("Step Into").click();
+    h.run_steps(3);
+    let ide = h.state().ide.as_ref().expect("the editor opened");
+    assert!(ide.paused(), "stopped before the first statement");
+    assert_eq!(value(&h, "A1"), Value::Empty, "nothing ran yet");
+}
+
+#[test]
+fn new_vba_macro_adds_an_empty_sub_to_the_project() {
+    let mut h = vba_harness();
+    h.state_mut().open_dialog("macros", json!({}));
+    h.run_steps(2);
+    h.get_by_label("New VBA Macro").click();
+    h.run_steps(3);
+    let ide = h.state().ide.as_ref().expect("the editor opened");
+    assert!(ide.text_of("Module1").contains("Sub Macro1()"));
 }
