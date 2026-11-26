@@ -143,6 +143,11 @@ pub fn title_bar(app: &mut SheetApp, ui: &mut Ui) {
                 if __k.clicked() {
                     app.open_dialog("comments", json!({}));
                 }
+                // The AI assistant, with the chosen provider's mark (desktop only).
+                #[cfg(not(target_arch = "wasm32"))]
+                if crate::assistant::offered(app, ui.ctx()) {
+                    crate::assistant::button(app, ui);
+                }
                 ui.min_rect().left()
             });
             // Centred title, cut with "…" so it never runs under the controls on either side.

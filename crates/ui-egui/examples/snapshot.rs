@@ -2,7 +2,7 @@
 //!
 //! `cargo run --release -p celdas-ui-egui --example snapshot -- [--sample sales] [--in file.xlsx]
 //!  [--size 1440x900] [--scale 2] [--cmd 'id={json}']... [--tab Insert] [--dark] [--window-controls] [--file-page options] [--language en|es|zh|ja|ko|ru|pt|de|cs|fr|tr]
-//!  [--pane name] [--object id] [--dialog 'name={json}'] [--refedit key=A1:B2] [--hf-edit header|footer] out.png`
+//!  [--assistant] [--pane name] [--object id] [--dialog 'name={json}'] [--refedit key=A1:B2] [--hf-edit header|footer] out.png`
 //!
 //! `--refedit key=range` collapses the open dialog to its reference box `key`, then selects
 //! `range` on the grid, as a person picking a range for that box does.
@@ -21,6 +21,7 @@ fn main() {
     let mut tab = None;
     let mut dark = false;
     let mut app_menu = false;
+    let mut assistant = false;
     let mut window_controls = false;
     let mut file_page: Option<String> = None;
     let mut pane: Option<String> = None;
@@ -33,6 +34,7 @@ fn main() {
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
+            "--assistant" => assistant = true,
             "--sample" => {
                 i += 1;
                 sample = args.get(i).cloned();
@@ -120,6 +122,9 @@ fn main() {
         egui_kittest::Harness::builder().with_size(egui::vec2(size.0, size.1)).with_pixels_per_point(scale).with_max_steps(12).wgpu().build_ui_state(
             move |ui, app: &mut SheetApp| {
                 let ctx = ui.ctx().clone();
+                if assistant {
+                    app.show_assistant(&ctx, Some(true));
+                }
                 app.logic(&ctx);
                 app.ui(ui);
             },
