@@ -239,6 +239,23 @@ call without its parameters). Both are kept as they ran, so editing or deleting 
 script before the recording stops changes nothing; a run whose steps did not fit in the
 recording's 64 MB is left out and listed.
 
+### Recording as Visual Basic
+
+`macro.record {as: "vba"}` records the same commands, but saves them as a `Sub` in the workbook's
+VBA project instead of as a Celdas macro (the Record Macro dialog offers it as "Record as: Visual
+Basic"). The macro's name becomes the procedure's name, cleaned up to be one (spaces and
+punctuation become `_`; a name that is taken gets a number), the description becomes comments above
+it, and the `Sub` is added to the last standard module, or to a new `ModuleN`. A workbook without a
+project gets one. What was recorded reads like what Excel's recorder writes: `Range("B2").Value =
+"x"`, `Selection.Font.Bold = True`, `Range("A1:C3").Borders.LineStyle = xlContinuous`,
+`Rows("4:4").Insert`, `Range("A1:B9").Sort Key1:=…`, `Sheets("Hoja1").Activate`. Each command is
+translated one for one and the result is tested against the command (the same steps run as
+commands and as VBA leave the workbook identical). A command with no VBA translation is not lost
+silently: it becomes a `' Not recorded as code: <id>` comment and the result lists it in
+`skipped`. Recording as VBA is always absolute (relative references and the shortcut are for Celdas
+macros; the result says `shortcutDropped` when one was given), and the result is
+`{recording: false, as: "vba", saved, module, steps, dropped, skipped}`.
+
 Undo while recording works as in Excel: `edit.undo` is left out (a macro never runs it), and the
 step it undid stays in the recording, so playing the recording back makes that edit again.
 
@@ -418,6 +435,15 @@ a signature hint for the call you are typing, hover cards, Go to Definition (F12
 A workbook without a VBA project shows a welcome page that creates one (`vba.create {code?}`) with a
 starter module, or records a macro.
 
+- **ThisWorkbook and the sheets.** A new project (`vba.create`) starts as an Excel one does: the
+  code behind `ThisWorkbook` and behind each sheet (named by the sheet's *code name*, `Sheet1`,
+  `Sheet2`…, which stays when the sheet is renamed or moved; it is read from and saved to the
+  file's `codeName`) and `Module1`. In the explorer they are under "Workbook and Sheets", with the
+  sheet's current name beside the code name; they can be edited but not removed. In a macro,
+  `Sheet1.Range("A1")` reaches a sheet by its code name, `ThisWorkbook` the workbook, and `Me` the
+  object behind the module a procedure is in, so a `Sub` in a sheet's module that says
+  `Me.Range("B2").Value = 1` writes to that sheet whichever one is active. Run it as
+  `Sheet1.Name`. A copied sheet has no code name until the project gives it one.
 - `vba.save {module, code}` rewrites the project's `vbaProject.bin` (the MS-OVBA streams of the
   edited modules are recompressed and the compiled caches are dropped so Excel recompiles from
   source; every other stream of the file stays byte for byte), as one undo step; the next run asks
@@ -438,9 +464,18 @@ kind; Run, Step Into (a VBA procedure opens the editor paused before its first s
 New VBA Macro (adds an empty `Sub` to the project, creating the project when the workbook has none),
 Create, Delete and Options.
 
-Not covered: UserForms (and so a form designer), ActiveX and form-control events, workbook and
-worksheet event procedures, PivotTables and most dialogs. A procedure that uses one fails with an error
-naming it, and changes nothing.
+**Spanish.** The editor speaks the interface language: the descriptions of suggestions, signatures
+and hover cards, and the messages of the syntax checks (`Syntax error: …`, "Block not closed", "is
+not defined"…) come out in Spanish when the interface is Spanish; the code, the names of the
+object model and the commands stay in English, as in Excel's editor.
+
+Not covered: UserForms (the form designer, `UserForm` modules and `Load`/`Show`: a form in a file
+is kept byte for byte when the project is saved but cannot be opened or run), ActiveX and
+form-control events, workbook and worksheet event procedures (`Workbook_Open`,
+`Worksheet_Change`… are read and can be run by name, but nothing starts them), PivotTables and
+most dialogs. A procedure that uses one fails with an error naming it, and changes nothing. The
+project a new workbook gets is written by Celdas and has not been checked against a copy of Excel
+here; Excel may offer to repair a project it does not like, and the code in it is kept.
 
 In the window, **Macros** lists the public `Sub`s without arguments beside Celdas macros and
 scripts (marked "VBA"); Run asks for approval when the workbook came from a file, shows what

@@ -61,7 +61,8 @@ fn an_edit_is_a_draft_until_it_is_saved() {
     assert!(ide.save_all(&mut app));
     assert!(!ide.has_unsaved_changes());
     let source = app.session.run("vba.source", json!({})).unwrap();
-    assert!(source["modules"][0]["code"].as_str().unwrap().contains("' note"));
+    let module = source["modules"].as_array().and_then(|all| all.iter().find(|m| m["name"] == "Module1")).unwrap();
+    assert!(module["code"].as_str().unwrap().contains("' note"));
 }
 
 #[test]
