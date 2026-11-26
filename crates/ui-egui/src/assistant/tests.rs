@@ -113,7 +113,7 @@ fn forbidden_commands_are_refused_and_hidden() {
     let mut h = host(&mut a);
     for command in ["file.save", "file.open", "ui.dialog", "window.close", "app.quit", "file.print", "macro.run"] {
         let err = h.call("run_command", &json!({"command": command})).unwrap_err();
-        assert!(err.contains("not available"), "{command}: {err}");
+        assert!(err.contains("not available"), "{command} was not refused");
     }
     let listed = h.call("list_commands", &json!({})).unwrap();
     let commands = listed["commands"].as_array().unwrap();
