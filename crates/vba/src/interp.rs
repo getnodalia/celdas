@@ -19,9 +19,9 @@ pub const DEFAULT_MAX_STEPS: u64 = 400_000_000;
 const END_SIGNAL: i32 = -1;
 
 #[derive(Clone)]
-struct Var {
-    value: Value,
-    ty: VType,
+pub(crate) struct Var {
+    pub(crate) value: Value,
+    pub(crate) ty: VType,
 }
 
 #[derive(Clone)]
@@ -31,17 +31,17 @@ enum OnErr {
     Goto(Name),
 }
 
-enum Flow {
+pub(crate) enum Flow {
     Next,
     Exit(ExitKind),
     Goto(Name),
 }
 
-struct Frame {
-    vars: HashMap<Name, Var>,
+pub(crate) struct Frame {
+    pub(crate) vars: HashMap<Name, Var>,
     with: Vec<Value>,
     on_error: OnErr,
-    module: usize,
+    pub(crate) module: usize,
 }
 
 impl Frame {
@@ -73,7 +73,7 @@ pub struct Vm<'a> {
     pub debug: Vec<String>,
     steps: u64,
     max_steps: u64,
-    depth: u32,
+    pub(crate) depth: u32,
     /// File numbers currently open.
     pub(crate) files: Vec<i32>,
     pub(crate) rng: u64,
@@ -81,6 +81,10 @@ pub struct Vm<'a> {
     /// The procedure and line that raised the error that ended the run.
     site: Option<ErrorSite>,
     current: Vec<(usize, Name)>,
+    /// Set while the run is debugged.
+    pub(crate) dbg: Option<Box<crate::debug::State>>,
+    /// Immediate-window statements compiled so far.
+    pub(crate) snippets: usize,
 }
 
 impl<'a> Vm<'a> {
@@ -99,6 +103,8 @@ impl<'a> Vm<'a> {
             last_rnd: 0.5,
             site: None,
             current: Vec::new(),
+            dbg: None,
+            snippets: 0,
         }
     }
 
@@ -113,6 +119,10 @@ impl<'a> Vm<'a> {
 
     pub fn steps(&self) -> u64 {
         self.steps
+    }
+
+    pub(crate) fn globals_iter(&self) -> impl Iterator<Item = (&Name, &Var)> {
+        self.globals.iter()
     }
 
     /// Runs the procedure `name` (`Proc` or `Module.Proc`) with `args`.
@@ -185,7 +195,16 @@ impl<'a> Vm<'a> {
         }
         self.depth += 1;
         self.current.push((module, p.name.clone()));
+        if let Some(st) = self.dbg.as_mut() {
+            st.lines.push(p.line);
+        }
         let flow = self.exec_block(&mut f, &p.body);
+        if flow.as_ref().is_err_and(|e| e.number == crate::debug::PAUSE_SIGNAL) {
+            self.debug_frame(&f, &p.display);
+        }
+        if let Some(st) = self.dbg.as_mut() {
+            st.lines.pop();
+        }
         self.current.pop();
         self.depth -= 1;
         flow?;
@@ -225,7 +244,7 @@ impl<'a> Vm<'a> {
 
     // ---- statements ----
 
-    fn exec_block(&mut self, f: &mut Frame, stmts: &'a [Stmt]) -> Result<Flow> {
+    pub(crate) fn exec_block(&mut self, f: &mut Frame, stmts: &'a [Stmt]) -> Result<Flow> {
         let mut i = 0;
         while let Some(s) = stmts.get(i) {
             match self.exec_stmt(f, s)? {
@@ -248,6 +267,11 @@ impl<'a> Vm<'a> {
         if self.steps.is_multiple_of(2048) {
             self.host.tick()?;
         }
+        if self.dbg.is_some()
+            && let Some(e) = self.debug_hook(f, s)
+        {
+            return Err(e);
+        }
         match self.exec_kind(f, s) {
             Ok(flow) => Ok(flow),
             Err(e) => self.on_error(f, s, e),
@@ -255,7 +279,7 @@ impl<'a> Vm<'a> {
     }
 
     fn on_error(&mut self, f: &mut Frame, s: &Stmt, e: VbError) -> Result<Flow> {
-        if e.number == END_SIGNAL {
+        if e.number == END_SIGNAL || e.number == crate::debug::PAUSE_SIGNAL {
             return Err(e);
         }
         self.err = ErrState { number: e.number, description: e.description.clone() };
@@ -290,6 +314,8 @@ impl<'a> Vm<'a> {
             StmtKind::Goto(l) => Ok(Flow::Goto(l.clone())),
             StmtKind::Label(_) | StmtKind::Nop => Ok(Flow::Next),
             StmtKind::End => Err(VbError::new(END_SIGNAL, "End")),
+            StmtKind::Stop if self.dbg.is_some() => Ok(Flow::Next),
+            StmtKind::Stop => Err(VbError::new(END_SIGNAL, "End")),
             StmtKind::Resume(_) => Err(VbError::new(20, "Resume without error")),
             StmtKind::OnError(o) => {
                 f.on_error = match o {
@@ -729,7 +755,7 @@ impl<'a> Vm<'a> {
     // ---- expressions ----
 
     /// The value of `e` for use as an operand: an object stands for its default member.
-    fn eval_r(&mut self, f: &mut Frame, e: &Expr) -> Result<Value> {
+    pub(crate) fn eval_r(&mut self, f: &mut Frame, e: &Expr) -> Result<Value> {
         let v = self.eval(f, e)?;
         self.rvalue(v)
     }

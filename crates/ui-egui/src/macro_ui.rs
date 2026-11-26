@@ -30,11 +30,14 @@ pub struct MacroUi {
     pub editor: Option<crate::macro_editor::Editor>,
     /// A debugger result from a question's button, for the editor to take in.
     pub debug_result: Option<Json>,
+    /// What a VBA command (`vba.run`, `vba.debug`, `vba.immediate`) answered, or `{problem}` when
+    /// it failed, for the VBA editor to take in on its next pass.
+    pub vba_result: Option<(String, Json)>,
 }
 
 impl Default for MacroUi {
     fn default() -> Self {
-        MacroUi { relative: true, recent: vec![], question: None, editor: None, debug_result: None }
+        MacroUi { relative: true, recent: vec![], question: None, editor: None, debug_result: None, vba_result: None }
     }
 }
 
@@ -118,12 +121,22 @@ pub fn call(app: &mut SheetApp, title: &str, id: &str, params: Json) -> Option<J
             Some(v)
         }
         Err(e) => {
-            if !ask(app, title, id, &params, &e) {
+            if ask(app, title, id, &params, &e) {
+                // The question is its own answer for now.
+            } else if is_vba_run(id) {
+                // The VBA editor shows the failure where it happened; with no editor it is a message.
+                app.macros.vba_result = Some((id.into(), json!({"problem": crate::clean_error(&e)})));
+            } else {
                 app.message = Some((title.into(), crate::clean_error(&e)));
             }
             None
         }
     }
+}
+
+/// The VBA commands whose answers the VBA editor takes in.
+fn is_vba_run(id: &str) -> bool {
+    matches!(id, "vba.run" | "vba.debug" | "vba.immediate")
 }
 
 /// The question in an engine error that asks something: `approve: …` or `confirm: …`.
@@ -168,8 +181,11 @@ pub fn note_result(app: &mut SheetApp, id: &str, params: &Json, v: &Json) {
         app.macros.debug_result = Some(v.clone());
         return;
     }
-    if id == "vba.run" {
-        note_vba_result(app, v);
+    if is_vba_run(id) {
+        app.macros.vba_result = Some((id.into(), v.clone()));
+        if id == "vba.run" {
+            note_vba_result(app, v);
+        }
         return;
     }
     if id != "macro.run" {
@@ -460,26 +476,20 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     let t = Tokens::get(ui.ctx());
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
-            ui.set_width(330.0);
+            ui.set_width(320.0);
             let label = ui.label(crate::i18n::ui_tr(ui, "Macro name:"));
-            if ui.add(egui::TextEdit::singleline(&mut name).desired_width(330.0).id_salt("macro_name")).labelled_by(label.id).changed() {
+            if ui.add(egui::TextEdit::singleline(&mut name).desired_width(320.0).id_salt("macro_name")).labelled_by(label.id).changed() {
                 kind = Kind::Macro;
             }
             egui::Frame::NONE.fill(t.input_bg).stroke(egui::Stroke::new(1.0, t.input_border)).inner_margin(2.0).show(ui, |ui| {
-                ui.set_min_size(vec2(326.0, 200.0));
-                egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                ui.set_min_size(vec2(316.0, 220.0));
+                egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
                     if list.is_empty() {
                         ui.label(egui::RichText::new(crate::i18n::ui_tr(ui, "This workbook has no scripts or macros.")).italics().color(t.text_dim));
                     }
                     for e in &list {
-                        let label = match (e.kind, &e.shortcut) {
-                            (Kind::Macro, Some(k)) => format!("{}    {k}", e.name),
-                            (Kind::Macro, None) => e.name.clone(),
-                            (Kind::Script, _) => format!("{}    (script, {} step{})", e.name, e.steps, if e.steps == 1 { "" } else { "s" }),
-                            (Kind::Vba, _) => format!("{}    (VBA)", e.name),
-                        };
                         let selected = e.kind == kind && e.name.eq_ignore_ascii_case(name.trim());
-                        let r = ui.add(egui::Button::selectable(selected, label).min_size(vec2(322.0, 20.0)));
+                        let r = entry_row(ui, &t, e, selected);
                         if r.clicked() {
                             name = e.name.clone();
                             kind = e.kind;
@@ -494,25 +504,30 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
         });
         ui.vertical(|ui| {
             ui.add_space(18.0);
-            let w = vec2(100.0, 24.0);
+            let w = vec2(112.0, 26.0);
             let target = name.trim().to_string();
             let found = list.iter().find(|e| e.kind == kind && e.name.eq_ignore_ascii_case(&target)).cloned();
             let is_macro = found.as_ref().is_some_and(|e| e.kind == Kind::Macro);
-            if ui.add_enabled(found.is_some(), egui::Button::new(crate::i18n::ui_tr(ui, "Run")).min_size(w)).clicked()
+            let run = egui::Button::new(egui::RichText::new(crate::i18n::ui_tr(ui, "Run")).color(t.on_accent)).fill(t.accent).min_size(w);
+            if ui.add_enabled(found.is_some(), run).clicked()
                 && let Some(e) = &found
             {
                 *open = false;
                 run_entry(app, e);
             }
+            let is_vba = found.as_ref().is_some_and(|e| e.kind == Kind::Vba);
             if ui
-                .add_enabled(is_macro, egui::Button::new(crate::i18n::ui_tr(ui, "Step Into")).min_size(w))
-                .on_hover_text(crate::i18n::ui_tr(ui, "Open the macro in the step editor and stop before its first step"))
+                .add_enabled(is_macro || is_vba, egui::Button::new(crate::i18n::ui_tr(ui, "Step Into")).min_size(w))
+                .on_hover_text(crate::i18n::ui_tr(ui, "Open the macro in the editor and stop before its first step"))
                 .clicked()
             {
                 *open = false;
-                app.open_dialog("macroEditor", json!({"macro": target, "debug": true}));
+                if let Some(e) = found.as_ref().filter(|e| e.kind == Kind::Vba) {
+                    app.open_dialog("vbaEditor", json!({"procedure": e.name, "debug": true}));
+                } else {
+                    app.open_dialog("macroEditor", json!({"macro": target, "debug": true}));
+                }
             }
-            let is_vba = found.as_ref().is_some_and(|e| e.kind == Kind::Vba);
             if ui.add_enabled(is_macro || is_vba, egui::Button::new(crate::i18n::ui_tr(ui, "Edit")).min_size(w)).clicked() {
                 *open = false;
                 if is_vba {
@@ -520,6 +535,14 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
                 } else {
                     app.open_dialog("macroEditor", json!({"macro": target}));
                 }
+            }
+            if ui
+                .add(egui::Button::new(crate::i18n::ui_tr(ui, "New VBA Macro")).min_size(w))
+                .on_hover_text(crate::i18n::ui_tr(ui, "Write a new macro in Visual Basic"))
+                .clicked()
+            {
+                *open = false;
+                app.open_dialog("vbaEditor", json!({"new": true}));
             }
             let free = !target.is_empty() && !list.iter().any(|e| e.kind == Kind::Macro && e.name.eq_ignore_ascii_case(&target));
             if ui
@@ -578,6 +601,45 @@ pub fn macros_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     }
     d.values.insert("name".into(), json!(name));
     d.values.insert("kind".into(), json!(kind.key()));
+}
+
+/// One row of the Macros dialog: a kind icon, the name and, on the right, what kind of thing it is
+/// (its shortcut, its steps or VBA).
+fn entry_row(ui: &mut Ui, t: &Tokens, e: &Entry, selected: bool) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 30.0), Sense::click());
+    let fill = if selected {
+        t.accent_soft
+    } else if resp.hovered() {
+        t.hover
+    } else {
+        egui::Color32::TRANSPARENT
+    };
+    ui.painter().rect_filled(rect, 6.0, fill);
+    let icon = match e.kind {
+        Kind::Macro => crate::icons::Icon::Macro,
+        Kind::Script => crate::icons::Icon::Shapes,
+        Kind::Vba => crate::icons::Icon::Code,
+    };
+    let ink = if selected { t.accent } else { t.text_dim };
+    crate::icons::paint(ui.painter(), egui::Rect::from_center_size(rect.left_center() + vec2(18.0, 0.0), vec2(16.0, 16.0)), icon, ink);
+    let note = match (e.kind, &e.shortcut) {
+        (Kind::Macro, Some(k)) => k.clone(),
+        (Kind::Macro, None) => String::new(),
+        (Kind::Script, _) if e.steps == 1 => crate::i18n::ui_tr(ui, "Script · 1 step").to_string(),
+        (Kind::Script, _) => crate::i18n::ui_fill(ui, "Script · {n} steps", &[("n", &e.steps.to_string())]),
+        (Kind::Vba, _) => crate::i18n::ui_tr(ui, "VBA").to_string(),
+    };
+    let right = ui.painter().layout_no_wrap(note.clone(), theme::ui_font(11.5), t.text_dim);
+    let text_color = if selected { t.accent_text } else { t.text };
+    let room = (rect.width() - 44.0 - right.size().x - 12.0).max(40.0);
+    let left = ui.painter().layout(e.name.clone(), theme::ui_font(13.0), text_color, room);
+    ui.painter().galley(egui::pos2(rect.left() + 36.0, rect.center().y - left.size().y / 2.0), left, text_color);
+    if !note.is_empty() {
+        ui.painter().galley(egui::pos2(rect.right() - 12.0 - right.size().x, rect.center().y - right.size().y / 2.0), right, t.text_dim);
+    }
+    let label = if note.is_empty() { e.name.clone() } else { format!("{}, {note}", e.name) };
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, selected, &label));
+    resp
 }
 
 /// Runs a row of the Macros dialog: a macro on the selection, or an Automate script.

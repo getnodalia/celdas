@@ -49,7 +49,7 @@ fn err(line: u32, message: impl Into<String>) -> SyntaxError {
 }
 
 /// Splits `src` into physical lines (any of `\r\n`, `\r`, `\n`).
-fn physical_lines(src: &str) -> Vec<&str> {
+pub(crate) fn physical_lines(src: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut start = 0;
     let bytes = src.as_bytes();

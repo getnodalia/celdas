@@ -10,8 +10,10 @@
 
 pub mod ast;
 mod builtins;
+pub mod debug;
 mod format;
 pub mod host;
+pub mod ide;
 mod interp;
 mod lexer;
 mod native;

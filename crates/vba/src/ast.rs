@@ -213,6 +213,8 @@ pub enum StmtKind {
     },
     Erase(Vec<Expr>),
     End,
+    /// `Stop`: ends the run, except under a debugger, where it is a breakpoint.
+    Stop,
     Nop,
 }
 

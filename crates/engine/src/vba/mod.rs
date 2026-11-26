@@ -7,8 +7,10 @@
 
 mod app;
 mod consts;
+pub mod debug;
 mod files;
 mod host;
+pub mod ide;
 mod objects;
 mod range;
 mod shapes;
@@ -66,9 +68,81 @@ pub fn specs() -> Vec<CommandSpec> {
             "Run VBA Macro",
             [],
             None,
-            "{procedure: \"Name\" | \"Module.Name\", caller?: \"Shape 1\" (what Application.Caller answers: the shape that was clicked), approve?: bool} runs as one undo step; an error rolls it all back → {procedure, messages: [{title, text}], files: [paths], steps}. A workbook opened from a file asks first (an approval) because a macro can write files",
+            "{procedure: \"Name\" | \"Module.Name\", caller?: \"Shape 1\" (what Application.Caller answers: the shape that was clicked), approve?: bool} runs as one undo step; an error rolls it all back → {procedure, messages: [{title, text}], files: [paths], steps, output: [what Debug.Print wrote]}. A workbook opened from a file asks first (an approval) because a macro can write files",
             has_doc,
             run
+        ),
+        cmd!(
+            "vba.debug",
+            "Debug VBA Macro",
+            [],
+            None,
+            "{action: start|step|immediate|stop|state, procedure: \"Name\" | \"Module.Name\" (start), approve?, kind?: into|over|out|continue (step; default into), text?: \"i = 3\" | \"?i * 2\" (immediate: a statement, or an expression after ?), keep?: bool (stop; default true: the changes become one undo step), breakpoints?: [{module, line}] (lines of the code an editor shows), watches?: [\"i + 1\"]} debugs a VBA macro one statement at a time. The macro pauses before its first statement; each step runs it again from the start on the workbook as it was, so a macro is debugged by replay and its writes are never applied twice. Runs on its own, never as a step of a script or macro. While paused its workbook runs only vba.debug, queries, selection and sheet changes, Go To, Find, Copy, zoom, Switch Window, Close and Stop Action → {state: paused|finished|failed|stopped, reason?: step|breakpoint|stop, frames?: [{module, procedure, line, locals: [{name, type, value}]}] (innermost first), globals?, watches?: [{expression, value|error}], output?: [Debug.Print lines], immediate?: [results of the Immediate lines at this pause], messages?, files?, breakpoints, error?: {number, message, at?: {module, procedure, line}}, kept?}",
+            has_doc,
+            debug::debug
+        ),
+        cmd!(
+            "vba.immediate",
+            "Run Immediate VBA",
+            [],
+            None,
+            "{text: \"Range(\\\"A1\\\").Value = 3\" | \"?Sum(2, 3)\", approve?: bool} runs one line the way the Immediate window does while no macro is paused: a statement, or an expression after ? whose value is printed. The project's procedures can be called. One undo step → {output: [lines printed], messages: [{title, text}], files, steps}",
+            has_doc,
+            immediate
+        ),
+        cmd!(
+            "vba.create",
+            "Create VBA Project",
+            [],
+            None,
+            "{code?: \"Sub Macro1()…\"} gives a workbook that has no VBA project one, with a standard module Module1 holding `code` (empty by default); saving it then writes a macro-enabled workbook. One undo step → {module}",
+            has_doc,
+            create
+        ),
+        cmd!(
+            query "vba.analyze",
+            "Check VBA Code",
+            [],
+            None,
+            "{code: \"the text of a module\", module?: \"Module1\"} reads code that may not compile → {diagnostics: [{line, start, end, severity: error|warning|hint, message, template, args}], procedures: [{name, kind, public, line, endLine, col, signature, doc}], variables: [{name, type, line, col, procedure, param, constant, public}], types: [{name, enum, line}], optionExplicit}. Lines are 1-based, columns 0-based in characters",
+            has_doc,
+            ide::analyze
+        ),
+        cmd!(
+            query "vba.complete",
+            "Complete VBA Code",
+            [],
+            None,
+            "{code, line, col, explicit?: bool (the person asked for suggestions)} → {from (column where the word being typed starts), items: [{label, kind, detail, doc, insert}], signature?: {label, params, active, doc} (the call being written)}",
+            has_doc,
+            ide::complete
+        ),
+        cmd!(
+            query "vba.hover",
+            "Describe VBA Name",
+            [],
+            None,
+            "{code, line, col} → {signature, doc, definition?: {line, col}} for the name there, or {signature: null}",
+            has_doc,
+            ide::hover
+        ),
+        cmd!(
+            query "vba.occurrences",
+            "Find VBA Name Uses",
+            [],
+            None,
+            "{code, line, col} → {name, places: [{line, start, end}], definition?: {line, col}}: every place the name under the caret is written in the module",
+            has_doc,
+            ide::occurrences
+        ),
+        cmd!(
+            query "vba.format",
+            "Format VBA Code",
+            [],
+            None,
+            "{code} → {changed, code}: indented by how deeply blocks nest, the language's words spelled the usual way, no trailing blanks. Names are never touched",
+            has_doc,
+            ide::format
         ),
     ]
 }
@@ -176,6 +250,8 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
         .ok_or_else(|| EngineError::Other("vba.save: missing `module`".into()))?
         .to_string();
     let code = p.get("code").and_then(Json::as_str).ok_or_else(|| EngineError::Other("vba.save: missing `code`".into()))?;
+    // The file is written the way Excel writes it, with `\r\n`, whichever the editor sent.
+    let code = &code.replace("\r\n", "\n").replace('\n', "\r\n");
     let kind = match str_param(p, "kind") {
         None | Some("standard") => celdas_vba::ModuleKind::Standard,
         Some("class") => celdas_vba::ModuleKind::Class,
@@ -214,6 +290,18 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
     Ok(json!({"module": name, "created": created, "procedures": procedures, "errors": errors}))
 }
 
+fn create(s: &mut Session, p: &Json) -> Result<Json> {
+    if s.doc()?.wb.vba_project.is_some() {
+        return Err(EngineError::Other("The workbook already has a VBA project.".into()));
+    }
+    let code = str_param(p, "code").unwrap_or("").replace("\r\n", "\n").replace('\n', "\r\n");
+    let source = format!("Attribute VB_Name = \"Module1\"\r\n{code}");
+    let sources = vec![SourceModule { name: "Module1".into(), kind: celdas_vba::ModuleKind::Standard, source }];
+    let bytes = celdas_vba::project::write_bin(&sources).map_err(project_error)?;
+    replace_project(s, bytes)?;
+    Ok(json!({"module": "Module1"}))
+}
+
 fn remove(s: &mut Session, p: &Json) -> Result<Json> {
     let name = str_param(p, "module")
         .map(str::trim)
@@ -244,8 +332,10 @@ fn procedure_name(text: &str) -> &str {
     t.rsplit_once('!').map_or(t, |(_, name)| name).trim_matches('\'')
 }
 
-fn run(s: &mut Session, p: &Json) -> Result<Json> {
-    let wanted = str_param(p, "procedure").ok_or_else(|| EngineError::Other("vba.run: missing `procedure`".into()))?;
+/// The project and procedure a run or a debug session starts: the procedure must exist, and a
+/// workbook opened from a file must have been approved. Returns the project and the name to run.
+fn target(s: &mut Session, p: &Json, command: &str) -> Result<(Project, String)> {
+    let wanted = str_param(p, "procedure").ok_or_else(|| EngineError::Other(format!("{command}: missing `procedure`")))?;
     let name = procedure_name(wanted).to_string();
     let Some((project, fingerprint)) = project_of(s)? else { return Err(EngineError::Other("The workbook has no VBA project.".into())) };
     let (doc, trust) = {
@@ -274,25 +364,97 @@ fn run(s: &mut Session, p: &Json) -> Result<Json> {
             s.macro_approvals.insert(key);
         }
     }
+    Ok((project, name))
+}
+
+fn run(s: &mut Session, p: &Json) -> Result<Json> {
+    let (project, name) = target(s, p, "vba.run")?;
     let caller = str_param(p, "caller").map(str::to_string);
     let label = format!("Run VBA: {name}");
     s.grouped(&label, |s| {
         let mut host = ExcelHost::new(s);
         host.caller = caller;
-        let (result, steps, site) = {
+        let (result, steps, site, output) = {
             let mut vm = Vm::new(&project, &mut host);
             let r = vm.run(&name, Vec::new());
-            (r, vm.steps(), vm.error_site().cloned())
+            (r, vm.steps(), vm.error_site().cloned(), vm.debug.clone())
         };
         match result {
             Ok(_) => host.finish().map_err(|e| EngineError::Other(e.to_string()))?,
             Err(e) => {
-                let at = site.map(|x| format!(" (in {}.{}, line {})", x.module, x.procedure, x.line)).unwrap_or_default();
+                let at = site.map(|x| debug::site_text(&project, &x)).unwrap_or_default();
                 return Err(EngineError::Other(format!("{e}{at}")));
             }
         }
         let messages: Vec<Json> = host.messages.iter().map(|m| json!({"title": m.title, "text": m.text})).collect();
-        Ok(json!({"procedure": name, "messages": messages, "files": host.written, "steps": steps}))
+        Ok(json!({"procedure": name, "messages": messages, "files": host.written, "steps": steps, "output": output}))
+    })
+}
+
+/// What `vba.immediate` runs a line in: a module of its own, so the project's names are in reach.
+const IMMEDIATE_MODULE: &str = "ImmediateWindow";
+const IMMEDIATE_PROCEDURE: &str = "RunImmediateLine";
+const IMMEDIATE_MAX: usize = 4000;
+
+fn immediate(s: &mut Session, p: &Json) -> Result<Json> {
+    let text =
+        str_param(p, "text").map(str::trim).filter(|t| !t.is_empty()).ok_or_else(|| EngineError::Other("vba.immediate: missing `text`".into()))?;
+    if text.chars().count() > IMMEDIATE_MAX || text.contains(['\n', '\r']) {
+        return Err(EngineError::Other("vba.immediate: `text` is one line of at most 4000 characters".into()));
+    }
+    let text = text.to_string();
+    let (mut sources, fingerprint) = match project_of(s)? {
+        Some((project, fingerprint)) => (modules_of(&project), Some(fingerprint)),
+        None => (Vec::new(), None),
+    };
+    sources.retain(|m| !m.name.eq_ignore_ascii_case(IMMEDIATE_MODULE));
+    let statement = match text.strip_prefix('?') {
+        Some(expr) => format!("Debug.Print {}", expr.trim()),
+        None => text.clone(),
+    };
+    sources.push(celdas_vba::SourceModule {
+        name: IMMEDIATE_MODULE.into(),
+        kind: celdas_vba::ModuleKind::Standard,
+        source: format!("Public Sub {IMMEDIATE_PROCEDURE}()\r\n{statement}\r\nEnd Sub\r\n"),
+    });
+    let project = Project::from_sources(sources);
+    if let Some((_, e)) = project.syntax_errors().into_iter().find(|(m, _)| m.eq_ignore_ascii_case(IMMEDIATE_MODULE)) {
+        return Err(EngineError::Other(format!("{e}")));
+    }
+    // A workbook opened from a file asks once, as running one of its macros does.
+    let (doc, trust) = {
+        let d = s.doc()?;
+        (d.uid, d.trust)
+    };
+    if let (Some(fingerprint), true) = (fingerprint, trust != Trust::Local) {
+        let key = (doc, format!("vba:{fingerprint:x}"));
+        if !s.macro_approvals.contains(&key) {
+            if bool_param(p, "approve") != Some(true) {
+                return Err(EngineError::Approve(
+                    "Run this line? It can call the macros of this workbook, which can change it and read and write files on this computer.".into(),
+                ));
+            }
+            s.macro_approvals.insert(key);
+        }
+    }
+    let label = format!("Immediate: {text}");
+    s.grouped(&label, |s| {
+        let mut host = ExcelHost::new(s);
+        let (result, steps, site, output) = {
+            let mut vm = Vm::new(&project, &mut host);
+            let r = vm.run(IMMEDIATE_PROCEDURE, Vec::new());
+            (r, vm.steps(), vm.error_site().cloned(), vm.debug.clone())
+        };
+        match result {
+            Ok(_) => host.finish().map_err(|e| EngineError::Other(e.to_string()))?,
+            Err(e) => {
+                let at =
+                    site.filter(|x| !x.module.eq_ignore_ascii_case(IMMEDIATE_MODULE)).map(|x| debug::site_text(&project, &x)).unwrap_or_default();
+                return Err(EngineError::Other(format!("{e}{at}")));
+            }
+        }
+        let messages: Vec<Json> = host.messages.iter().map(|m| json!({"title": m.title, "text": m.text})).collect();
+        Ok(json!({"output": output, "messages": messages, "files": host.written, "steps": steps}))
     })
 }
 

@@ -562,3 +562,37 @@ fn a_real_workbook_reproduces_its_excel_results() {
     let named: usize = s.doc().unwrap().wb.sheets.iter().map(|sh| sh.charts.iter().filter(|c| c.name == "Grafico_Rebanadas_Arco").count()).sum();
     assert_eq!(named, 1, "the macro leaves exactly one of its chart");
 }
+
+#[test]
+fn the_immediate_window_runs_a_line_with_the_projects_names() {
+    let mut s = session("Function Doble(x)\nDoble = x * 2\nEnd Function\nSub Pon()\nRange(\"A1\").Value = Doble(21)\nEnd Sub\n");
+    let r = s.execute("vba.immediate", json!({"text": "?Doble(4) + 1"})).unwrap();
+    assert_eq!(r["output"], json!(["9"]));
+    assert!(s.doc().unwrap().undo.is_empty() || text(&s, 0, "A1").is_empty());
+    let before = s.doc().unwrap().undo.len();
+    s.execute("vba.immediate", json!({"text": "Pon"})).unwrap();
+    assert_eq!(text(&s, 0, "A1"), "42");
+    assert_eq!(s.doc().unwrap().undo.len(), before + 1, "a line that writes is one undo step");
+    s.execute("vba.immediate", json!({"text": "Range(\"B2\").Value = \"hola\""})).unwrap();
+    assert_eq!(text(&s, 0, "B2"), "hola");
+    // A mistake says what is wrong and changes nothing.
+    assert!(s.execute("vba.immediate", json!({"text": "If x Then"})).is_err());
+    assert!(s.execute("vba.immediate", json!({"text": "x = 1 / 0"})).unwrap_err().to_string().contains("Division by zero"));
+    assert!(s.execute("vba.immediate", json!({"text": "a\nb"})).is_err());
+    assert!(s.execute("vba.immediate", json!({})).is_err());
+    // A workbook with no project can still be asked a question.
+    let mut blank = Session::new();
+    blank.new_workbook();
+    assert_eq!(blank.execute("vba.immediate", json!({"text": "?2 ^ 10"})).unwrap()["output"], json!(["1024"]));
+}
+
+#[test]
+fn an_error_site_does_not_count_the_attribute_lines() {
+    let mut s = Session::new();
+    s.new_workbook();
+    s.execute("vba.create", json!({"code": "Sub Boom()\r\n    Dim x As Long\r\n    x = 1 / 0\r\nEnd Sub\r\n"})).unwrap();
+    let e = s.execute("vba.run", json!({"procedure": "Module1.Boom"})).unwrap_err().to_string();
+    assert!(e.ends_with("(in Module1.boom, line 3)") || e.ends_with("(in Module1.Boom, line 3)"), "{e}");
+    let e = s.execute("vba.immediate", json!({"text": "Boom"})).unwrap_err().to_string();
+    assert!(e.contains("line 3"), "{e}");
+}

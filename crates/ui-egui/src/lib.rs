@@ -56,7 +56,7 @@ mod text_direction;
 pub mod theme;
 #[cfg(not(target_arch = "wasm32"))]
 mod updates_ui;
-pub mod vba_editor;
+pub mod vba_ide;
 pub mod widgets;
 pub mod window_controls;
 mod window_ui;
@@ -259,6 +259,8 @@ pub struct SheetApp {
     pub dialog: Option<dialogs::Dialog>,
     /// The File tab's Backstage view, when open (UI-only; replaces the ribbon, grid and tabs).
     pub backstage: Option<backstage::Backstage>,
+    /// The VBA editor, when open (UI-only; takes the window below the title bar like File does).
+    pub ide: Option<Box<vba_ide::Ide>>,
     pub message: Option<(String, String)>,
     pub toast: Option<(String, f64)>,
     /// Dismissible info bar under the ribbon (open-time notices).
