@@ -89,6 +89,23 @@ pub fn toggle_recording(app: &mut SheetApp) {
 pub fn stop_recording(app: &mut SheetApp) {
     match app.run("macro.record", json!({"stop": true})) {
         Ok(v) => match v["saved"].as_str() {
+            Some(name) if v["as"] == "vba" => {
+                let steps = v["steps"].as_u64().unwrap_or(0);
+                let left = v["skipped"].as_array().map_or(0, Vec::len);
+                let lang = app.ui.language;
+                let module = v["module"].as_str().unwrap_or("");
+                let template = if steps == 1 {
+                    "Recorded “{name}” as Visual Basic in {module} ({steps} command)"
+                } else {
+                    "Recorded “{name}” as Visual Basic in {module} ({steps} commands)"
+                };
+                let mut text = lang.tr_fill(template, &[("name", name), ("module", module), ("steps", &steps.to_string())]);
+                if left > 0 {
+                    text.push(' ');
+                    text.push_str(&lang.tr_fill("{count} could not be written as code and are comments", &[("count", &left.to_string())]));
+                }
+                app.toast = Some((text, crate::now_ms()));
+            }
             Some(name) => {
                 let steps = v["steps"].as_u64().unwrap_or(0);
                 app.macros.note_recent(name);
@@ -741,7 +758,11 @@ pub fn open_record(app: &mut SheetApp, params: &Json) -> Option<Dialog> {
     }
     let suggested = app.session.active().map(|d| celdas_engine::macros::next_name(&d.wb)).unwrap_or_else(|| "Macro1".into());
     let name = params["name"].as_str().map(str::to_string).filter(|n| !n.trim().is_empty()).unwrap_or(suggested);
-    Some(Dialog::custom("recordMacro", "Record Macro", json!({"name": name, "shortcut": "", "description": ""})))
+    Some(Dialog::custom(
+        "recordMacro",
+        "Record Macro",
+        json!({"name": name, "shortcut": "", "description": "", "as": if params["as"] == "vba" { "vba" } else { "steps" }}),
+    ))
 }
 
 /// What is wrong with the Record Macro dialog's name or shortcut, if anything.
@@ -766,16 +787,34 @@ pub fn record_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     let mut name = get(d, "name");
     let mut key = get(d, "shortcut");
     let mut desc = get(d, "description");
+    let mut code = get(d, "as") == "vba";
     let label = ui.label(crate::i18n::ui_tr(ui, "Macro name:"));
     ui.add(egui::TextEdit::singleline(&mut name).desired_width(f32::INFINITY).id_salt("record_name")).labelled_by(label.id);
     ui.add_space(4.0);
-    ui.label(crate::i18n::ui_tr(ui, "Shortcut key:"));
-    shortcut_field(ui, &mut key, "record_shortcut");
+    ui.label(crate::i18n::ui_tr(ui, "Record as:"));
+    ui.horizontal(|ui| {
+        ui.radio_value(&mut code, false, crate::i18n::ui_tr(ui, "Steps"));
+        ui.radio_value(&mut code, true, crate::i18n::ui_tr(ui, "Visual Basic"));
+    });
     ui.add_space(4.0);
+    if code {
+        let proc_name = celdas_engine::vba::record::procedure_name(name.trim());
+        if proc_name != name.trim() && !name.trim().is_empty() {
+            let hint = crate::i18n::ui_tr(ui, "Saved as the procedure {name}").replace("{name}", &proc_name);
+            ui.label(egui::RichText::new(hint).color(Tokens::get(ui.ctx()).text_dim));
+        }
+        key.clear();
+    } else {
+        ui.label(crate::i18n::ui_tr(ui, "Shortcut key:"));
+        shortcut_field(ui, &mut key, "record_shortcut");
+        ui.add_space(4.0);
+    }
     let label = ui.label(crate::i18n::ui_tr(ui, "Description:"));
     ui.add(egui::TextEdit::multiline(&mut desc).desired_rows(3).desired_width(f32::INFINITY).id_salt("record_description")).labelled_by(label.id);
-    ui.checkbox(&mut app.macros.relative, crate::i18n::ui_tr(ui, "Use Relative References"));
-    let problem = record_problem(app, &name, &key);
+    if !code {
+        ui.checkbox(&mut app.macros.relative, crate::i18n::ui_tr(ui, "Use Relative References"));
+    }
+    let problem = if code { None } else { record_problem(app, &name, &key) };
     if let Some(p) = &problem {
         ui.label(egui::RichText::new(p).color(Tokens::get(ui.ctx()).danger));
     }
@@ -786,6 +825,9 @@ pub fn record_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
         }
         if ui.add_enabled(problem.is_none(), egui::Button::new(crate::i18n::ui_tr(ui, "OK"))).clicked() {
             let mut p = json!({"name": name.trim(), "description": desc, "relative": app.macros.relative});
+            if code {
+                p = json!({"name": name.trim(), "description": desc, "as": "vba"});
+            }
             if !key.trim().is_empty() {
                 p["shortcut"] = json!(key.trim());
             }
@@ -798,6 +840,7 @@ pub fn record_dialog(app: &mut SheetApp, ui: &mut Ui, d: &mut Dialog, open: &mut
     d.values.insert("name".into(), json!(name));
     d.values.insert("shortcut".into(), json!(key));
     d.values.insert("description".into(), json!(desc));
+    d.values.insert("as".into(), json!(if code { "vba" } else { "steps" }));
 }
 
 #[cfg(test)]
@@ -850,6 +893,24 @@ mod tests {
         let want = it.tr("Saved macro “{name}” ({steps} step)").replace("{name}", "Rec").replace("{steps}", "1");
         assert_eq!(app.toast.take().map(|t| t.0).as_deref(), Some(want.as_str()));
         assert!(!want.starts_with("Saved macro"));
+    }
+
+    #[test]
+    fn a_recording_as_visual_basic_says_where_the_code_went() {
+        use celdas_engine::Session;
+        let mut session = Session::new();
+        session.new_workbook();
+        let mut app = SheetApp::new(session, Default::default());
+        app.run("macro.record", json!({"as": "vba", "name": "Hola"})).unwrap();
+        app.run("cell.set", json!({"cell": "A1", "input": "1"})).unwrap();
+        app.run("insert.chart", json!({})).ok();
+        stop_recording(&mut app);
+        let toast = app.toast.take().map(|t| t.0).unwrap_or_default();
+        assert!(toast.starts_with("Recorded “Hola” as Visual Basic in Module1 (1 command)"), "{toast}");
+        let v = app.run("vba.list", json!({})).unwrap();
+        assert_eq!(v["procedures"][0]["name"], "Hola");
+        // The macros of steps are untouched, so the Macros dialog lists the procedure only once.
+        assert_eq!(app.run("macro.list", json!({})).unwrap().as_array().map(Vec::len), Some(0));
     }
 
     #[test]

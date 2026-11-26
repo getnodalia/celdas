@@ -211,6 +211,10 @@ pub struct Workbook {
     /// formats aren't filtered: the workbook's own serialization still holds them.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub remove_personal_info: bool,
+    /// The name of the workbook's own Visual Basic module (`ThisWorkbook`), from
+    /// `<workbookPr codeName>`; `None` when the file has no project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code_name: Option<String>,
     /// Read and set with [`Workbook::active_sheet`] and [`Workbook::set_active_sheet`].
     pub active_sheet: ActiveSheet,
     /// The workbook window's display settings (`<workbookView>`), kept across an open + save.
@@ -355,6 +359,7 @@ impl Workbook {
             calc: CalcSettings::default(),
             show_objects: ShowObjects::All,
             remove_personal_info: false,
+            code_name: None,
             active_sheet: ActiveSheet::default(),
             view: WorkbookView::default(),
             props: DocProps::default(),

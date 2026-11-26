@@ -249,6 +249,27 @@ fn workbook_view_attrs(wb: &Workbook) -> String {
     attrs
 }
 
+/// `<workbookPr>`: the code name, how drawn objects show, the date system and the privacy flag.
+fn workbook_pr(wb: &Workbook) -> String {
+    let mut w = String::from("<workbookPr");
+    if let Some(n) = &wb.code_name {
+        let _ = write!(w, " codeName=\"{}\"", crate::xml::esc_attr(n));
+    }
+    match wb.show_objects {
+        ShowObjects::All => {}
+        ShowObjects::Placeholders => w.push_str(" showObjects=\"placeholders\""),
+        ShowObjects::None => w.push_str(" showObjects=\"none\""),
+    }
+    if wb.date_system == celdas_core::DateSystem::D1904 {
+        w.push_str(" date1904=\"1\"");
+    }
+    if wb.remove_personal_info {
+        w.push_str(" filterPrivacy=\"1\"");
+    }
+    w.push_str("/>");
+    w
+}
+
 /// Writes the workbook for the file `book_name` (a bare file name). A PivotChart is bound to its
 /// PivotTable in Excel only when its link starts with the workbook in brackets.
 pub fn write_xlsx_named_with(wb: &Workbook, kind: XlsxKind, book_name: Option<&str>, functions: FunctionInfo) -> Result<Vec<u8>, IoError> {
@@ -307,19 +328,7 @@ pub fn write_xlsx_named_with(wb: &Workbook, kind: XlsxKind, book_name: Option<&s
     // only when appName is "xl" (#799). One without names Celdas (#1699), and Excel recalculates it.
     let file_version = crate::passthrough::workbook_elements(wb, "fileVersion");
     w.push_str(if file_version.is_empty() { "<fileVersion appName=\"celdas\"/>" } else { &file_version });
-    w.push_str("<workbookPr");
-    match wb.show_objects {
-        ShowObjects::All => {}
-        ShowObjects::Placeholders => w.push_str(" showObjects=\"placeholders\""),
-        ShowObjects::None => w.push_str(" showObjects=\"none\""),
-    }
-    if wb.date_system == celdas_core::DateSystem::D1904 {
-        w.push_str(" date1904=\"1\"");
-    }
-    if wb.remove_personal_info {
-        w.push_str(" filterPrivacy=\"1\"");
-    }
-    w.push_str("/>");
+    w.push_str(&workbook_pr(wb));
     if wb.protected_structure {
         let pw = wb.structure_password.as_ref().map(|h| crate::sheet_write::password_attrs(h, "workbook")).unwrap_or_default();
         let _ = write!(w, "<workbookProtection{pw} lockStructure=\"1\"/>");

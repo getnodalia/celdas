@@ -153,6 +153,8 @@ pub(super) fn move_sheet(s: &mut Session, p: &Json) -> Result<Json> {
             let mut sh = (*src).clone();
             // The copy is a sheet of its own, not the one it was copied from.
             sh.uid = celdas_model::SheetUid::fresh();
+            // The code behind the original stays with it; a project gives the copy its own.
+            sh.code_name = None;
             let base = sh.name.clone();
             // `Name (2)`: the name is shortened so the suffix fits in Excel's 31 characters.
             let name = (2..)

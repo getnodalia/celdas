@@ -271,6 +271,10 @@ mod tests {
         assert!(s.execute("vba.create", json!({})).is_err());
         s.execute("vba.run", json!({"procedure": "Hola"})).unwrap();
         let src = s.execute("vba.source", json!({})).unwrap();
-        assert!(src["modules"][0]["code"].as_str().unwrap().contains("Sub Hola()"));
+        let module1 = src["modules"].as_array().unwrap().iter().find(|m| m["name"] == "Module1").unwrap();
+        assert!(module1["code"].as_str().unwrap().contains("Sub Hola()"));
+        // The project starts with the code behind the workbook and the sheet, too.
+        assert_eq!(src["modules"][0]["name"], "ThisWorkbook");
+        assert_eq!(src["modules"][0]["document"], true);
     }
 }

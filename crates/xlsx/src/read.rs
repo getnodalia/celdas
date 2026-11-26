@@ -201,6 +201,12 @@ fn workbook_xml(pkg: &mut Package<'_>, part: &str) -> Result<El, IoError> {
     Ok(xml)
 }
 
+/// A code name Visual Basic can use as an identifier; anything else in a file is ignored.
+pub(crate) fn is_code_name(n: &str) -> bool {
+    let mut c = n.chars();
+    n.chars().count() <= 31 && c.next().is_some_and(|f| f.is_alphabetic()) && c.all(|ch| ch.is_alphanumeric() || ch == '_')
+}
+
 /// Read workbook-level settings before processing the individual sheets.
 fn read_workbook_properties(cx: &mut Ctx<'_>, wb: &mut Workbook, xml: &El) {
     if let Some(p) = xml.child("workbookPr") {
@@ -208,6 +214,7 @@ fn read_workbook_properties(cx: &mut Ctx<'_>, wb: &mut Workbook, xml: &El) {
             cx.date_system = DateSystem::D1904;
         }
         wb.remove_personal_info = p.flag("filterPrivacy", false);
+        wb.code_name = p.attr("codeName").filter(|n| is_code_name(n)).map(str::to_string);
         wb.show_objects = match p.attr("showObjects") {
             Some("none") => ShowObjects::None,
             Some("placeholders") => ShowObjects::Placeholders,
@@ -550,4 +557,19 @@ pub fn parse_print_titles(text: &str) -> (TitleSpan, TitleSpan) {
         }
     }
     (rows, cols)
+}
+
+#[cfg(test)]
+mod code_name_tests {
+    use super::is_code_name;
+
+    #[test]
+    fn only_a_name_visual_basic_can_use_is_kept() {
+        assert!(is_code_name("Sheet1"));
+        assert!(is_code_name("Hoja_2"));
+        assert!(!is_code_name("1Sheet"));
+        assert!(!is_code_name("Sheet 1\"><x"));
+        assert!(!is_code_name(""));
+        assert!(!is_code_name(&"a".repeat(32)));
+    }
 }

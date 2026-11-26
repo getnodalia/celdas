@@ -233,6 +233,7 @@ fn suggest(app: &mut SheetApp, ide: &mut Ide, text: &str, caret: usize, explicit
         return;
     };
     let from = usize::try_from(r["from"].as_u64().unwrap_or(0)).unwrap_or(0);
+    let lang = app.ui.language;
     let items: Vec<Item> = r["items"]
         .as_array()
         .into_iter()
@@ -241,7 +242,7 @@ fn suggest(app: &mut SheetApp, ide: &mut Ide, text: &str, caret: usize, explicit
             label: i["label"].as_str().unwrap_or("").to_string(),
             kind: i["kind"].as_str().unwrap_or("").to_string(),
             detail: i["detail"].as_str().unwrap_or("").to_string(),
-            doc: i["doc"].as_str().unwrap_or("").to_string(),
+            doc: lang.tr(i["doc"].as_str().unwrap_or("")).to_string(),
             insert: i["insert"].as_str().unwrap_or("").to_string(),
         })
         .collect();
@@ -253,7 +254,7 @@ fn suggest(app: &mut SheetApp, ide: &mut Ide, text: &str, caret: usize, explicit
         label: r["signature"]["label"].as_str().unwrap_or("").to_string(),
         params: r["signature"]["params"].as_array().into_iter().flatten().filter_map(Json::as_str).map(str::to_string).collect(),
         active: usize::try_from(r["signature"]["active"].as_u64().unwrap_or(0)).unwrap_or(0),
-        doc: r["signature"]["doc"].as_str().unwrap_or("").to_string(),
+        doc: lang.tr(r["signature"]["doc"].as_str().unwrap_or("")).to_string(),
     });
 }
 
@@ -473,7 +474,7 @@ fn card_at(app: &mut SheetApp, ide: &Ide, text: &str, idx: usize, at: egui::Pos2
     }
     let r = app.session.run("vba.hover", json!({"code": text, "line": line, "col": col})).ok()?;
     let title = r["signature"].as_str()?.to_string();
-    Some(Card { title, doc: r["doc"].as_str().unwrap_or("").to_string(), error: false, at })
+    Some(Card { title, doc: app.ui.language.tr(r["doc"].as_str().unwrap_or("")).to_string(), error: false, at })
 }
 
 /// F12 and Ctrl+click: the caret goes to where the name under it is declared.

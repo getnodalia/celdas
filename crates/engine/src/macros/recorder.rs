@@ -49,6 +49,9 @@ pub struct RecordingStart {
     pub name: Option<String>,
     pub shortcut: Option<String>,
     pub description: Option<String>,
+    /// The recording is saved as Visual Basic (a `Sub` in the workbook's VBA project) instead of
+    /// as a macro of steps.
+    pub vba: bool,
 }
 
 impl RecordingStart {
@@ -65,6 +68,7 @@ impl RecordingStart {
             name: None,
             shortcut: None,
             description: None,
+            vba: false,
         }
     }
 }

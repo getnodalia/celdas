@@ -408,7 +408,11 @@ fn module_row(ui: &mut Ui, ide: &mut Ide, m: &Module, t: &Tokens, lang: crate::i
         if selected { t.accent_text } else { t.text_dim },
     );
     let name_font = theme::ui_font(13.5);
-    ui.painter().text(rect.left_center() + vec2(34.0, 0.0), egui::Align2::LEFT_CENTER, &m.name, name_font, t.text);
+    let name_end = ui.painter().text(rect.left_center() + vec2(34.0, 0.0), egui::Align2::LEFT_CENTER, &m.name, name_font, t.text);
+    if let Some(sheet) = m.sheet.as_deref().filter(|n| !n.eq_ignore_ascii_case(&m.name)) {
+        let clip = ui.painter().with_clip_rect(rect.shrink2(vec2(40.0, 0.0)));
+        clip.text(name_end.right_center() + vec2(8.0, 0.0), egui::Align2::LEFT_CENTER, format!("({sheet})"), theme::ui_font(12.0), t.text_dim);
+    }
     let dirty = ide.drafts.get(&m.name).is_some_and(|d| *d != m.code);
     let broken = ide.errors.iter().any(|(n, e)| n.eq_ignore_ascii_case(&m.name) && !e.is_empty());
     let mut right = rect.right() - 12.0;

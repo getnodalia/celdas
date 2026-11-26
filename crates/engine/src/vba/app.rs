@@ -316,6 +316,10 @@ impl ExcelHost<'_> {
                 self.run(book, "sheet.activate", json!({"sheet": &**sheet}))?;
                 Ok(Value::Empty)
             }
+            "paste" => {
+                self.run(book, "edit.paste", json!({"sheet": &**sheet}))?;
+                Ok(Value::Empty)
+            }
             "delete" => {
                 self.run(book, "home.deleteSheet", json!({"sheet": &**sheet}))?;
                 Ok(Value::Empty)
@@ -400,7 +404,7 @@ impl ExcelHost<'_> {
     }
 }
 
-fn object_of(v: &Value) -> Option<XObj> {
+pub(super) fn object_of(v: &Value) -> Option<XObj> {
     match v {
         Value::Object(Some(o)) => o.downcast::<X>().map(|x| x.0.clone()),
         _ => None,

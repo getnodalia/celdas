@@ -189,6 +189,20 @@ impl<'a> ExcelHost<'a> {
             .ok_or_else(|| VbError::new(9, "Subscript out of range"))
     }
 
+    /// What a code name stands for in the workbook the macro lives in: `ThisWorkbook` (or the
+    /// name the file gave it) is the workbook, `Sheet1` the sheet that carries that code name,
+    /// wherever it is now and whatever it is called. `name` is lower case.
+    pub(super) fn code_name_object(&self, name: &str) -> Option<Value> {
+        let d = self.session_ref(0).ok()?.doc().ok()?;
+        if d.wb.code_name.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(name)) {
+            return Some(X::value(XObj::Workbook(0)));
+        }
+        d.wb.sheets
+            .iter()
+            .find(|s| s.code_name.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(name)))
+            .map(|s| X::value(XObj::Sheet(0, Rc::from(s.name.as_str()))))
+    }
+
     pub(super) fn sheet_names(&self, book: usize) -> Result<Vec<String>> {
         Ok(self.session_ref(book)?.doc().map_err(engine_err)?.wb.sheets.iter().map(|s| s.name.clone()).collect())
     }
@@ -369,7 +383,10 @@ impl Host for ExcelHost<'_> {
                 let n = self.active_sheet_name(book)?;
                 return self.sheet_member(book, &n, name, args, assign).map(Some);
             }
-            _ => return Ok(None),
+            _ => match self.code_name_object(name) {
+                Some(v) => v,
+                None => return Ok(None),
+            },
         };
         if assign.is_some() {
             return Err(VbError::new(
@@ -378,6 +395,10 @@ impl Host for ExcelHost<'_> {
             ));
         }
         Ok(Some(v))
+    }
+
+    fn module_object(&mut self, module: &str) -> Option<Value> {
+        self.code_name_object(&module.to_ascii_lowercase())
     }
 
     fn enumerate(&mut self, obj: &Obj) -> Result<Vec<Value>> {

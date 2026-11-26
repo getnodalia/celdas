@@ -341,7 +341,8 @@ mod tests {
         let mut w = Writer::new(Version::V3);
         for id in cf.walk() {
             let (Some(e), Some(p)) = (cf.entry(id), cf.path(id)) else { continue };
-            if e.kind == EntryKind::Stream {
+            // `write_bin` now writes a `PROJECT` stream; this fixture supplies its own below.
+            if e.kind == EntryKind::Stream && p != "PROJECT" {
                 w.stream_at(&p, cf.read(id).unwrap()).unwrap();
             }
         }
