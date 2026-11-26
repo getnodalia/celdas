@@ -34,6 +34,11 @@ It opens and saves Excel workbooks (`.xlsx`), with formulas, tables, charts, piv
 conditional formatting and printing, and it is drawn in the Nodalia Design Language in light and
 dark.
 
+It has an **AI assistant**: a chat beside your sheet, with the whole workbook as context, that
+writes formulas, builds tables and charts, and sorts and filters data. You bring your own key
+(Claude, OpenAI, Gemini or a local Ollama model), kept in the system keychain; every change waits
+for your approval and a turn undoes in one click. Nodalia has no servers in between.
+
 > [!IMPORTANT]
 > **Celdas is at an early stage.** Expect rough edges, and keep a copy of workbooks that matter.
 
