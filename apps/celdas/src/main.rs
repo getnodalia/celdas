@@ -52,7 +52,7 @@ impl eframe::App for App {
         #[cfg(target_os = "macos")]
         {
             if self.2.is_none() && std::env::var_os("CELDAS_NO_NATIVE_MENU").is_none() {
-                self.2 = Some(native_menu::NativeMenu::install(ctx));
+                self.2 = Some(native_menu::NativeMenu::install(ctx, self.0.ui.language));
             }
             if let Some(m) = &mut self.2 {
                 m.poll(&mut self.0, ctx, self.1.focused_viewport());
@@ -429,6 +429,8 @@ fn main() -> eframe::Result<()> {
                     }
                 }
                 let windows = DocWindows::new(&mut app, window_builder.clone(), DocWindows::platform_quits_with_last_window());
+                #[allow(unused_variables)]
+                let language = app.ui.language;
                 Ok(Box::new(App(
                     app,
                     windows,
@@ -437,7 +439,7 @@ fn main() -> eframe::Result<()> {
                     #[cfg(target_os = "macos")]
                     apple_events.connect(&cc.egui_ctx),
                     #[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))]
-                    linux_menu::install(&cc.egui_ctx, std::env::var_os("WAYLAND_DISPLAY").is_some_and(|d| !d.is_empty())),
+                    linux_menu::install(&cc.egui_ctx, std::env::var_os("WAYLAND_DISPLAY").is_some_and(|d| !d.is_empty()), language),
                 )))
             }),
         )

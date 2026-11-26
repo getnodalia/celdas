@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use celdas_ui_egui::SheetApp;
+use celdas_ui_egui::i18n::Language;
 use zbus::blocking::Connection;
 use zbus::zvariant::{OwnedValue, StructureBuilder, Value};
 
@@ -238,17 +239,17 @@ fn register(conn: &Connection) {
 }
 
 /// Every menu of the global menu: Celdas's own first, then the menu bar's.
-fn menus() -> Vec<(&'static str, Vec<Entry>)> {
-    std::iter::once(menu_tree::app_menu()).chain(menu_tree::tree()).collect()
+fn menus(language: Language) -> Vec<(&'static str, Vec<Entry>)> {
+    menu_tree::translated(language, std::iter::once(menu_tree::app_menu()).chain(menu_tree::tree()).collect())
 }
 
 /// Export the menus and register them with the desktop's registrar, now and whenever a registrar
 /// appears. `None` off Wayland, or without a session bus.
-pub fn install(ctx: &egui::Context, wayland: bool) -> Option<GlobalMenu> {
+pub fn install(ctx: &egui::Context, wayland: bool, language: Language) -> Option<GlobalMenu> {
     if !wayland {
         return None;
     }
-    let shared = Arc::new(Mutex::new(Shared::of(&menus())));
+    let shared = Arc::new(Mutex::new(Shared::of(&menus(language))));
     let object = MenuObject { shared: shared.clone(), ctx: ctx.clone() };
     let conn = match zbus::blocking::connection::Builder::session().and_then(|b| b.serve_at(MENU_PATH, object)).and_then(|b| b.build()) {
         Ok(conn) => conn,
@@ -282,7 +283,7 @@ mod tests {
 
     #[test]
     fn rows_are_numbered_depth_first_with_celdas_first() {
-        let s = Shared::of(&menus());
+        let s = Shared::of(&menus(Language::En));
         let first = s.root.first().copied().unwrap_or_default();
         assert!(matches!(s.rows.get(&first), Some(Row::Submenu { label, .. }) if label == "Celdas"));
         assert_eq!(s.root.len(), menu_tree::tree().len() + 1);
@@ -299,7 +300,7 @@ mod tests {
 
     #[test]
     fn a_click_runs_the_item_and_other_events_nothing() {
-        let shared = Arc::new(Mutex::new(Shared::of(&menus())));
+        let shared = Arc::new(Mutex::new(Shared::of(&menus(Language::En))));
         let object = MenuObject { shared: shared.clone(), ctx: egui::Context::default() };
         let first = shared.lock().unwrap().root[0];
         object.chosen(first + 3, "clicked");

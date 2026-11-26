@@ -2023,6 +2023,31 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Evolutionary: a genetic search for models that aren't smooth; every variable cell needs bounds." => {
             "Evolutivo: una búsqueda genética para modelos no suaves; cada celda variable necesita límites."
         }
+        "Agent Control (MCP)…" => "Control del agente (MCP)…",
+        "Celdas on getnodalia.com" => "Celdas en getnodalia.com",
+        "Cells…" => "Celdas…",
+        "Collapse Ribbon" => "Contraer la cinta",
+        "Command Palette…" => "Paleta de comandos…",
+        "Conditional Formatting…" => "Formato condicional…",
+        "Error Checking…" => "Comprobación de errores…",
+        "Evaluate Formula…" => "Evaluar fórmula…",
+        "Function…" => "Función…",
+        "Help" => "Ayuda",
+        "Name…" => "Nombre…",
+        "New from Sample…" => "Nuevo desde ejemplo…",
+        "Picture…" => "Imagen…",
+        "Preferences…" => "Preferencias…",
+        "Properties…" => "Propiedades…",
+        "Remove Duplicates…" => "Quitar duplicados…",
+        "Rename Sheet…" => "Cambiar nombre de hoja…",
+        "Save as Web Page…" => "Guardar como página web…",
+        "Sheet" => "Hoja",
+        "Sparklines…" => "Minigráficos…",
+        "Spelling…" => "Ortografía…",
+        "Subtotal…" => "Subtotal…",
+        "Text to Columns…" => "Texto en columnas…",
+        "Settings…" => "Ajustes…",
+        "Quit Celdas" => "Salir de Celdas",
         _ => return None,
     })
 }
