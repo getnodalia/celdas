@@ -13,6 +13,11 @@ mod host;
 pub mod ide;
 mod objects;
 mod range;
+mod range_ops;
+pub mod record;
+pub(crate) mod record_save;
+#[cfg(test)]
+mod record_tests;
 mod shapes;
 
 use std::hash::{Hash, Hasher};

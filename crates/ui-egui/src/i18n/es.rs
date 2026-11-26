@@ -5,6 +5,13 @@
 /// Returns the Spanish translation for `text`, or `None` so callers fall back to English.
 pub(super) fn translate(text: &str) -> Option<&'static str> {
     Some(match text {
+        // Recording as Visual Basic.
+        "Record as:" => "Grabar como:",
+        "Steps" => "Pasos",
+        "Saved as the procedure {name}" => "Se guardará como el procedimiento {name}",
+        "Recorded “{name}” as Visual Basic in {module} ({steps} command)" => "Macro “{name}” grabada como Visual Basic en {module} ({steps} comando)",
+        "Recorded “{name}” as Visual Basic in {module} ({steps} commands)" => "Macro “{name}” grabada como Visual Basic en {module} ({steps} comandos)",
+        "{count} could not be written as code and are comments" => "{count} no se pudieron escribir como código y quedan como comentarios",
         // Visual Basic editor and the Macros dialog.
         "Check VBA Code" => "Comprobar código VBA",
         "Complete VBA Code" => "Completar código VBA",
