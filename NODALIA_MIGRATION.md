@@ -11,17 +11,12 @@ getnodalia/foundation and nodalia-design. The gate, FreeBSD, Nix, packaging lint
 git-sources checks call getnodalia/foundation's reusable workflows pinned by commit. Releases run
 on Celdas's own workflows (`release-auto.yml` with Foundation's release-tag and release-publish,
 then `release-linux.yml`, `release-macos.yml` and `release-windows.yml`). Every name is Celdas's,
-internal ones included: `scripts/rebrand.py` with `.github/rebrand.toml` renames upstream's tree,
-the weekly sync merges it renamed (`docs/upstream.md`), and CI fails if an old name comes back.
+internal ones included. There is no upstream sync.
 
 Celdas keeps `.xlsx` as its workbook format: upstream never had a file format of its own, so
 there is no old extension to rename.
 
-## Inherited dependencies still pending
-
-| Dependency | Where | Replacement | Blocked on |
-|---|---|---|---|
-| upstream's repository (`docs/upstream.md`) | `.github/workflows/upstream-sync.yml` | none: the weekly sync reads upstream and renames it | — |
+## Inherited dependencies
 
 Resolved: craft-common-actions (release, contributors refresh, Windows ARM64) is gone; fonts and
 the shared libraries come from getnodalia/foundation's vendor branches; the `[patch]` for

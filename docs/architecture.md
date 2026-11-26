@@ -227,7 +227,7 @@ recorded in [`decisions.md`](decisions.md) and re-run by `crates/math/tests/gate
 
 ## Platforms and builds
 
-macOS universal, Windows x64/x86/arm64, Linux x86_64/aarch64/riscv64 (AppImage, Flatpak, deb,
+macOS universal, Windows x64/x86/arm64, Linux x86_64/aarch64/riscv64 (AppImage, deb,
 rpm, tarball), FreeBSD, and web (WASM; WebGPU or WebGL2). Release workflows in
 `.github/workflows/release.yml`; see [`releasing.md`](releasing.md).
 

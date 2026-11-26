@@ -99,9 +99,7 @@ Merging a version bump with its notes (`docs/release-notes/vX.Y.Z.md`, rules in 
 README) releases it: `release-auto.yml` tags the merge, builds the Linux, macOS and Windows
 packages and publishes the release. Nobody pushes a tag by hand.
 
-## Upstream names
+## Names
 
-Every name is Celdas's, internal ones included. `scripts/rebrand.py` with `.github/rebrand.toml`
-renames upstream's tree for the weekly sync (`docs/upstream.md`), and
-`python3 scripts/rebrand.py check` fails when an old name comes back; a line that must keep one
-says `rebrand: keep`.
+Every name is Celdas's, internal ones included. There is no upstream sync and no rename tooling:
+Celdas is its own app, and the origin of its code base is credited in `NOTICE` and About.
