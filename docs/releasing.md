@@ -12,7 +12,7 @@ This process was copied from Pliego and renamed. User-facing names say
 | App-specific value | Where |
 |---|---|
 | Display name `Celdas`, binaries `celdas` + `celdas-cli` | every script and workflow |
-| Bundle / app id `dev.danielmiguelt.Celdas` | `packaging/macos/Info.plist.in`, `packaging/linux/*`, flatpak manifest |
+| Bundle / app id `dev.danielmiguelt.Celdas` | `packaging/macos/Info.plist.in`, `packaging/linux/*` |
 | WiX UpgradeCode `8E3C1A47-52D9-4B6F-A0E8-3F7B2C9D1E64` (fixed forever) | `packaging/windows/celdas.wxs` |
 | File types `.xlsx` `.xlsm` `.xlsb` `.ods` `.csv` `.tsv` | Info.plist (`CFBundleDocumentTypes`), WiX (ProgIds/OpenWithProgids), `.desktop` `MimeType=`, `dev.danielmiguelt.Celdas.mime.xml`, metainfo |
 | Web app dir `apps/celdas-web` | `packaging/web/package.sh` |
@@ -66,7 +66,7 @@ After the draft is published, the workflow refuses to touch that version again, 
 `version` input (such as `0.2.0-rc.1`) overrides `Cargo.toml` for that run only; each job
 applies it with `cargo xtask version set` before building, so the binaries report it too. The
 signing jobs and the draft release need the `release` environment, which only the `release`
-branch can use. Run from any other branch, it's a dry run: Linux, Flatpak, FreeBSD and web build
+branch can use. Run from any other branch, it's a dry run: Linux, FreeBSD and web build
 and upload their artifacts, the environment refuses macOS and Windows, and no release is drafted
 (`gh workflow run release.yml --ref <branch>`).
 
@@ -81,7 +81,6 @@ and upload their artifacts, the environment refuses macOS and Windows, and no re
 | Linux x86_64 | `celdas-<v>-linux-x86_64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}` | `ubuntu-22.04` |
 | Linux aarch64 | `celdas-<v>-linux-aarch64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}` | `ubuntu-22.04-arm` |
 | Linux riscv64 | `celdas-<v>-linux-riscv64.tar.gz` (cross-compiled, glibc >= 2.39; CLI smoke-tested under QEMU) | `ubuntu-24.04` |
-| Flatpak x86_64, aarch64 | `celdas-<v>-linux-<arch>.flatpak` (repackages the Linux tarball) | `ubuntu-24.04`, `ubuntu-24.04-arm` |
 | FreeBSD 14 x86_64 | `celdas-<v>-freebsd-x86_64.tar.gz` | FreeBSD 14.3 VM (`freebsd.yml`, called by `release.yml`) |
 | Web | `celdas-web-<v>.zip` (static site; see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
 
@@ -172,13 +171,6 @@ matching `.zsync` is published beside it, so AppImageUpdate and AppImageLauncher
 changed blocks of the newest published release. appimagetool writes the `.zsync` when
 `zsyncmake` (the `zsync` package) is installed; without it the script warns and skips it.
 
-Flatpak: `packaging/linux/flatpak/dev.danielmiguelt.Celdas.yml` builds from source and is ready
-for a Flathub submission (freedesktop 25.08; Wayland + X11 fallback, `dri`, IPC; Documents and
-Downloads; everything else through portals); build it by hand with the commands in its header.
-The single-file `.flatpak` on each release comes from `packaging/linux/flatpak-bundle.sh` and
-`dev.danielmiguelt.Celdas.bundle.yml`, which repackage the release's Linux tarball (no Rust
-build) and smoke-test the result in the sandbox. packaging-lint checks that both manifests
-agree on runtime and finish-args.
 
 Locally (on Linux): install [nfpm](https://nfpm.goreleaser.com/install/), then
 `packaging/linux/package.sh` (or `--formats "deb tar"`).
@@ -281,7 +273,7 @@ row in `ATTRIBUTION.md` (`cargo xtask assets`).
 
 - `.github/workflows/packaging-lint.yml` (seconds, on changes to `packaging/`, the workflows or
   the icons): actionlint, shellcheck, a PowerShell parse, xmllint, a WiX icon-id check,
-  `desktop-file-validate`, `appstreamcli validate`, and a Flatpak manifest check.
+  `desktop-file-validate`, `appstreamcli validate`.
 - `.github/workflows/windows-arm64.yml` (on `release` pushes): packages ARM64 on x64, then
   installs, runs and uninstalls the MSI on a Windows 11 ARM64 runner.
 - `.github/workflows/freebsd.yml`: FreeBSD build + tests (manual run from `release`).

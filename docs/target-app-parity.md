@@ -220,7 +220,7 @@ clamping, a `cargo xtask bench` with fixed workbooks so the numbers become measu
 | macOS (Apple silicon, Intel) | yes | yes (signed, notarized universal DMG) |
 | Web | Excel for the web | yes (WASM; local files, no cloud) |
 | iOS / iPadOS / Android | yes | no |
-| Linux | no | yes (AppImage, Flatpak, deb, rpm, tarball; x86_64, aarch64, riscv64) |
+| Linux | no | yes (AppImage, deb, rpm, tarball; x86_64, aarch64, riscv64) |
 | FreeBSD | no | yes |
 
 Mobile is the gap (30–60 h for a touch layout over the same engine). Celdas is ahead on
@@ -321,7 +321,7 @@ The inventory carried over from the 2026-10-07 ROADMAP.md, updated for what land
   `eval`, `cat`, `run`, `commands`, `functions`, `mcp`, `send`).
 - Platforms: macOS, Windows, Linux, FreeBSD; web (WASM via trunk). Release workflows for
   signed/notarized macOS universal DMG, signed Windows x64/x86 MSI + zip, Linux AppImage/deb/rpm/
-  tar.gz + Flatpak manifest, FreeBSD tarball and a web zip.
+  tar.gz, FreeBSD tarball and a web zip.
 
 ## Not measured yet
 
