@@ -758,7 +758,11 @@ pub fn open_record(app: &mut SheetApp, params: &Json) -> Option<Dialog> {
     }
     let suggested = app.session.active().map(|d| celdas_engine::macros::next_name(&d.wb)).unwrap_or_else(|| "Macro1".into());
     let name = params["name"].as_str().map(str::to_string).filter(|n| !n.trim().is_empty()).unwrap_or(suggested);
-    Some(Dialog::custom("recordMacro", "Record Macro", json!({"name": name, "shortcut": "", "description": "", "as": "steps"})))
+    Some(Dialog::custom(
+        "recordMacro",
+        "Record Macro",
+        json!({"name": name, "shortcut": "", "description": "", "as": if params["as"] == "vba" { "vba" } else { "steps" }}),
+    ))
 }
 
 /// What is wrong with the Record Macro dialog's name or shortcut, if anything.

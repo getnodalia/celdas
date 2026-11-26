@@ -196,13 +196,18 @@ fn list(s: &mut Session, _: &Json) -> Result<Json> {
 fn source(s: &mut Session, p: &Json) -> Result<Json> {
     let Some((project, _)) = project_of(s)? else { return Err(EngineError::Other("The workbook has no VBA project.".into())) };
     let only = str_param(p, "module");
+    // The sheet a document module stands behind, by its code name: the name the sheet has now.
+    let sheet_of = |module: &str| -> Option<String> {
+        let wb = &s.doc().ok()?.wb;
+        wb.sheets.iter().find(|sh| sh.code_name.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(module))).map(|sh| sh.name.clone())
+    };
     let modules: Vec<Json> = project
         .modules
         .iter()
         .filter(|m| only.is_none_or(|n| m.name.eq_ignore_ascii_case(n)))
         .map(|m| {
             let (header, code) = split_attributes(&m.source);
-            json!({"name": m.name, "kind": kind_name(m.kind), "source": m.source, "header": header, "code": code, "document": is_document(&m.source)})
+            json!({"name": m.name, "kind": kind_name(m.kind), "source": m.source, "header": header, "code": code, "document": is_document(&m.source), "sheet": sheet_of(&m.name)})
         })
         .collect();
     if modules.is_empty() && only.is_some() {

@@ -39,6 +39,8 @@ pub struct Module {
     pub class: bool,
     /// The code behind ThisWorkbook or a sheet: it can be edited but not removed.
     pub document: bool,
+    /// The name of the sheet a document module stands behind (its own name is the code name).
+    pub sheet: Option<String>,
     /// The code a person edits (the module without its `Attribute` lines), lines ending in `\n`.
     pub code: String,
 }
@@ -375,6 +377,7 @@ impl Ide {
                         name: m["name"].as_str().unwrap_or("").to_string(),
                         class: m["kind"] == "class",
                         document: m["document"] == true,
+                        sheet: m["sheet"].as_str().map(str::to_string),
                         code: model::normalize(m["code"].as_str().unwrap_or("")),
                     })
                     .collect();
