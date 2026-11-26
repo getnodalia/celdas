@@ -412,7 +412,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         }
         "Platform" => "Plataforma",
         "Licence" => "Licencia",
-        "Version, contributors and the AI models that helped" => "Versión, colaboradores y los modelos de IA que ayudaron",
+        "Version, website and licence" => "Versión, sitio web y licencia",
         "Blank workbook" => "Libro en blanco",
         "Recent" => "Recientes",
         "No recent workbooks yet." => "Todavía no hay libros recientes.",

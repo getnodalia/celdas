@@ -380,7 +380,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "Версия",
         "Platform" => "Платформа",
         "Licence" => "Лицензия",
-        "Version, contributors and the AI models that helped" => "Версия, участники и модели ИИ, которые помогали",
+        "Version, website and licence" => "Версия, сайт и лицензия",
         "Blank workbook" => "Пустая книга",
         "Recent" => "Последние",
         "No recent workbooks yet." => "Недавних книг пока нет.",

@@ -1194,7 +1194,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Variable 2 Range:" => "Phạm vi biến 2:",
         "Version" => "Phiên bản",
         "Version {version}" => "Phiên bản {version}",
-        "Version, contributors and the AI models that helped" => "Phiên bản, người đóng góp và các mô hình AI đã hỗ trợ",
+        "Version, website and licence" => "Phiên bản, trang web và giấy phép",
         "Vertical" => "Dọc",
         "Vertical axis title:" => "Tiêu đề trục dọc:",
         "Visible cells only" => "Chỉ ô hiển thị",

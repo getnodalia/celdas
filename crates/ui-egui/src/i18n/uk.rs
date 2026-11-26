@@ -951,7 +951,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Список скасування",
         "Unhide Sheet…" => "Показати аркуш…",
         "Up" => "Угору",
-        "Version, contributors and the AI models that helped" => "Версія, учасники та моделі ШІ, які допомагали",
+        "Version, website and licence" => "Версія, вебсайт і ліцензія",
         "What-If Analysis" => "Аналіз «що як»",
         "Zoom In" => "Збільшити",
         "Zoom Out" => "Зменшити",

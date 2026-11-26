@@ -960,7 +960,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Elenco azioni annullabili",
         "Unhide Sheet…" => "Scopri foglio…",
         "Up" => "Su",
-        "Version, contributors and the AI models that helped" => "Versione, collaboratori e modelli di IA che hanno contribuito",
+        "Version, website and licence" => "Versione, sito web e licenza",
         "What-If Analysis" => "Analisi di simulazione",
         "Zoom In" => "Ingrandisci",
         "Zoom Out" => "Riduci",

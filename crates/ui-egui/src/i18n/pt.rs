@@ -983,7 +983,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Lista de desfazer",
         "Unhide Sheet…" => "Reexibir Planilha…",
         "Up" => "Para Cima",
-        "Version, contributors and the AI models that helped" => "Versão, colaboradores e os modelos de IA que ajudaram",
+        "Version, website and licence" => "Versão, site e licença",
         "What-If Analysis" => "Teste de Hipóteses",
         "Zoom In" => "Ampliar",
         "Zoom Out" => "Reduzir",

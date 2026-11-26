@@ -378,7 +378,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "버전",
         "Platform" => "플랫폼",
         "Licence" => "라이선스",
-        "Version, contributors and the AI models that helped" => "버전, 기여자 및 도움을 준 AI 모델",
+        "Version, website and licence" => "버전, 웹사이트 및 라이선스",
         "Blank workbook" => "새 통합 문서",
         "Recent" => "최근 항목",
         "No recent workbooks yet." => "최근 통합 문서가 아직 없습니다.",

@@ -546,7 +546,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Λίστα αναιρέσεων",
         "Unhide Sheet…" => "Εμφάνιση φύλλου…",
         "Up" => "Πάνω",
-        "Version, contributors and the AI models that helped" => "Έκδοση, συντελεστές και μοντέλα ΤΝ που συνέβαλαν",
+        "Version, website and licence" => "Έκδοση, ιστότοπος και άδεια",
         "Watch\nWindow" => "Παράθυρο\nπαρακολούθησης",
         "What-If Analysis" => "Ανάλυση υποθετικών σεναρίων",
         "Workbook\nStatistics" => "Στατιστικά\nβιβλίου εργασίας",

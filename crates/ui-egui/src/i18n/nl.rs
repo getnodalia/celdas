@@ -530,7 +530,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Ongedaan maken-lijst",
         "Unhide Sheet…" => "Blad zichtbaar maken…",
         "Up" => "Omhoog",
-        "Version, contributors and the AI models that helped" => "Versie, bijdragers en de AI-modellen die hielpen",
+        "Version, website and licence" => "Versie, website en licentie",
         "Watch\nWindow" => "Bewakings-\nvenster",
         "What-If Analysis" => "Wat-als-analyse",
         "Workbook\nStatistics" => "Werkmap-\nstatistieken",

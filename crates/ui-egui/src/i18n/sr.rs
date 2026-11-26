@@ -371,7 +371,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "Verzija",
         "Platform" => "Platforma",
         "Licence" => "Licenca",
-        "Version, contributors and the AI models that helped" => "Verzija, saradnici i AI modeli koji su pomogli",
+        "Version, website and licence" => "Verzija, veb-sajt i licenca",
         "Blank workbook" => "Prazna radna sveska",
         "Recent" => "Nedavno",
         "No recent workbooks yet." => "Još nema nedavnih radnih svezaka.",

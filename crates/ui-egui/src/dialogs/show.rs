@@ -389,7 +389,7 @@ pub fn show(app: &mut SheetApp, ctx: &egui::Context) {
             }
         });
     window_shown(ctx, &mut d, collapsed.is_some(), shown.map(|r| r.response.rect));
-    // Hyperlinks inside dialogs (About ▸ Contributors) open through the host's `open_url`, since
+    // Hyperlinks inside dialogs (About) open through the host's `open_url`, since
     // the native shell has no browser integration of its own.
     if let Some(open_url) = &app.services.open_url {
         let urls: Vec<String> = ctx.output_mut(|o| {

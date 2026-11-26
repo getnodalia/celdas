@@ -302,7 +302,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "Version",
         "Platform" => "Plattform",
         "Licence" => "Lizenz",
-        "Version, contributors and the AI models that helped" => "Version, Mitwirkende und die KI-Modelle, die geholfen haben",
+        "Version, website and licence" => "Version, Website und Lizenz",
         "Blank workbook" => "Leere Arbeitsmappe",
         "Recent" => "Zuletzt verwendet",
         "No recent workbooks yet." => "Noch keine zuletzt verwendeten Arbeitsmappen.",
