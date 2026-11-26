@@ -10,6 +10,7 @@
 //!   `ui.move {x, y}` — real pointer input in window points
 //! - `ui.cell.click {cell}`, `ui.cell.drag {from, to}` — pointer input on a cell's centre
 //! - `ui.key {key, shift?, cmd?, alt?, ctrl?}`, `ui.text {text}` — keyboard input
+//! - `ui.assistant {open?}` — open, close or switch the AI assistant's chat (desktop only)
 //! - `ui.ribbon {tab}`, `ui.dialog {name}`, `ui.dialog.set {field, value}`,
 //!   `ui.dialog.confirm`, `ui.dialog.cancel`, `ui.message.dismiss`
 //! - `ui.edit.begin {text?}`, `ui.edit.commit {move?}`, `ui.edit.cancel`
@@ -304,6 +305,8 @@ pub fn handle(app: &mut SheetApp, ctx: &egui::Context, method: &str, p: &Json) -
         "engine.journal" => ok(json!(app.session.journal.iter().map(|(id, p)| json!({"command": id, "params": p})).collect::<Vec<_>>())),
         "document.inspect" | "sheet.read" | "cell.get" | "selection.stats" => wrap(direct(app, method, p, false)),
         "ui.inspect" => ok(inspect(app, ctx)),
+        #[cfg(not(target_arch = "wasm32"))]
+        "ui.assistant" => ok(json!({"open": app.show_assistant(ctx, p.get("open").and_then(Json::as_bool))})),
         "ui.ribbon" => {
             app.ui.ribbon_tab = s("tab").unwrap_or("Home").to_string();
             app.ui.ribbon_collapsed = false;

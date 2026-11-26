@@ -35,6 +35,12 @@ pub(super) fn options(app: &mut SheetApp, ui: &mut Ui) {
     if ui.checkbox(&mut autosave, lang.tr("Save .xlsx workbooks automatically after every change")).changed() {
         app.toggle_autosave();
     }
+    // The AI assistant: provider, model, key and whether it asks before changing the workbook.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        ui.add_space(18.0);
+        crate::assistant::preferences(app, ui);
+    }
     let Some((calc, view)) = app.session.active().map(|d| (d.wb.calc.clone(), d.wb.view)) else { return };
     ui.add_space(18.0);
     // Excel's Advanced › Display options for this workbook: saved with the workbook (#3101).
