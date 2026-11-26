@@ -376,7 +376,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "版本",
         "Platform" => "平台",
         "Licence" => "许可证",
-        "Version, contributors and the AI models that helped" => "版本、贡献者以及参与协助的 AI 模型",
+        "Version, website and licence" => "版本、网站和许可证",
         "Blank workbook" => "空白工作簿",
         "Recent" => "最近",
         "No recent workbooks yet." => "还没有最近使用的工作簿。",

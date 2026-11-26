@@ -992,7 +992,7 @@ pub(super) const DIALOGS: &[(&str, &str)] = &[
     ("Undo list", "元に戻す操作の一覧"),
     ("Unhide Sheet…", "シートの再表示…"),
     ("Up", "上へ"),
-    ("Version, contributors and the AI models that helped", "バージョン、貢献者、支援した AI モデル"),
+    ("Version, website and licence", "バージョン、ウェブサイト、ライセンス"),
     ("What-If Analysis", "What-If 分析"),
     ("Zoom In", "拡大"),
     ("Zoom Out", "縮小"),

@@ -378,7 +378,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Version" => "Version",
         "Platform" => "Plateforme",
         "Licence" => "Licence",
-        "Version, contributors and the AI models that helped" => "Version, contributeurs et les modèles d'IA qui ont aidé",
+        "Version, website and licence" => "Version, site web et licence",
         "Blank workbook" => "Classeur vide",
         "Recent" => "Récent",
         "No recent workbooks yet." => "Aucun classeur récent pour le moment.",

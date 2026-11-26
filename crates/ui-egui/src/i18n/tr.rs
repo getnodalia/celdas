@@ -1200,7 +1200,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Variable 2 Range:" => "Değişken 2 Aralığı:",
         "Version" => "Sürüm",
         "Version {version}" => "Sürüm {version}",
-        "Version, contributors and the AI models that helped" => "Sürüm, katkıda bulunanlar ve yardımcı olan yapay zekâ modelleri",
+        "Version, website and licence" => "Sürüm, web sitesi ve lisans",
         "Vertical" => "Dikey",
         "Vertical axis title:" => "Dikey eksen başlığı:",
         "Visible cells only" => "Yalnızca görünür hücreler",

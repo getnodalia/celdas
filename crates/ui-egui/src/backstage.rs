@@ -758,7 +758,7 @@ fn account(app: &mut SheetApp, ui: &mut Ui) {
         ui.vertical(|ui| {
             ui.add_space(14.0);
             ui.label(RichText::new(lang.tr("About Celdas")).font(theme::ui_bold(13.5)).color(t.text));
-            dim(ui, lang.tr("Version, contributors and the AI models that helped"));
+            dim(ui, lang.tr("Version, website and licence"));
         });
     });
 }

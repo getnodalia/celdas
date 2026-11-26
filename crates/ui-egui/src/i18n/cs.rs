@@ -558,7 +558,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Seznam akcí k vrácení",
         "Unhide Sheet…" => "Zobrazit list…",
         "Up" => "Nahoru",
-        "Version, contributors and the AI models that helped" => "Verze, přispěvatelé a modely AI, které pomáhaly",
+        "Version, website and licence" => "Verze, web a licence",
         "Watch\nWindow" => "Okno\nsledování",
         "What-If Analysis" => "Citlivostní analýza",
         "Workbook\nStatistics" => "Statistika\nsešitu",
