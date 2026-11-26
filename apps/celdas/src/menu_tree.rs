@@ -3,6 +3,7 @@
 //! Items run the same commands as the ribbon.
 
 use celdas_ui_egui::SheetApp;
+use celdas_ui_egui::i18n::Language;
 use serde_json::{Value, json};
 
 pub type Entry = (&'static str, &'static str, Option<&'static str>);
@@ -185,6 +186,22 @@ pub fn tree() -> Vec<(&'static str, Vec<Entry>)> {
     ]
 }
 
+/// `text` in `language`: labels the catalog doesn't translate stay English, and `-` stays a separator.
+pub fn label(language: Language, text: &'static str) -> &'static str {
+    language.tr(text)
+}
+
+/// `menus` with every title and label in `language`. Commands and accelerators are untouched.
+pub fn translated(language: Language, menus: Vec<(&'static str, Vec<Entry>)>) -> Vec<(&'static str, Vec<Entry>)> {
+    menus
+        .into_iter()
+        .map(|(title, entries)| {
+            let entries = entries.into_iter().map(|(text, id, accelerator)| (label(language, text), id, accelerator)).collect();
+            (label(language, title), entries)
+        })
+        .collect()
+}
+
 /// The Linux global menu's first menu, which macOS's own app menu stands for there.
 pub fn app_menu() -> (&'static str, Vec<Entry>) {
     (
@@ -297,5 +314,38 @@ mod tests {
         let mut app = super::SheetApp::new(celdas_engine::Session::new(), Default::default());
         super::dispatch(&mut app, &ctx, egui::ViewportId::ROOT, "dialog:backstage:options");
         assert!(app.backstage.is_some(), "Preferences opens File › Options");
+    }
+}
+
+#[cfg(test)]
+mod translation_tests {
+    use super::*;
+
+    #[test]
+    fn every_menu_label_has_a_spanish_translation() {
+        let menus = std::iter::once(app_menu()).chain(tree());
+        let mut missing = Vec::new();
+        for (title, entries) in menus {
+            for text in std::iter::once(title).chain(entries.iter().map(|e| e.0)) {
+                if text != "-" && text != "Celdas" && label(Language::Es, text) == text {
+                    missing.push(text);
+                }
+            }
+        }
+        // Words Spanish spells the way English does need no row.
+        missing.retain(|t| !matches!(*t, "Normal" | "Series…" | "Subtotal…" | "Zoom…"));
+        assert!(missing.is_empty(), "no Spanish for {missing:?}");
+    }
+
+    #[test]
+    fn translating_keeps_commands_and_accelerators() {
+        let english = tree();
+        let spanish = translated(Language::Es, tree());
+        assert_eq!(english.len(), spanish.len());
+        for ((_, a), (_, b)) in english.iter().zip(&spanish) {
+            assert_eq!(a.len(), b.len());
+            assert!(a.iter().zip(b).all(|(x, y)| x.1 == y.1 && x.2 == y.2));
+        }
+        assert_eq!(spanish[0].0, "Archivo");
     }
 }

@@ -5,15 +5,18 @@
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, channel};
 
+use celdas_ui_egui::i18n::Language;
 use celdas_ui_egui::{OpenWindow, SheetApp};
 use muda::accelerator::Accelerator;
 use muda::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use serde_json::json;
 
-use crate::menu_tree::{QUIT, dispatch, tree};
+use crate::menu_tree::{QUIT, dispatch, label, tree};
 
 pub struct NativeMenu {
     _menu: Menu,
+    /// The language the menus were built in; they are built again when the preference changes.
+    language: Language,
     events: Receiver<MenuEvent>,
     window_menu: Option<Submenu>,
     /// The Window menu's window items and what they last showed.
@@ -25,55 +28,25 @@ pub struct NativeMenu {
 const WINDOW_ITEM: &str = "window:id:";
 
 impl NativeMenu {
-    pub fn install(ctx: &egui::Context) -> NativeMenu {
-        let menu = Menu::new();
-        let app_menu = Submenu::new("Celdas", true);
-        let about = MenuItem::with_id("dialog:about", "About Celdas", true, None);
-        let _ = app_menu.append_items(&[
-            &about,
-            &PredefinedMenuItem::separator(),
-            &MenuItem::with_id("dialog:backstage:options", "Settings…", true, Accelerator::from_str("CMD+COMMA").ok()),
-            &PredefinedMenuItem::separator(),
-            &PredefinedMenuItem::services(None),
-            &PredefinedMenuItem::separator(),
-            &PredefinedMenuItem::hide(None),
-            &PredefinedMenuItem::hide_others(None),
-            &PredefinedMenuItem::show_all(None),
-            &PredefinedMenuItem::separator(),
-            &MenuItem::with_id(QUIT, "Quit Celdas", true, Accelerator::from_str("CMD+Q").ok()),
-        ]);
-        let _ = menu.append(&app_menu);
-        let mut window_menu = None;
-        for (title, entries) in tree() {
-            let sub = Submenu::new(title, true);
-            for (label, id, acc) in entries {
-                if label == "-" {
-                    let _ = sub.append(&PredefinedMenuItem::separator());
-                    continue;
-                }
-                let accel = acc.and_then(|a| Accelerator::from_str(a).ok());
-                let item = MenuItem::with_id(id, label, true, accel);
-                let _ = sub.append(&item);
-            }
-            let _ = menu.append(&sub);
-            if title == "Window" {
-                window_menu = Some(sub);
-            }
-        }
-        menu.init_for_nsapp();
-        // NSApp's windowsMenu is where macOS adds Move & Resize, Fill and Center, the targets of the
-        // system tiling shortcuts (Fn+Ctrl+arrows, Fn+F). Only once the menu is NSApp's: muda looks
-        // the submenu up in the installed main menu.
-        if let Some(window) = &window_menu {
-            window.set_as_windows_menu_for_nsapp();
-        }
+    pub fn install(ctx: &egui::Context, language: Language) -> NativeMenu {
+        let (menu, window_menu) = build(language);
         let (tx, rx) = channel();
         let ctx = ctx.clone();
         MenuEvent::set_event_handler(Some(move |e: MenuEvent| {
             let _ = tx.send(e);
             ctx.request_repaint();
         }));
-        NativeMenu { _menu: menu, events: rx, window_menu, window_items: Vec::new(), windows: Vec::new() }
+        NativeMenu { _menu: menu, language, events: rx, window_menu, window_items: Vec::new(), windows: Vec::new() }
+    }
+
+    /// Builds the menus again in `language`, and lists the open windows in the new Window menu.
+    fn rebuild(&mut self, language: Language) {
+        let (menu, window_menu) = build(language);
+        self._menu = menu;
+        self.language = language;
+        self.window_menu = window_menu;
+        self.window_items.clear();
+        self.windows.clear();
     }
 
     /// Keeps the Window menu's list of open windows (title, unsaved bullet, active check) in
@@ -111,6 +84,9 @@ impl NativeMenu {
     /// Runs the chosen menu items. Commands go to the active window, the most recently focused;
     /// `viewport` is its egui viewport, for the items that act on its input.
     pub fn poll(&mut self, app: &mut SheetApp, ctx: &egui::Context, viewport: egui::ViewportId) {
+        if app.ui.language != self.language {
+            self.rebuild(app.ui.language);
+        }
         while let Ok(ev) = self.events.try_recv() {
             let id = ev.id.as_ref().to_string();
             if let Some(window) = id.strip_prefix(WINDOW_ITEM).and_then(|w| w.parse::<u64>().ok()) {
@@ -121,4 +97,50 @@ impl NativeMenu {
         }
         self.sync_windows(app);
     }
+}
+
+/// The menu bar in `language`, and its Window menu (always found by its English title).
+fn build(language: Language) -> (Menu, Option<Submenu>) {
+    let menu = Menu::new();
+    let app_menu = Submenu::new("Celdas", true);
+    let about = MenuItem::with_id("dialog:about", label(language, "About Celdas"), true, None);
+    let _ = app_menu.append_items(&[
+        &about,
+        &PredefinedMenuItem::separator(),
+        &MenuItem::with_id("dialog:backstage:options", label(language, "Settings…"), true, Accelerator::from_str("CMD+COMMA").ok()),
+        &PredefinedMenuItem::separator(),
+        &PredefinedMenuItem::services(None),
+        &PredefinedMenuItem::separator(),
+        &PredefinedMenuItem::hide(None),
+        &PredefinedMenuItem::hide_others(None),
+        &PredefinedMenuItem::show_all(None),
+        &PredefinedMenuItem::separator(),
+        &MenuItem::with_id(QUIT, label(language, "Quit Celdas"), true, Accelerator::from_str("CMD+Q").ok()),
+    ]);
+    let _ = menu.append(&app_menu);
+    let mut window_menu = None;
+    for (title, entries) in tree() {
+        let sub = Submenu::new(label(language, title), true);
+        for (text, id, acc) in entries {
+            if text == "-" {
+                let _ = sub.append(&PredefinedMenuItem::separator());
+                continue;
+            }
+            let accel = acc.and_then(|a| Accelerator::from_str(a).ok());
+            let item = MenuItem::with_id(id, label(language, text), true, accel);
+            let _ = sub.append(&item);
+        }
+        let _ = menu.append(&sub);
+        if title == "Window" {
+            window_menu = Some(sub);
+        }
+    }
+    menu.init_for_nsapp();
+    // NSApp's windowsMenu is where macOS adds Move & Resize, Fill and Center, the targets of the
+    // system tiling shortcuts (Fn+Ctrl+arrows, Fn+F). Only once the menu is NSApp's: muda looks
+    // the submenu up in the installed main menu.
+    if let Some(window) = &window_menu {
+        window.set_as_windows_menu_for_nsapp();
+    }
+    (menu, window_menu)
 }
