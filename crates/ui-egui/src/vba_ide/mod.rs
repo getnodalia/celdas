@@ -506,8 +506,16 @@ impl Ide {
             .flatten()
             .map(|d| {
                 let template = d["template"].as_str().unwrap_or("");
-                let args: Vec<(String, String)> =
-                    d["args"].as_object().into_iter().flatten().map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string())).collect();
+                let args: Vec<(String, String)> = d["args"]
+                    .as_object()
+                    .into_iter()
+                    .flatten()
+                    .map(|(k, v)| {
+                        let text = v.as_str().unwrap_or("");
+                        // The parser's own sentence travels as the `message` of a syntax error.
+                        (k.clone(), if template == "Syntax error: {message}" && k == "message" { lang.tr_syntax(text) } else { text.to_string() })
+                    })
+                    .collect();
                 let refs: Vec<(&str, &str)> = args.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
                 let message = if template.is_empty() { d["message"].as_str().unwrap_or("").to_string() } else { lang.tr_fill(template, &refs) };
                 Diag {

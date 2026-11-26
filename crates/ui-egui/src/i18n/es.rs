@@ -99,6 +99,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Block not closed: “{open}” needs “{close}”" => "Bloque sin cerrar: «{open}» necesita «{close}»",
         "“{name}” is not defined" => "«{name}» no está definido",
         "Variable “{name}” is never used" => "La variable «{name}» nunca se usa",
+        "“{close}” without a matching “{open}”" => "«{close}» sin su «{open}» correspondiente",
         "“{word}” without a matching “{block}”" => "«{word}» sin su «{block}» correspondiente",
         "“{exit}” is not valid here" => "«{exit}» no es válido aquí",
         "Unbalanced parentheses" => "Paréntesis sin equilibrar",
