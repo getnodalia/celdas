@@ -11,6 +11,8 @@
 pub const UPDATE_APP: nodalia_update::App =
     nodalia_update::App { name: "Celdas", repo: "getnodalia/celdas", bundle: "Celdas.app", version: env!("CARGO_PKG_VERSION"), edition: None };
 
+#[cfg(not(target_arch = "wasm32"))]
+mod assistant;
 pub mod backstage;
 mod border_preview;
 mod cell_pictures;
@@ -356,6 +358,9 @@ pub struct SheetApp {
     /// The update check, the startup prompt and a running self-update (desktop only).
     #[cfg(not(target_arch = "wasm32"))]
     updates_rt: updates_ui::Runtime,
+    /// The AI assistant chat, made the first time it is asked for (desktop only).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) assistant: Option<nodalia_assistant::Assistant>,
 }
 
 /// Strips the engine's error prefixes for message boxes.

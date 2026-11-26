@@ -3,13 +3,13 @@ use super::clock::monotonic_ms;
 use super::clock::now_ms;
 use super::services::{Chrome, Services};
 use super::state::{NoticeKind, OpenWindow, SaveAnswer, SheetView};
-#[cfg(not(target_arch = "wasm32"))]
-use super::updates_ui;
 use super::{
     CellRef, HashMap, INTERFACE_SCALE_MAX, INTERFACE_SCALE_MIN, Json, Notice, Perf, RangeRef, Session, SheetApp, UiRequest, UiState, backstage,
     clamp_interface_scale, clean_error, control, desktop_theme, dialogs, editor, floating_pictures, formula_bar, formula_locale, grid, i18n, json,
     keytips, macro_ui, panes, pivot_pane, printing, ribbon, tabs, text_box, theme, widgets,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use super::{assistant, updates_ui};
 
 mod clipboard;
 mod commands;
@@ -90,6 +90,8 @@ impl SheetApp {
             arrange_windows: None,
             #[cfg(not(target_arch = "wasm32"))]
             updates_rt: Default::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            assistant: None,
         }
     }
 
@@ -144,6 +146,8 @@ impl SheetApp {
         self.guard_window_close(ctx);
         #[cfg(not(target_arch = "wasm32"))]
         updates_ui::tick(self, ctx);
+        #[cfg(not(target_arch = "wasm32"))]
+        self.poll_assistant(ctx);
         // Files read asynchronously (web file picker, dropped files).
         self.poll_async_opens();
         self.autosave(ctx);
@@ -248,6 +252,9 @@ impl SheetApp {
                 tabs::status_bar(self, ui);
             }
             tabs::sheet_tabs(self, ui);
+            // The assistant's chat keeps the right edge; the task panes sit beside it.
+            #[cfg(not(target_arch = "wasm32"))]
+            assistant::panel(self, ui);
             pivot_pane::show(self, ui);
             panes::show(self, ui);
             // The sheet is an island (Nodalia Design): its top corners are rounded here, its
