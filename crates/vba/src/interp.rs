@@ -855,6 +855,13 @@ impl<'a> Vm<'a> {
             return Ok(v);
         }
         let project = self.project;
+        if &**n == "me"
+            && args.is_empty()
+            && let Some(m) = project.modules.get(f.module)
+            && let Some(v) = self.host.module_object(&m.name)
+        {
+            return Ok(v);
+        }
         if let Some((mi, p)) = project.find_proc(n, Some(f.module)) {
             return self.call_proc(mi, p, args.to_vec()).map(|(v, _)| v);
         }

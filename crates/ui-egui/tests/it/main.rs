@@ -125,6 +125,7 @@ mod ui_clock;
 mod undo_while_grouping;
 mod validation_alert;
 mod validation_input_message;
+mod vba_help_translated;
 mod wheel_zoom;
 mod whole_line_shortcuts;
 mod widgets;

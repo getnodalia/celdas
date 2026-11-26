@@ -14,6 +14,7 @@ mod de;
 mod el;
 mod es;
 mod es_functions;
+mod es_vba;
 mod fr;
 mod it;
 mod ja;
@@ -201,7 +202,7 @@ impl Language {
     fn translated(self, text: &str) -> Option<&'static str> {
         match self {
             Self::En => None,
-            Self::Es => es::translate(text),
+            Self::Es => es::translate(text).or_else(|| es_vba::translate(text)),
             Self::El => el::translate(text),
             Self::Ja => ja::translate(text),
             Self::Zh => zh::translate(text),
@@ -219,6 +220,15 @@ impl Language {
             Self::Vi => vi::translate(text),
             Self::Nl => nl::translate(text),
             Self::Ro => ro::translate(text),
+        }
+    }
+
+    /// A syntax error of the Visual Basic parser, which writes its sentences in English: the
+    /// language's own wording, or the sentence as it came.
+    pub fn tr_syntax(self, message: &str) -> String {
+        match self {
+            Self::Es => es_vba::syntax(message).unwrap_or_else(|| message.to_string()),
+            _ => message.to_string(),
         }
     }
 

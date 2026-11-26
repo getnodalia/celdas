@@ -313,6 +313,28 @@ pub fn write_bin(modules: &[SourceModule]) -> Result<Vec<u8>, String> {
         let bytes: Vec<u8> = m.source.chars().map(|c| u8::try_from(u32::from(c)).unwrap_or(b'?')).collect();
         streams.push((format!("VBA/{}", m.name), compress_literals(&bytes)));
     }
+    let mut project = String::from("ID=\"{00000000-0000-0000-0000-000000000000}\"\r\n");
+    for m in modules {
+        let document = m
+            .source
+            .lines()
+            .take_while(|l| l.trim_start().to_ascii_lowercase().starts_with("attribute "))
+            .any(|l| l.to_ascii_lowercase().contains("vb_base"));
+        let line = match (document, m.kind) {
+            (true, _) => format!("Document={}/&H00000000", m.name),
+            (false, ModuleKind::Class) => format!("Class={}", m.name),
+            (false, ModuleKind::Standard) => format!("Module={}", m.name),
+        };
+        project.push_str(&line);
+        project.push_str("\r\n");
+    }
+    project.push_str(
+        "Name=\"VBAProject\"\r\n\r\n[Host Extender Info]\r\n&H00000001={3832D640-CF90-11CF-8E43-00A0C911005A};VBE;&H00000000\r\n\r\n[Workspace]\r\n",
+    );
+    for m in modules {
+        project.push_str(&format!("{}=0, 0, 0, 0, C\r\n", m.name));
+    }
+    streams.push(("PROJECT".to_string(), project.into_bytes()));
     let mut w = nodalia_cfb::Writer::new(nodalia_cfb::Version::V3);
     for (path, data) in streams {
         w.stream_at(&path, data).map_err(|e| e.to_string())?;

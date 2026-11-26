@@ -54,6 +54,10 @@ dark.
 <td width="50%" valign="top"><img src="docs/images/celdas-macros-editor.png" alt="The Visual Basic editor in the light theme: project explorer with an outline, highlighted code with line numbers and a toolbar with run and debug buttons" width="100%"><p align="center"><sub><b>Visual Basic editor.</b> Suggestions, inline errors, Find and Replace, Format Module and an Immediate window.</sub></p></td>
 <td width="50%" valign="top"><img src="docs/images/celdas-macros-debug-dark.png" alt="A macro paused at a breakpoint in the dark theme, with its local variables in the bottom panel" width="100%"><p align="center"><sub><b>Debugger.</b> Breakpoints, step into, over and out, locals, watches and the call stack.</sub></p></td>
 </tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/celdas-macros-record-dialog.png" alt="The Record Macro dialog with Record as set to Visual Basic" width="100%"><p align="center"><sub><b>Record as Visual Basic.</b> The recorder can write a <code>Sub</code> into the project instead of a Celdas macro.</sub></p></td>
+<td width="50%" valign="top"><img src="docs/images/celdas-macros-record-vba.png" alt="The Visual Basic editor showing a recorded macro, with ThisWorkbook and the sheet's code module in the explorer" width="100%"><p align="center"><sub><b>Recorded code</b>, and the code behind ThisWorkbook and each sheet.</sub></p></td>
+</tr>
 </table>
 
 ## Download

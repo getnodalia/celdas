@@ -445,22 +445,31 @@ impl ExcelHost<'_> {
             "delete" => match r.span {
                 Span::Rows => self.run_value(r.book, "home.deleteRows", json!({"sheet": &*r.sheet, "rows": r.r.a1()})),
                 Span::Cols => self.run_value(r.book, "home.deleteColumns", json!({"sheet": &*r.sheet, "cols": r.r.a1()})),
-                Span::Cells => self.run_value(r.book, "home.deleteCells", json!({"sheet": &*r.sheet, "range": r.r.a1(), "shift": "up"})),
+                Span::Cells => {
+                    let shift = Self::shift_of(args, "up")?;
+                    self.run_value(r.book, "home.deleteCells", json!({"sheet": &*r.sheet, "range": r.r.a1(), "shift": shift}))
+                }
             },
             "insert" => match r.span {
                 Span::Rows => self.run_value(r.book, "home.insertRows", json!({"sheet": &*r.sheet, "rows": r.r.a1()})),
                 Span::Cols => self.run_value(r.book, "home.insertColumns", json!({"sheet": &*r.sheet, "cols": r.r.a1()})),
-                Span::Cells => self.run_value(r.book, "home.insertCells", json!({"sheet": &*r.sheet, "range": r.r.a1(), "shift": "down"})),
+                Span::Cells => {
+                    let shift = Self::shift_of(args, "down")?;
+                    self.run_value(r.book, "home.insertCells", json!({"sheet": &*r.sheet, "range": r.r.a1(), "shift": shift}))
+                }
             },
-            _ => Err(VbError::no_member(name)),
+            _ => match self.range_action(r, name, args, assign)? {
+                Some(v) => Ok(v),
+                None => Err(VbError::no_member(name)),
+            },
         }
     }
 
-    fn simple(&mut self, r: &RangeObj, id: &str) -> Result<Value> {
+    pub(super) fn simple(&mut self, r: &RangeObj, id: &str) -> Result<Value> {
         self.run_value(r.book, id, Self::range_a1(r))
     }
 
-    fn run_value(&mut self, book: usize, id: &str, params: Json) -> Result<Value> {
+    pub(super) fn run_value(&mut self, book: usize, id: &str, params: Json) -> Result<Value> {
         self.run(book, id, params).map(|_| Value::Empty)
     }
 
@@ -580,11 +589,24 @@ impl ExcelHost<'_> {
             },
             "underline" => match assign {
                 Some(v) => {
-                    // xlUnderlineStyleNone is -4142; any other value underlines.
-                    let on = v.to_i32()? != -4142;
-                    self.restyle(r, move |st| st.font.underline = if on { Underline::Single } else { Underline::None }).map(|()| Value::Empty)
+                    // xlUnderlineStyleNone is -4142, Double -4119, SingleAccounting 4 and
+                    // DoubleAccounting 5; any other value is a single underline.
+                    let u = match v.to_i32()? {
+                        -4142 => Underline::None,
+                        -4119 => Underline::Double,
+                        4 => Underline::SingleAccounting,
+                        5 => Underline::DoubleAccounting,
+                        _ => Underline::Single,
+                    };
+                    self.restyle(r, move |st| st.font.underline = u).map(|()| Value::Empty)
                 }
-                None => Ok(Value::Long(if self.first_style(r)?.font.underline == Underline::None { -4142 } else { 2 })),
+                None => Ok(Value::Long(match self.first_style(r)?.font.underline {
+                    Underline::None => -4142,
+                    Underline::Single => 2,
+                    Underline::Double => -4119,
+                    Underline::SingleAccounting => 4,
+                    Underline::DoubleAccounting => 5,
+                })),
             },
             "size" => match assign {
                 Some(v) => {
@@ -609,6 +631,12 @@ impl ExcelHost<'_> {
                     self.restyle(r, move |st| st.font.color = c).map(|()| Value::Empty)
                 }
                 None => Ok(vba_color(self.first_style(r)?.font.color)),
+            },
+            // xlAutomatic (-4105) is the one index a macro sets: the font follows the theme again.
+            "colorindex" => match assign {
+                Some(v) if v.to_i32()? == -4105 => self.restyle(r, |st| st.font.color = Color::Auto).map(|()| Value::Empty),
+                Some(_) => Err(VbError::app("Unable to set the ColorIndex property of the Font class")),
+                None => Ok(Value::Long(if self.first_style(r)?.font.color == Color::Auto { -4105 } else { 1 })),
             },
             _ => Err(VbError::no_member(name)),
         }
@@ -709,6 +737,22 @@ impl ExcelHost<'_> {
                 let l = line_mut(&mut st.borders, side);
                 *l = edited(*l, e);
             })?;
+            // A line is shared by the two cells it lies between: taking it away takes it from the
+            // neighbour too (the Borders command does the same).
+            if matches!(e, Edit::Line(-4142)) {
+                let (dr, dc, facing) = match side {
+                    Side::Top => (-1, 0, Side::Bottom),
+                    Side::Bottom => (1, 0, Side::Top),
+                    Side::Left => (0, -1, Side::Right),
+                    Side::Right => (0, 1, Side::Left),
+                    _ => continue,
+                };
+                let (a, b) = (area.start.offset(dr, dc).filter(|c| c.is_valid()), area.end.offset(dr, dc).filter(|c| c.is_valid()));
+                if let (Some(a), Some(b)) = (a, b) {
+                    let next = RangeObj { book: r.book, sheet: r.sheet.clone(), r: RangeRef::new(a, b), span: Span::Cells };
+                    self.restyle(&next, move |st| *line_mut(&mut st.borders, facing) = BorderLine::default())?;
+                }
+            }
         }
         Ok(Value::Empty)
     }

@@ -8,11 +8,18 @@
 mod app;
 mod consts;
 pub mod debug;
+#[cfg(test)]
+mod document_tests;
 mod files;
 mod host;
 pub mod ide;
 mod objects;
 mod range;
+mod range_ops;
+pub mod record;
+pub(crate) mod record_save;
+#[cfg(test)]
+mod record_tests;
 mod shapes;
 
 use std::hash::{Hash, Hasher};
@@ -189,13 +196,18 @@ fn list(s: &mut Session, _: &Json) -> Result<Json> {
 fn source(s: &mut Session, p: &Json) -> Result<Json> {
     let Some((project, _)) = project_of(s)? else { return Err(EngineError::Other("The workbook has no VBA project.".into())) };
     let only = str_param(p, "module");
+    // The sheet a document module stands behind, by its code name: the name the sheet has now.
+    let sheet_of = |module: &str| -> Option<String> {
+        let wb = &s.doc().ok()?.wb;
+        wb.sheets.iter().find(|sh| sh.code_name.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(module))).map(|sh| sh.name.clone())
+    };
     let modules: Vec<Json> = project
         .modules
         .iter()
         .filter(|m| only.is_none_or(|n| m.name.eq_ignore_ascii_case(n)))
         .map(|m| {
             let (header, code) = split_attributes(&m.source);
-            json!({"name": m.name, "kind": kind_name(m.kind), "source": m.source, "header": header, "code": code, "document": is_document(&m.source)})
+            json!({"name": m.name, "kind": kind_name(m.kind), "source": m.source, "header": header, "code": code, "document": is_document(&m.source), "sheet": sheet_of(&m.name)})
         })
         .collect();
     if modules.is_empty() && only.is_some() {
@@ -290,16 +302,64 @@ fn save(s: &mut Session, p: &Json) -> Result<Json> {
     Ok(json!({"module": name, "created": created, "procedures": procedures, "errors": errors}))
 }
 
+/// The header Excel writes for the code behind ThisWorkbook (`workbook`) or a sheet.
+fn document_header(name: &str, workbook: bool) -> String {
+    let base = if workbook { "{00020819-0000-0000-C000-000000000046}" } else { "{00020820-0000-0000-C000-000000000046}" };
+    format!(
+        "Attribute VB_Name = \"{name}\"\r\nAttribute VB_Base = \"0{base}\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = True\r\nAttribute VB_Exposed = True\r\nAttribute VB_TemplateDerived = False\r\nAttribute VB_Customizable = True\r\n"
+    )
+}
+
+/// The first `SheetN` no sheet carries as its code name yet.
+fn free_code_name(taken: &[String]) -> String {
+    (1u32..).map(|n| format!("Sheet{n}")).find(|c| !taken.iter().any(|t| t.eq_ignore_ascii_case(c))).unwrap_or_else(|| "Sheet".into())
+}
+
+/// A new project holds what an Excel one starts with: the code behind ThisWorkbook and behind
+/// every sheet (named by the sheet's code name, so it follows the sheet when renamed), and
+/// `Module1` for the macros.
 fn create(s: &mut Session, p: &Json) -> Result<Json> {
     if s.doc()?.wb.vba_project.is_some() {
         return Err(EngineError::Other("The workbook already has a VBA project.".into()));
     }
     let code = str_param(p, "code").unwrap_or("").replace("\r\n", "\n").replace('\n', "\r\n");
-    let source = format!("Attribute VB_Name = \"Module1\"\r\n{code}");
-    let sources = vec![SourceModule { name: "Module1".into(), kind: celdas_vba::ModuleKind::Standard, source }];
+    let (workbook_name, sheets) = {
+        let wb = &s.doc()?.wb;
+        let mut taken: Vec<String> = wb.sheets.iter().filter_map(|sh| sh.code_name.clone()).collect();
+        let sheets: Vec<String> = wb
+            .sheets
+            .iter()
+            .map(|sh| match &sh.code_name {
+                Some(c) => c.clone(),
+                None => {
+                    let c = free_code_name(&taken);
+                    taken.push(c.clone());
+                    c
+                }
+            })
+            .collect();
+        (wb.code_name.clone().unwrap_or_else(|| "ThisWorkbook".into()), sheets)
+    };
+    let class = celdas_vba::ModuleKind::Class;
+    let mut sources = vec![SourceModule { name: workbook_name.clone(), kind: class, source: document_header(&workbook_name, true) }];
+    sources.extend(sheets.iter().map(|n| SourceModule { name: n.clone(), kind: class, source: document_header(n, false) }));
+    sources.push(SourceModule {
+        name: "Module1".into(),
+        kind: celdas_vba::ModuleKind::Standard,
+        source: format!("Attribute VB_Name = \"Module1\"\r\n{code}"),
+    });
     let bytes = celdas_vba::project::write_bin(&sources).map_err(project_error)?;
-    replace_project(s, bytes)?;
-    Ok(json!({"module": "Module1"}))
+    crate::cmd::edit(s, |cx| {
+        cx.wb.vba_project = Some(std::sync::Arc::new(bytes));
+        cx.wb.code_name = Some(workbook_name.clone());
+        for (sheet, name) in cx.wb.sheets.iter_mut().zip(&sheets) {
+            if sheet.code_name.is_none() {
+                std::sync::Arc::make_mut(sheet).code_name = Some(name.clone());
+            }
+        }
+        Ok(())
+    })?;
+    Ok(json!({"module": "Module1", "workbook": workbook_name, "sheets": sheets}))
 }
 
 fn remove(s: &mut Session, p: &Json) -> Result<Json> {

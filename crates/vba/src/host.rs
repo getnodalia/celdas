@@ -38,6 +38,13 @@ pub trait Host {
     /// `Range(...)`, `xlCenter`… `Ok(None)` means the host does not know it either.
     fn global(&mut self, name: &str, args: &[CallArg], assign: Option<Value>) -> Result<Option<Value>>;
 
+    /// `Me` inside the module `module` (its real name): the object a document module stands for,
+    /// ThisWorkbook or a sheet. `None` for a module that is not behind an object.
+    fn module_object(&mut self, module: &str) -> Option<Value> {
+        let _ = module;
+        None
+    }
+
     /// The items of an object for `For Each`.
     fn enumerate(&mut self, obj: &Obj) -> Result<Vec<Value>> {
         let _ = obj;

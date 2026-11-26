@@ -46,7 +46,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Record Macro",
             ["View", "Macros"],
             None,
-            "{stop?: bool, cancel?: bool (ends a recording without saving it), relative?: bool (default true; when starting), name?, shortcut?: \"Ctrl+Shift+M\" | \"M\", description?} toggles recording; when starting, the name (new and valid) and the shortcut (free) are checked and kept for the save, and without a name the macro gets the next MacroN; when stopping, a name or description given then wins (a taken name gets a suffix); with relative references the selection when it starts is the example input → {recording, name?, relative?, input?} or {recording: false, saved, steps, dropped, skipped, inputs, shortcutDropped? (the shortcut another macro took while recording)}",
+            "{stop?: bool, cancel?: bool (ends a recording without saving it), as?: \"steps\" | \"vba\" (when starting; default steps: a macro of steps. vba: a Sub of Visual Basic in a new module of the workbook's VBA project, written as Excel's recorder writes it, with the commands that have no statement left as comments; relative is ignored), relative?: bool (default true; when starting), name?, shortcut?: \"Ctrl+Shift+M\" | \"M\", description?} toggles recording; when starting, the name (new and valid) and the shortcut (free) are checked and kept for the save, and without a name the macro gets the next MacroN; when stopping, a name or description given then wins (a taken name gets a suffix); with relative references the selection when it starts is the example input → {recording, name?, relative?, input?} or {recording: false, saved, steps, dropped, skipped, inputs, shortcutDropped? (the shortcut another macro took while recording)}",
             has_doc,
             record
         ),
@@ -237,13 +237,18 @@ fn check_record_params(recording: bool, p: &Json) -> Result<()> {
             return Err(bad("macro.record", format!("`{k}` must be true or false")));
         }
     }
-    for k in ["name", "description", "shortcut"] {
+    for k in ["name", "description", "shortcut", "as"] {
         if given(k).is_some_and(|v| !v.is_string()) {
             return Err(bad("macro.record", format!("`{k}` must be text")));
         }
     }
+    if let Some(a) = given("as").and_then(Json::as_str)
+        && !matches!(a, "steps" | "vba")
+    {
+        return Err(bad("macro.record", "`as` must be \"steps\" or \"vba\""));
+    }
     if given("cancel").and_then(Json::as_bool) == Some(true) {
-        if let Some(k) = ["stop", "relative", "name", "description", "shortcut"].into_iter().find(|k| given(k).is_some()) {
+        if let Some(k) = ["stop", "relative", "name", "description", "shortcut", "as"].into_iter().find(|k| given(k).is_some()) {
             return Err(bad("macro.record", format!("`cancel: true` ends the recording without saving it, so `{k}` would be ignored")));
         }
         return Ok(());
@@ -256,7 +261,7 @@ fn check_record_params(recording: bool, p: &Json) -> Result<()> {
         ));
     }
     if (recording || stop == Some(true))
-        && let Some(k) = ["relative", "shortcut"].into_iter().find(|k| given(k).is_some())
+        && let Some(k) = ["relative", "shortcut", "as"].into_iter().find(|k| given(k).is_some())
     {
         return Err(bad("macro.record", format!("`{k}` is chosen when recording starts")));
     }
@@ -289,12 +294,20 @@ fn start_recording(s: &mut Session, p: &Json, relative: bool) -> Result<Json> {
         Some(t) => Some(t.to_string()),
         None => None,
     };
-    let mut start = RecordingStart::new(d, relative);
-    (start.name, start.shortcut, start.description) = (name.clone(), shortcut, description);
+    let vba = str_param(p, "as") == Some("vba");
+    // Code has no tokens for "the input": a recording as Visual Basic is always in plain references.
+    let mut start = RecordingStart::new(d, relative && !vba);
+    (start.name, start.shortcut, start.description, start.vba) = (name.clone(), shortcut, description, vba);
     let input = start.selection.current().a1();
     s.start_recording();
     s.macro_recording = Some(start);
-    let mut out = if relative { json!({"recording": true, "relative": true, "input": input}) } else { json!({"recording": true, "relative": false}) };
+    let mut out = if vba {
+        json!({"recording": true, "as": "vba"})
+    } else if relative {
+        json!({"recording": true, "relative": true, "input": input})
+    } else {
+        json!({"recording": true, "relative": false})
+    };
     if let Some(n) = name {
         out["name"] = json!(n);
     }
@@ -334,6 +347,9 @@ fn save_recording(s: &mut Session, p: &Json, rec: &crate::record::Recorder, star
     // A recording started without `macro.record` (`Session::start_recording`) takes its example
     // input from the workbook as it is now.
     let start = start.unwrap_or_else(|| RecordingStart::new(d, true));
+    if start.vba {
+        return crate::vba::record_save::save(s, p, rec, &start, at);
+    }
     let (doc, wb) = (d.uid, d.wb.clone());
     // A name given when stopping wins over the one given when starting; either one, if another
     // macro has it, gets a suffix, so the save never replaces a macro.
