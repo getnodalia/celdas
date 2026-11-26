@@ -9,8 +9,12 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Record as:" => "Grabar como:",
         "Steps" => "Pasos",
         "Saved as the procedure {name}" => "Se guardará como el procedimiento {name}",
-        "Recorded “{name}” as Visual Basic in {module} ({steps} command)" => "Macro “{name}” grabada como Visual Basic en {module} ({steps} comando)",
-        "Recorded “{name}” as Visual Basic in {module} ({steps} commands)" => "Macro “{name}” grabada como Visual Basic en {module} ({steps} comandos)",
+        "Recorded “{name}” as Visual Basic in {module} ({steps} command)" => {
+            "Macro “{name}” grabada como Visual Basic en {module} ({steps} comando)"
+        }
+        "Recorded “{name}” as Visual Basic in {module} ({steps} commands)" => {
+            "Macro “{name}” grabada como Visual Basic en {module} ({steps} comandos)"
+        }
         "{count} could not be written as code and are comments" => "{count} no se pudieron escribir como código y quedan como comentarios",
         // Visual Basic editor and the Macros dialog.
         "Check VBA Code" => "Comprobar código VBA",

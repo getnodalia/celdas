@@ -308,6 +308,9 @@ pub fn write_xlsx_named_with(wb: &Workbook, kind: XlsxKind, book_name: Option<&s
     let file_version = crate::passthrough::workbook_elements(wb, "fileVersion");
     w.push_str(if file_version.is_empty() { "<fileVersion appName=\"celdas\"/>" } else { &file_version });
     w.push_str("<workbookPr");
+    if let Some(n) = &wb.code_name {
+        let _ = write!(w, " codeName=\"{}\"", crate::xml::esc_attr(n));
+    }
     match wb.show_objects {
         ShowObjects::All => {}
         ShowObjects::Placeholders => w.push_str(" showObjects=\"placeholders\""),

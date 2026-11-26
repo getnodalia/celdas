@@ -65,10 +65,7 @@ pub(crate) fn save(s: &mut Session, p: &Json, rec: &Recorder, start: &RecordingS
     };
     let name = match wanted {
         Some(_) => free_name(&names("procedures", "name"), &base),
-        None => (1..)
-            .map(|n| format!("Macro{n}"))
-            .find(|n| !names("procedures", "name").iter().any(|t| t.eq_ignore_ascii_case(n)))
-            .unwrap_or(base),
+        None => (1..).map(|n| format!("Macro{n}")).find(|n| !names("procedures", "name").iter().any(|t| t.eq_ignore_ascii_case(n))).unwrap_or(base),
     };
     let description = str_param(p, "description").or(start.description.as_deref()).unwrap_or("");
     let (sub, skipped) = recorded_sub(&name, description, &steps);

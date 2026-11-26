@@ -416,7 +416,8 @@ fn borders(p: &Json) -> Result<Option<Vec<String>>, ()> {
         Some("thick") => "xlThick",
         _ => "xlThin",
     };
-    let edge = |name: &str, weight: &str| vec![format!("{t}.Borders({name}).LineStyle = xlContinuous"), format!("{t}.Borders({name}).Weight = {weight}")];
+    let edge =
+        |name: &str, weight: &str| vec![format!("{t}.Borders({name}).LineStyle = xlContinuous"), format!("{t}.Borders({name}).Weight = {weight}")];
     let thick = if matches!(preset, "thickOutside" | "thickBottom") { "xlThick" } else { weight };
     let edges: &[&str] = match preset {
         "none" => return Ok(Some(vec![format!("{t}.Borders.LineStyle = xlNone")])),

@@ -117,11 +117,7 @@ impl ExcelHost<'_> {
                 // Pasted where the range is: its first cell becomes the selection.
                 self.run(r.book, "sheet.activate", json!({"sheet": &*r.sheet}))?;
                 self.run(r.book, "selection.set", json!({"range": r.r.a1(), "sheet": &*r.sheet}))?;
-                self.run(
-                    r.book,
-                    "edit.pasteSpecial",
-                    json!({"what": what, "operation": operation, "skipBlanks": skip, "transpose": transpose}),
-                )?;
+                self.run(r.book, "edit.pasteSpecial", json!({"what": what, "operation": operation, "skipBlanks": skip, "transpose": transpose}))?;
                 done
             }
             "sort" => {
