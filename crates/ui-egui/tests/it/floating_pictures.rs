@@ -17,12 +17,19 @@ fn harness() -> egui_kittest::Harness<'static, SheetApp> {
     crate::support::blank_harness(4)
 }
 
+/// The textures of the pictures drawn on the sheet. The title bar also draws an image, the
+/// assistant button's provider mark, and it is not a picture of the workbook, so what sits inside
+/// the title bar is left out.
 fn picture_textures(h: &egui_kittest::Harness<'static, SheetApp>) -> Vec<TextureId> {
+    const BELOW_TITLE_BAR: f32 = 80.0;
     h.output()
         .shapes
         .iter()
         .filter_map(|shape| match &shape.shape {
-            Shape::Mesh(mesh) if mesh.texture_id != TextureId::default() => Some(mesh.texture_id),
+            Shape::Mesh(mesh) if mesh.texture_id != TextureId::default() => {
+                let top = mesh.vertices.iter().map(|v| v.pos.y).fold(f32::INFINITY, f32::min);
+                (top > BELOW_TITLE_BAR).then_some(mesh.texture_id)
+            }
             _ => None,
         })
         .collect()
