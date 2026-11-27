@@ -44,7 +44,10 @@ fn confirm(h: &mut egui_kittest::Harness<'static, SheetApp>) {
     h.run_steps(6);
 }
 
+/// Pictures drawn on the sheet. The title bar also draws an image, the assistant button's provider
+/// mark, and it is not a cell picture, so what sits inside the title bar is left out.
 fn image_meshes(h: &egui_kittest::Harness<'static, SheetApp>) -> Vec<(Rect, Rect)> {
+    const BELOW_TITLE_BAR: f32 = 80.0;
     h.output()
         .shapes
         .iter()
@@ -54,7 +57,7 @@ fn image_meshes(h: &egui_kittest::Harness<'static, SheetApp>) -> Vec<(Rect, Rect
                 for vertex in &mesh.vertices {
                     bounds.extend_with(vertex.pos);
                 }
-                Some((bounds, shape.clip_rect))
+                (bounds.min.y > BELOW_TITLE_BAR).then_some((bounds, shape.clip_rect))
             }
             _ => None,
         })
