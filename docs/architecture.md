@@ -88,8 +88,8 @@ drawing its own:
   CJK scripts use epaint's baseline fallback alignment in cells, editors and window titles.
   Other scripts, symbols and emoji keep their existing alignment. Baseline alignment can
   increase line height; manual row heights and clipping remain unchanged. Reports:
-  [#1265](https://github.com/storytold/gridcraft/issues/1265) and
-  [#2621](https://github.com/storytold/gridcraft/issues/2621).
+  #1265 and
+  #2621.
 - **Code editor marks**: `code_editor_marked` underlines a byte range in the error colour (the
   equation editor marks the position of a LaTeX error with it).
 - **Formula bar**: grows with its content from one line to `formula_bar::MAX_LINES` (five), then
