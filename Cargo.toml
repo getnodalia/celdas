@@ -4,7 +4,7 @@ members = ["crates/*", "apps/*", "xtask"]
 default-members = ["crates/*", "apps/celdas", "apps/celdas-cli", "xtask"]
 
 [workspace.package]
-version = "0.7.2"
+version = "0.7.3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.95"
@@ -31,10 +31,10 @@ celdas-math = { path = "crates/math" }
 # ui-egui, nodalia-print in the app, nodalia-web-api and nodalia-web-host in the web app) comes from one
 # nodalia-libs revision.
 # In-app updates from this app's GitHub releases, with the update windows for egui.
-nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "7966cac1e786a14ca7e58b201fa6dd084b39f0a7", features = ["egui"] }
-nodalia-assistant = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "7966cac1e786a14ca7e58b201fa6dd084b39f0a7", features = ["egui"] }
+nodalia-update = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "55ef2eccee0ca0fda67bd1d31bfabb1a82ea098f", features = ["egui"] }
+nodalia-assistant = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "55ef2eccee0ca0fda67bd1d31bfabb1a82ea098f", features = ["egui"] }
 # Nodalia Design for egui: the palette, Celdas's accent, the icon set and the window controls.
-nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "7966cac1e786a14ca7e58b201fa6dd084b39f0a7", features = ["egui", "creator"] }
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "55ef2eccee0ca0fda67bd1d31bfabb1a82ea098f", features = ["egui", "creator"] }
 # PDF RunLength encoding; this revision also fixes the vendored JBIG2 dependency for Git consumers.
 nodalia-pdf = { git = "https://github.com/getnodalia/foundation", rev = "a2a0bb63def6bf4bbb74562dc7462983f3aa13df", version = "0.1.0", default-features = false }
 nodalia-stream-codecs = { git = "https://github.com/getnodalia/foundation", rev = "2fb829b020925c63593aec1ac1b0880c55b3f96a", version = "0.1.0" }
