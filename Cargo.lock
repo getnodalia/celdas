@@ -207,15 +207,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arbitrary"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
-dependencies = [
- "derive_arbitrary",
-]
-
-[[package]]
 name = "arboard"
 version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -762,7 +753,7 @@ dependencies = [
  "log",
  "quick-xml",
  "serde_json",
- "zip 3.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -800,7 +791,7 @@ dependencies = [
  "thiserror 2.0.21",
  "unicode-segmentation",
  "web-time",
- "zip 3.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -959,7 +950,7 @@ dependencies = [
  "quick-xml",
  "sha2 0.11.1",
  "thiserror 2.0.21",
- "zip 3.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -1342,17 +1333,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "derive_arbitrary"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b034bd7d5f032402a2479444dcc6f74e36a03f31854d41680fb240ef682a1ac"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 3.0.6",
 ]
 
 [[package]]
@@ -3457,7 +3437,7 @@ source = "git+https://github.com/getnodalia/foundation?rev=57933793e2a2ef8904338
 dependencies = [
  "flate2",
  "thiserror 2.0.21",
- "zip 9.7.0",
+ "zip",
 ]
 
 [[package]]
@@ -7266,20 +7246,6 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12598812502ed0105f607f941c386f43d441e00148fce9dec3ca5ffb0bde9308"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "flate2",
- "indexmap",
- "memchr",
- "zopfli",
-]
-
-[[package]]
-name = "zip"
 version = "9.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08687262e7c0f1284b259686f322805a8adaa8ef4d7210e76448950b3f083bf7"
@@ -7295,6 +7261,7 @@ dependencies = [
  "typed-path",
  "windows-sys 0.61.2",
  "zeroize",
+ "zopfli",
 ]
 
 [[package]]
