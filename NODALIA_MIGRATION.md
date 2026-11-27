@@ -18,10 +18,7 @@ there is no old extension to rename.
 
 ## Inherited dependencies
 
-Resolved: craft-common-actions (release, contributors refresh, Windows ARM64) is gone; fonts and
-the shared libraries come from getnodalia/foundation's vendor branches; the `[patch]` for
-`storytold/winprint.rs` in `Cargo.toml` only names the old home of crates fetched from
-getnodalia/foundation.
+Resolved: fonts, translations and the shared libraries come from getnodalia/foundation's vendor branches, and nothing in `Cargo.toml` names another organisation.
 
 ## Technical debt
 

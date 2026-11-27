@@ -147,7 +147,7 @@ language (none so far) and of localized function names.
 | Date | Change | Summary |
 |---|---|---|
 | 2026-11-15 | minor | The RaTeX equation parser's messages follow the interface language: its 33 fixed messages are catalog keys, and its 33 messages that carry a piece of the source (a command, token, environment name or count) are read back into templates (`i18n::unfill`) whose translation is filled with the same pieces. A message of another shape, such as RaTeX's internal ones or the chemistry parser's, stays English. 66 new keys in every catalog (#4261) |
-| 2026-11-10 | minor | Ukrainian Chart is `Діаграма`, matching [nodalia-i18n#211](https://github.com/storytold/craft-i18n/pull/211) and distinct from Diagram (`Схема`) |
+| 2026-11-10 | minor | Ukrainian Chart is `Діаграма`, matching nodalia-i18n#211 and distinct from Diagram (`Схема`) |
 | 2026-11-10 | minor | Diagram and Decorative Text labels in all 18 non-English catalogs; Diagram never repeats the catalog's chart word (German `Schema`, Ukrainian `Схема`, Romanian `Schemă`), see [feature-names.md](feature-names.md) |
 | 2026-11-09 | minor | Arabic PDF export no longer fails on a character the Arabic face lacks (it falls back like other text) or when no Arabic font is available (Arabic is set in the CID font, which has no Arabic glyphs, and a message says so) |
 | 2026-10-31 | minor | System and embedded CJK text fallbacks share the Latin baseline in cells, editors and window titles; other scripts, symbols and emoji keep their alignment |

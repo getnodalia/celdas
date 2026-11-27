@@ -627,7 +627,7 @@ fn a_part_over_the_size_limit_says_how_to_get_the_data_in() {
     let mut wb = Workbook::new();
     wb.sheet_mut(0).unwrap().set_value(CellRef::new(0, 0), celdas_core::Value::text("big"));
     let package = save_bytes(&wb, "big.xlsx").unwrap();
-    // The size reported in storytold/gridcraft#1242.
+    // The size reported in #1242.
     let msg = open_bytes("big.xlsx", &declaring(package.clone(), "xl/worksheets/sheet1.xml", 540_278_731)).unwrap_err().to_string();
     assert!(msg.starts_with("We can't open 'big.xlsx': "), "{msg}");
     assert!(msg.contains("xl/worksheets/sheet1.xml") && msg.contains("515 MB") && msg.contains("512 MB"), "{msg}");
